@@ -8,6 +8,7 @@ export default defineConfig({
     name: 'Chrome Start Page',
     version: '0.1.0',
     description: 'Custom Chrome new tab page',
+    permissions: ['storage'],
   },
   vite: () => ({
     plugins: [tailwindcss()],
