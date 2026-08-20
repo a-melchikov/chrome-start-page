@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'wxt';
 
 export default defineConfig({
@@ -8,4 +9,7 @@ export default defineConfig({
     version: '0.1.0',
     description: 'Custom Chrome new tab page',
   },
+  vite: () => ({
+    plugins: [tailwindcss()],
+  }),
 });
