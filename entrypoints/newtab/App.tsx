@@ -1,12 +1,19 @@
 import { useEffect } from 'react';
 
-import { DashboardControls } from '../../components/dashboard/DashboardControls';
+import { Dashboard } from '../../components/dashboard/Dashboard';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { DEFAULT_APPEARANCE } from '../../storage/defaults';
 
 export function App() {
-  const { config, error, isLoading, updateAppearance } = useDashboardConfig();
+  const {
+    config,
+    error,
+    isLoading,
+    addWidget,
+    removeWidget,
+    updateAppearance,
+  } = useDashboardConfig();
   const systemDarkMode = useSystemDarkMode();
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
   const resolvedTheme =
@@ -44,9 +51,13 @@ export function App() {
         </p>
       ) : null}
 
-      <DashboardControls
+      <Dashboard
         appearance={appearance}
+        config={config}
+        isLoading={isLoading}
+        onAddWidget={addWidget}
         onAppearanceChange={updateAppearance}
+        onRemoveWidget={removeWidget}
       />
     </main>
   );

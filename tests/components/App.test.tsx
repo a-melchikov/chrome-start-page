@@ -47,7 +47,7 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('opens the add-widget placeholder and closes it on cancel', async () => {
+  it('opens the widget picker and closes it on cancel', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -56,13 +56,15 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+    const addWidgetButton = screen.getByRole('button', {
+      name: 'Добавить виджет',
+    });
+    await waitFor(() => expect(addWidgetButton).toBeEnabled());
+    await user.click(addWidgetButton);
 
     const dialog = screen.getByRole('dialog', { name: 'Добавить виджет' });
     expect(dialog).toHaveAttribute('open');
-    expect(
-      screen.getByText('Выбор типов виджетов появится на следующем этапе.'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Список ссылок' })).toBeVisible();
 
     fireEvent(dialog, new Event('cancel', { cancelable: true }));
 

@@ -1,27 +1,34 @@
 import { useState } from 'react';
 
-import type { AppearanceConfig } from '../../storage/schema';
+import type { AppearanceConfig, WidgetType } from '../../storage/schema';
 import { PaletteIcon, PlusIcon } from '../icons';
 import { Button, IconButton } from '../ui';
-import { AddWidgetPlaceholderDialog } from './AddWidgetPlaceholderDialog';
+import { AddWidgetDialog } from './AddWidgetDialog';
 import { AppearanceDialog } from './AppearanceDialog';
 
 interface DashboardControlsProps {
   appearance: AppearanceConfig;
+  canManageWidgets: boolean;
+  isEditing: boolean;
+  onAddWidget: (type: WidgetType) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onEditingChange: (isEditing: boolean) => void;
 }
 
 export function DashboardControls({
   appearance,
+  canManageWidgets,
+  isEditing,
+  onAddWidget,
   onAppearanceChange,
+  onEditingChange,
 }: DashboardControlsProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
 
   const toggleEditing = () => {
     const nextValue = !isEditing;
-    setIsEditing(nextValue);
+    onEditingChange(nextValue);
 
     if (!nextValue) {
       setIsAppearanceOpen(false);
@@ -35,6 +42,7 @@ export function DashboardControls({
         {isEditing ? (
           <>
             <Button
+              disabled={!canManageWidgets}
               size="small"
               variant="secondary"
               onClick={() => setIsAddWidgetOpen(true)}
@@ -82,8 +90,9 @@ export function DashboardControls({
         onAppearanceChange={onAppearanceChange}
         onOpenChange={setIsAppearanceOpen}
       />
-      <AddWidgetPlaceholderDialog
+      <AddWidgetDialog
         open={isAddWidgetOpen}
+        onSelectWidgetType={onAddWidget}
         onOpenChange={setIsAddWidgetOpen}
       />
     </>

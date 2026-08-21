@@ -4,12 +4,18 @@ import {
   loadDashboardConfig,
   saveDashboardConfig,
 } from '../storage/dashboard-storage';
-import type { AppearanceConfig, DashboardConfig } from '../storage/schema';
+import type {
+  AppearanceConfig,
+  DashboardConfig,
+  WidgetConfig,
+} from '../storage/schema';
 
 interface UseDashboardConfigResult {
   config: DashboardConfig | null;
   error: string | null;
   isLoading: boolean;
+  addWidget: (widget: WidgetConfig) => void;
+  removeWidget: (widgetId: string) => void;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
 }
 
@@ -57,34 +63,73 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     };
   }, []);
 
-  const updateAppearance = useCallback((changes: Partial<AppearanceConfig>) => {
-    const currentConfig = configRef.current;
+  const commitConfig = useCallback(
+    (update: (currentConfig: DashboardConfig) => DashboardConfig) => {
+      const currentConfig = configRef.current;
 
-    if (!currentConfig) {
-      return;
-    }
+      if (!currentConfig) {
+        return;
+      }
 
-    const nextConfig: DashboardConfig = {
-      ...currentConfig,
-      appearance: {
-        ...currentConfig.appearance,
-        ...changes,
-      },
-    };
+      const nextConfig = update(currentConfig);
 
-    configRef.current = nextConfig;
-    setConfig(nextConfig);
-    setError(null);
+      configRef.current = nextConfig;
+      setConfig(nextConfig);
+      setError(null);
 
-    saveQueueRef.current = saveQueueRef.current
-      .catch(() => undefined)
-      .then(() => saveDashboardConfig(nextConfig))
-      .catch((saveError: unknown) => {
-        if (isMountedRef.current) {
-          setError(getErrorMessage(saveError));
-        }
-      });
-  }, []);
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => undefined)
+        .then(() => saveDashboardConfig(nextConfig))
+        .catch((saveError: unknown) => {
+          if (isMountedRef.current) {
+            setError(getErrorMessage(saveError));
+          }
+        });
+    },
+    [],
+  );
 
-  return { config, error, isLoading, updateAppearance };
+  const updateAppearance = useCallback(
+    (changes: Partial<AppearanceConfig>) => {
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        appearance: {
+          ...currentConfig.appearance,
+          ...changes,
+        },
+      }));
+    },
+    [commitConfig],
+  );
+
+  const addWidget = useCallback(
+    (widget: WidgetConfig) => {
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        widgets: [...currentConfig.widgets, widget],
+      }));
+    },
+    [commitConfig],
+  );
+
+  const removeWidget = useCallback(
+    (widgetId: string) => {
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        widgets: currentConfig.widgets.filter(
+          (widget) => widget.id !== widgetId,
+        ),
+      }));
+    },
+    [commitConfig],
+  );
+
+  return {
+    config,
+    error,
+    isLoading,
+    addWidget,
+    removeWidget,
+    updateAppearance,
+  };
 }
