@@ -6,7 +6,10 @@ import type {
   WidgetConfig,
   WidgetType,
 } from '../../storage/schema';
-import { createWidgetConfig } from '../../widgets/registry';
+import {
+  createWidgetConfig,
+  getWidgetDefinition,
+} from '../../widgets/registry';
 import { DashboardControls } from './DashboardControls';
 import { WidgetCanvas } from './WidgetCanvas';
 
@@ -16,7 +19,9 @@ interface DashboardProps {
   isLoading: boolean;
   onAddWidget: (widget: WidgetConfig) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onFlushWidgetUpdates: () => void;
   onRemoveWidget: (widgetId: string) => void;
+  onUpdateWidget: (widget: WidgetConfig) => void;
 }
 
 export function Dashboard({
@@ -25,9 +30,12 @@ export function Dashboard({
   isLoading,
   onAddWidget,
   onAppearanceChange,
+  onFlushWidgetUpdates,
   onRemoveWidget,
+  onUpdateWidget,
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
 
   const addWidget = (type: WidgetType) => {
     const widget = createWidgetConfig(type, config?.widgets.length ?? 0);
@@ -37,13 +45,64 @@ export function Dashboard({
     }
   };
 
+  const canFinishWidgetEditing = (widgetId: string | null): boolean => {
+    if (!widgetId) {
+      return true;
+    }
+
+    const widget = config?.widgets.find(({ id }) => id === widgetId);
+    const definition = widget ? getWidgetDefinition(widget.type) : undefined;
+
+    return widget && definition?.canFinishEditing
+      ? definition.canFinishEditing(widget)
+      : true;
+  };
+
+  const changeEditing = (nextValue: boolean) => {
+    if (!nextValue && !canFinishWidgetEditing(editingWidgetId)) {
+      return;
+    }
+
+    if (!nextValue) {
+      setEditingWidgetId(null);
+      onFlushWidgetUpdates();
+    }
+
+    setIsEditing(nextValue);
+  };
+
+  const startWidgetEditing = (widgetId: string) => {
+    if (!canFinishWidgetEditing(editingWidgetId)) {
+      return;
+    }
+
+    setEditingWidgetId(widgetId);
+  };
+
+  const finishWidgetEditing = () => {
+    setEditingWidgetId(null);
+    onFlushWidgetUpdates();
+  };
+
+  const removeWidget = (widgetId: string) => {
+    if (editingWidgetId === widgetId) {
+      setEditingWidgetId(null);
+    }
+
+    onRemoveWidget(widgetId);
+  };
+
   return (
     <>
       {config ? (
         <WidgetCanvas
+          editingWidgetId={editingWidgetId}
           isEditing={isEditing}
           widgets={config.widgets}
-          onRemoveWidget={onRemoveWidget}
+          onFinishWidgetEditing={finishWidgetEditing}
+          onRemoveWidget={removeWidget}
+          onStartWidgetEditing={startWidgetEditing}
+          onUpdateWidget={onUpdateWidget}
         />
       ) : null}
 
@@ -53,7 +112,7 @@ export function Dashboard({
         isEditing={isEditing}
         onAddWidget={addWidget}
         onAppearanceChange={onAppearanceChange}
-        onEditingChange={setIsEditing}
+        onEditingChange={changeEditing}
       />
     </>
   );

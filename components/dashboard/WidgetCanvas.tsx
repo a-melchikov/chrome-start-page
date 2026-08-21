@@ -9,15 +9,23 @@ import {
 } from './widget-display';
 
 interface WidgetCanvasProps {
+  editingWidgetId: string | null;
   isEditing: boolean;
   widgets: readonly WidgetConfig[];
+  onFinishWidgetEditing: () => void;
   onRemoveWidget: (widgetId: string) => void;
+  onStartWidgetEditing: (widgetId: string) => void;
+  onUpdateWidget: (widget: WidgetConfig) => void;
 }
 
 export function WidgetCanvas({
+  editingWidgetId,
   isEditing,
   widgets,
+  onFinishWidgetEditing,
   onRemoveWidget,
+  onStartWidgetEditing,
+  onUpdateWidget,
 }: WidgetCanvasProps) {
   const [widgetPendingDelete, setWidgetPendingDelete] =
     useState<RenderableWidgetConfig | null>(null);
@@ -45,8 +53,12 @@ export function WidgetCanvas({
           <WidgetHost
             key={widget.id}
             isEditing={isEditing}
+            isWidgetEditing={editingWidgetId === widget.id}
             widget={widget}
+            onRequestEdit={() => onStartWidgetEditing(widget.id)}
             onRequestDelete={setWidgetPendingDelete}
+            onRequestFinishEditing={onFinishWidgetEditing}
+            onWidgetChange={onUpdateWidget}
           />
         ))}
       </section>

@@ -1,4 +1,5 @@
 import { getWidgetDefinition } from '../../widgets/registry';
+import type { WidgetConfig } from '../../storage/schema';
 import { Button } from '../ui';
 import {
   getWidgetDisplayName,
@@ -7,18 +8,34 @@ import {
 
 interface WidgetHostProps {
   isEditing: boolean;
+  isWidgetEditing?: boolean;
   widget: RenderableWidgetConfig;
+  onRequestEdit?: () => void;
   onRequestDelete: (widget: RenderableWidgetConfig) => void;
+  onRequestFinishEditing?: () => void;
+  onWidgetChange?: (widget: WidgetConfig) => void;
 }
 
 export function WidgetHost({
   isEditing,
+  isWidgetEditing = false,
   widget,
+  onRequestEdit,
   onRequestDelete,
+  onRequestFinishEditing,
+  onWidgetChange,
 }: WidgetHostProps) {
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
   const content = definition?.render(widget);
+  const editor =
+    isWidgetEditing && onWidgetChange && onRequestFinishEditing
+      ? definition?.renderEditor?.(
+          widget,
+          onWidgetChange,
+          onRequestFinishEditing,
+        )
+      : null;
 
   return (
     <article
@@ -28,7 +45,21 @@ export function WidgetHost({
       <header className="mb-3 flex min-h-8 items-center justify-between gap-3">
         <h2 className="truncate text-sm font-semibold">{displayName}</h2>
         {isEditing ? (
-          <div aria-label="Управление виджетом" role="toolbar">
+          <div
+            aria-label="Управление виджетом"
+            className="flex items-center gap-2"
+            role="toolbar"
+          >
+            {definition?.renderEditor && !isWidgetEditing && onRequestEdit ? (
+              <Button
+                aria-label={`Редактировать виджет «${displayName}»`}
+                size="small"
+                variant="secondary"
+                onClick={onRequestEdit}
+              >
+                Изменить
+              </Button>
+            ) : null}
             <Button
               aria-label={`Удалить виджет «${displayName}»`}
               size="small"
@@ -41,7 +72,7 @@ export function WidgetHost({
         ) : null}
       </header>
 
-      {content ?? (
+      {editor ?? content ?? (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Неподдерживаемый тип виджета: {widget.type}
         </p>

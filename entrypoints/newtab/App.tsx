@@ -11,8 +11,10 @@ export function App() {
     error,
     isLoading,
     addWidget,
+    flushWidgetUpdates,
     removeWidget,
     updateAppearance,
+    updateWidget,
   } = useDashboardConfig();
   const systemDarkMode = useSystemDarkMode();
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
@@ -57,7 +59,9 @@ export function App() {
         isLoading={isLoading}
         onAddWidget={addWidget}
         onAppearanceChange={updateAppearance}
+        onFlushWidgetUpdates={flushWidgetUpdates}
         onRemoveWidget={removeWidget}
+        onUpdateWidget={updateWidget}
       />
     </main>
   );

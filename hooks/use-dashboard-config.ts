@@ -15,9 +15,13 @@ interface UseDashboardConfigResult {
   error: string | null;
   isLoading: boolean;
   addWidget: (widget: WidgetConfig) => void;
+  flushWidgetUpdates: () => void;
   removeWidget: (widgetId: string) => void;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
+  updateWidget: (widget: WidgetConfig) => void;
 }
+
+const WIDGET_SAVE_DEBOUNCE_MS = 300;
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error
@@ -31,7 +35,34 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const [isLoading, setIsLoading] = useState(true);
   const configRef = useRef<DashboardConfig | null>(null);
   const isMountedRef = useRef(false);
+  const pendingWidgetConfigRef = useRef<DashboardConfig | null>(null);
+  const widgetSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  const enqueueConfigSave = useCallback((nextConfig: DashboardConfig) => {
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => saveDashboardConfig(nextConfig))
+      .catch((saveError: unknown) => {
+        if (isMountedRef.current) {
+          setError(getErrorMessage(saveError));
+        }
+      });
+  }, []);
+
+  const flushWidgetUpdates = useCallback(() => {
+    if (widgetSaveTimerRef.current !== null) {
+      clearTimeout(widgetSaveTimerRef.current);
+      widgetSaveTimerRef.current = null;
+    }
+
+    const pendingConfig = pendingWidgetConfigRef.current;
+    pendingWidgetConfigRef.current = null;
+
+    if (pendingConfig) {
+      enqueueConfigSave(pendingConfig);
+    }
+  }, [enqueueConfigSave]);
 
   useEffect(() => {
     let isActive = true;
@@ -60,11 +91,26 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     return () => {
       isActive = false;
       isMountedRef.current = false;
+
+      if (widgetSaveTimerRef.current !== null) {
+        clearTimeout(widgetSaveTimerRef.current);
+        widgetSaveTimerRef.current = null;
+      }
+
+      const pendingConfig = pendingWidgetConfigRef.current;
+      pendingWidgetConfigRef.current = null;
+
+      if (pendingConfig) {
+        enqueueConfigSave(pendingConfig);
+      }
     };
-  }, []);
+  }, [enqueueConfigSave]);
 
   const commitConfig = useCallback(
-    (update: (currentConfig: DashboardConfig) => DashboardConfig) => {
+    (
+      update: (currentConfig: DashboardConfig) => DashboardConfig,
+      persistence: 'immediate' | 'debounced' = 'immediate',
+    ) => {
       const currentConfig = configRef.current;
 
       if (!currentConfig) {
@@ -77,16 +123,34 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       setConfig(nextConfig);
       setError(null);
 
-      saveQueueRef.current = saveQueueRef.current
-        .catch(() => undefined)
-        .then(() => saveDashboardConfig(nextConfig))
-        .catch((saveError: unknown) => {
-          if (isMountedRef.current) {
-            setError(getErrorMessage(saveError));
+      if (persistence === 'debounced') {
+        pendingWidgetConfigRef.current = nextConfig;
+
+        if (widgetSaveTimerRef.current !== null) {
+          clearTimeout(widgetSaveTimerRef.current);
+        }
+
+        widgetSaveTimerRef.current = setTimeout(() => {
+          widgetSaveTimerRef.current = null;
+          const pendingConfig = pendingWidgetConfigRef.current;
+          pendingWidgetConfigRef.current = null;
+
+          if (pendingConfig) {
+            enqueueConfigSave(pendingConfig);
           }
-        });
+        }, WIDGET_SAVE_DEBOUNCE_MS);
+        return;
+      }
+
+      if (widgetSaveTimerRef.current !== null) {
+        clearTimeout(widgetSaveTimerRef.current);
+        widgetSaveTimerRef.current = null;
+      }
+
+      pendingWidgetConfigRef.current = null;
+      enqueueConfigSave(nextConfig);
     },
-    [],
+    [enqueueConfigSave],
   );
 
   const updateAppearance = useCallback(
@@ -124,12 +188,29 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     [commitConfig],
   );
 
+  const updateWidget = useCallback(
+    (widget: WidgetConfig) => {
+      commitConfig(
+        (currentConfig) => ({
+          ...currentConfig,
+          widgets: currentConfig.widgets.map((currentWidget) =>
+            currentWidget.id === widget.id ? widget : currentWidget,
+          ),
+        }),
+        'debounced',
+      );
+    },
+    [commitConfig],
+  );
+
   return {
     config,
     error,
     isLoading,
     addWidget,
+    flushWidgetUpdates,
     removeWidget,
     updateAppearance,
+    updateWidget,
   };
 }
