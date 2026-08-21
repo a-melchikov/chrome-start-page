@@ -8,7 +8,9 @@ export default defineConfig({
     name: 'Chrome Start Page',
     version: '0.1.0',
     description: 'Custom Chrome new tab page',
-    permissions: ['storage'],
+    // `favicon` exposes Chrome's local _favicon endpoint. It avoids external
+    // favicon services and does not require access to users' linked websites.
+    permissions: ['storage', 'favicon'],
   },
   vite: () => ({
     plugins: [tailwindcss()],
