@@ -128,7 +128,9 @@ describe('widget lifecycle', () => {
         name: 'Удалить виджет «Список ссылок»',
       }),
     );
-    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+    const cancelButton = screen.getByRole('button', { name: 'Отмена' });
+    expect(cancelButton).toHaveFocus();
+    await user.click(cancelButton);
 
     expect(
       screen.getByRole('article', { name: 'Список ссылок' }),

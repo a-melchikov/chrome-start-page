@@ -22,6 +22,7 @@ interface DashboardProps {
   onFlushWidgetUpdates: () => void;
   onRemoveWidget: (widgetId: string) => void;
   onUpdateWidget: (widget: WidgetConfig) => void;
+  onUpdateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
 }
 
 export function Dashboard({
@@ -33,6 +34,7 @@ export function Dashboard({
   onFlushWidgetUpdates,
   onRemoveWidget,
   onUpdateWidget,
+  onUpdateWidgetLayouts,
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
@@ -103,6 +105,7 @@ export function Dashboard({
           onRemoveWidget={removeWidget}
           onStartWidgetEditing={startWidgetEditing}
           onUpdateWidget={onUpdateWidget}
+          onUpdateWidgetLayouts={onUpdateWidgetLayouts}
         />
       ) : null}
 

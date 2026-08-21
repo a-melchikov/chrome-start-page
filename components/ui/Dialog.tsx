@@ -35,6 +35,7 @@ export function Dialog({
   ...props
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -46,17 +47,37 @@ export function Dialog({
     }
 
     if (open && !dialog.open) {
+      if (!returnFocusRef.current?.isConnected) {
+        returnFocusRef.current =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+      }
+
       dialog.showModal();
+      dialog
+        .querySelector<HTMLElement>('[data-dialog-initial-focus]')
+        ?.focus({ preventScroll: true });
     } else if (!open && dialog.open) {
       dialog.close();
+
+      if (returnFocusRef.current?.isConnected) {
+        returnFocusRef.current.focus({ preventScroll: true });
+      }
+
+      returnFocusRef.current = null;
     }
+  }, [open]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
 
     return () => {
-      if (dialog.open) {
+      if (dialog?.open) {
         dialog.close();
       }
     };
-  }, [open]);
+  }, []);
 
   const close = () => onOpenChange(false);
 
@@ -78,14 +99,14 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
-        'm-auto max-h-[calc(100vh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-zinc-200 bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50',
+        'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50',
         className,
       )}
       onCancel={handleCancel}
       onClick={handleBackdropClick}
     >
-      <div className="flex max-h-[calc(100vh-2rem)] flex-col">
-        <header className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+      <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
           <div className="min-w-0">
             <h2 id={titleId} className="text-base font-semibold">
               {title}
@@ -110,9 +131,11 @@ export function Dialog({
             </span>
           </IconButton>
         </header>
-        <div className="overflow-y-auto p-5">{children}</div>
+        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
+          {children}
+        </div>
         {footer ? (
-          <footer className="flex justify-end gap-2 border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
             {footer}
           </footer>
         ) : null}

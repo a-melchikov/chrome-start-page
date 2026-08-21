@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { LinksWidget } from '../../../widgets/links/LinksWidget';
@@ -78,5 +79,14 @@ describe('LinksWidget', () => {
       'href',
       'https://github.com/',
     );
+  });
+
+  it('keeps rendered links keyboard-focusable', async () => {
+    const user = userEvent.setup();
+    render(<LinksWidget config={createConfig('[GitHub](github.com)')} />);
+
+    await user.tab();
+
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveFocus();
   });
 });

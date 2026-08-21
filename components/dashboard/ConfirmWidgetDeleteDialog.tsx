@@ -18,7 +18,11 @@ export function ConfirmWidgetDeleteDialog({
       description={`Виджет «${widgetName}» будет удалён без возможности отмены.`}
       footer={
         <>
-          <Button variant="secondary" onClick={onCancel}>
+          <Button
+            data-dialog-initial-focus
+            variant="secondary"
+            onClick={onCancel}
+          >
             Отмена
           </Button>
           <Button variant="danger" onClick={onConfirm}>

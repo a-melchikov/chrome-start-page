@@ -35,6 +35,9 @@ export function AppearanceDialog({
               <Button
                 key={option.value}
                 aria-pressed={appearance.theme === option.value}
+                data-dialog-initial-focus={
+                  appearance.theme === option.value ? true : undefined
+                }
                 size="small"
                 variant={
                   appearance.theme === option.value ? 'primary' : 'secondary'

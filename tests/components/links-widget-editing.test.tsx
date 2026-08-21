@@ -95,6 +95,8 @@ describe('LinksWidget editing', () => {
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Работа');
 
+    expect(screen.getByRole('textbox', { name: 'Заголовок' })).toHaveFocus();
+
     const textarea = screen.getByRole('textbox', {
       name: 'Markdown-содержимое',
     });
@@ -123,11 +125,17 @@ describe('LinksWidget editing', () => {
       name: 'Markdown-содержимое',
     });
     changeMarkdown(textarea, 'Новая [ссылка](new.example.com)');
-    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await user.click(textarea);
+    await user.keyboard('{Escape}');
 
     expect(
       screen.queryByRole('textbox', { name: 'Markdown-содержимое' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'Редактировать виджет «Работа»',
+      }),
+    ).toHaveFocus();
     expect(screen.getByText('Новая')).toBeVisible();
     expect(screen.getByRole('link', { name: 'ссылка' })).toHaveAttribute(
       'href',
@@ -153,7 +161,8 @@ describe('LinksWidget editing', () => {
       name: 'Markdown-содержимое',
     });
     changeMarkdown(textarea, '[Ошибка](not a url)');
-    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await user.click(textarea);
+    await user.keyboard('{Escape}');
 
     expect(textarea).toBeInTheDocument();
     expect(textarea).toHaveAttribute('aria-invalid', 'true');

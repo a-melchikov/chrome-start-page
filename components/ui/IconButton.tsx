@@ -27,7 +27,7 @@ export function IconButton({
   return (
     <Button
       className={classNames('shrink-0 p-0', sizeClasses[size], className)}
-      size="medium"
+      size={size}
       {...props}
     />
   );

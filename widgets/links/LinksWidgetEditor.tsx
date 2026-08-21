@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type KeyboardEvent } from 'react';
 
 import { Button, Input, Textarea } from '../../components/ui';
 import { parseLinksContent } from './parser';
@@ -27,13 +27,21 @@ export function LinksWidgetEditor({
     }
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      finishEditing();
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" onKeyDown={handleKeyDown}>
       <div className="space-y-1.5">
         <label className="block text-xs font-medium" htmlFor={titleId}>
           Заголовок
         </label>
         <Input
+          autoFocus
           id={titleId}
           placeholder="Список ссылок"
           value={config.title ?? ''}
@@ -51,6 +59,7 @@ export function LinksWidgetEditor({
           aria-describedby={firstIssue ? errorId : undefined}
           aria-invalid={firstIssue ? true : undefined}
           id={contentId}
+          className="max-h-[min(40dvh,20rem)]"
           placeholder="[GitHub](https://github.com/)"
           value={config.content}
           onChange={(event) =>

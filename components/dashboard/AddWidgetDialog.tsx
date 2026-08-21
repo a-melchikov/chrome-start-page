@@ -30,10 +30,11 @@ export function AddWidgetDialog({
       onOpenChange={onOpenChange}
     >
       <div className="space-y-2">
-        {getAvailableWidgetDefinitions().map((definition) => (
+        {getAvailableWidgetDefinitions().map((definition, index) => (
           <Button
             key={definition.type}
             className="w-full justify-start"
+            data-dialog-initial-focus={index === 0 ? true : undefined}
             variant="secondary"
             onClick={() => selectWidgetType(definition.type)}
           >

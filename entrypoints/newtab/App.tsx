@@ -15,6 +15,7 @@ export function App() {
     removeWidget,
     updateAppearance,
     updateWidget,
+    updateWidgetLayouts,
   } = useDashboardConfig();
   const systemDarkMode = useSystemDarkMode();
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
@@ -46,7 +47,7 @@ export function App() {
     >
       {error ? (
         <p
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-3 py-2 text-sm text-white shadow-lg"
+          className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
           role="alert"
         >
           {error}
@@ -62,6 +63,7 @@ export function App() {
         onFlushWidgetUpdates={flushWidgetUpdates}
         onRemoveWidget={removeWidget}
         onUpdateWidget={updateWidget}
+        onUpdateWidgetLayouts={updateWidgetLayouts}
       />
     </main>
   );

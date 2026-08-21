@@ -19,6 +19,7 @@ interface UseDashboardConfigResult {
   removeWidget: (widgetId: string) => void;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
+  updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
 }
 
 const WIDGET_SAVE_DEBOUNCE_MS = 300;
@@ -203,6 +204,16 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     [commitConfig],
   );
 
+  const updateWidgetLayouts = useCallback(
+    (widgets: readonly WidgetConfig[]) => {
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        widgets: [...widgets],
+      }));
+    },
+    [commitConfig],
+  );
+
   return {
     config,
     error,
@@ -212,5 +223,6 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     removeWidget,
     updateAppearance,
     updateWidget,
+    updateWidgetLayouts,
   };
 }

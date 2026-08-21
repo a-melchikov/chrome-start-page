@@ -12,12 +12,12 @@ function renderSegment(segment: LinksRenderSegment, index: number) {
     return (
       <a
         key={index}
-        className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 align-middle font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+        className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 align-middle font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500 focus-visible:outline-none dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
         href={segment.href}
         title={segment.label}
       >
         <LinkFavicon key={segment.href} href={segment.href} />
-        <span className="truncate">{segment.label}</span>
+        <span className="min-w-0 truncate">{segment.label}</span>
       </a>
     );
   }

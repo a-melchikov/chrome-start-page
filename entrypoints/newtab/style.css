@@ -42,3 +42,35 @@
     font: inherit;
   }
 }
+
+@layer components {
+  .dashboard-grid--editing > .react-grid-placeholder {
+    border: 1px dashed var(--color-zinc-500);
+    border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--color-zinc-500) 20%, transparent);
+    opacity: 1;
+  }
+
+  .react-grid-layout:not(.dashboard-grid--editing)
+    > .react-grid-item
+    > .react-resizable-handle {
+    display: none;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle::after {
+    width: 8px;
+    height: 8px;
+    border-color: currentColor;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

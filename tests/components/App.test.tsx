@@ -64,11 +64,12 @@ describe('App', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Добавить виджет' });
     expect(dialog).toHaveAttribute('open');
-    expect(screen.getByRole('button', { name: 'Список ссылок' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Список ссылок' })).toHaveFocus();
 
     fireEvent(dialog, new Event('cancel', { cancelable: true }));
 
     await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+    expect(addWidgetButton).toHaveFocus();
   });
 
   it('applies and persists theme and background changes immediately', async () => {
@@ -83,6 +84,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
+    expect(screen.getByRole('button', { name: 'Системная' })).toHaveFocus();
     await user.click(screen.getByRole('button', { name: 'Тёмная' }));
     fireEvent.change(screen.getByLabelText('Цвет фона'), {
       target: { value: '#123456' },

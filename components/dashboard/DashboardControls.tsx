@@ -38,7 +38,7 @@ export function DashboardControls({
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-10 flex items-center gap-2 rounded-xl border border-zinc-200/80 bg-white/90 p-1 shadow-lg backdrop-blur-sm dark:border-zinc-700/80 dark:bg-zinc-900/90">
+      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-zinc-200/80 bg-white/95 p-1 shadow-lg backdrop-blur-sm dark:border-zinc-700/80 dark:bg-zinc-900/95">
         {isEditing ? (
           <>
             <Button
@@ -52,6 +52,7 @@ export function DashboardControls({
             </Button>
             <IconButton
               aria-label="Настройки оформления"
+              disabled={!canManageWidgets}
               size="small"
               title="Настройки оформления"
               variant="ghost"
@@ -69,6 +70,7 @@ export function DashboardControls({
               : 'Включить режим редактирования'
           }
           aria-pressed={isEditing}
+          disabled={!canManageWidgets}
           size="small"
           title={
             isEditing
