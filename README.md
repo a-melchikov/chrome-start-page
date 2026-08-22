@@ -1,72 +1,201 @@
 # Chrome Start Page
 
-Chrome Start Page — расширение для Google Chrome, которое заменяет стандартную страницу новой вкладки на собственную стартовую страницу.
+Chrome Start Page — расширение Manifest V3 для Google Chrome, которое заменяет
+стандартную новую вкладку на настраиваемую локальную панель с виджетами.
+Текущая версия MVP: **0.1.0**.
+
+## Возможности MVP
+
+- включение режима редактирования кнопкой с карандашом;
+- добавление нескольких виджетов «Список ссылок»;
+- редактирование содержимого виджета как обычного Markdown-текста;
+- отображение текста, переносов строк и нескольких Markdown-ссылок в одной
+  строке;
+- локальные favicon сайтов без внешнего favicon API;
+- перемещение и изменение размера виджетов в 12-колоночной сетке;
+- темы `system`, `light` и `dark`, а также произвольный цвет фона;
+- автоматическое сохранение содержимого, оформления и layout;
+- восстановление конфигурации после перезапуска Chrome.
+
+Поддерживаемый формат ссылки:
+
+```md
+[Mail](https://mail.example.com/) [Docs](docs.example.com)
+```
+
+URL без протокола нормализуется в `https://`, если адрес однозначен. Разрешены
+только протоколы HTTP и HTTPS.
+
+## Стек
+
+- WXT 0.21 и Manifest V3;
+- React 19 и TypeScript в strict mode;
+- Vite через WXT;
+- Tailwind CSS 4;
+- `react-grid-layout`;
+- WXT Storage поверх `chrome.storage.local`;
+- Vitest и React Testing Library;
+- ESLint и Prettier;
+- pnpm.
 
 ## Требования
 
-- Node.js 22 LTS;
-- pnpm 10.
+- Node.js 22 LTS — точная версия указана в [.nvmrc](.nvmrc);
+- pnpm 10 — версия зафиксирована в поле `packageManager` файла `package.json`;
+- Google Chrome с поддержкой Manifest V3.
 
-Версию Node.js можно выбрать через `nvm use`.
-
-## Разработка
-
-1. Склонировать репозиторий:
+При использовании nvm:
 
 ```bash
-git clone https://github.com/a-melchikov/chrome-start-page.git
+nvm use
+corepack enable
 ```
 
-2. Установить зависимости и запустить WXT в режиме разработки:
+## Установка зависимостей
 
 ```bash
 pnpm install
+```
+
+Команда `postinstall` запускает `wxt prepare` и создаёт служебные типы WXT в
+каталоге `.wxt/`.
+
+## Режим разработки
+
+```bash
 pnpm dev
 ```
 
-## Сборка и установка в Chrome
+WXT собирает development-версию в `.output/chrome-mv3-dev` и следит за
+изменениями исходных файлов. Для первой установки этой версии откройте
+`chrome://extensions`, включите режим разработчика, нажмите «Загрузить
+распакованное расширение» и выберите каталог:
 
-1. Собрать расширение:
+```text
+<корень-репозитория>/.output/chrome-mv3-dev
+```
+
+После изменения файлов дождитесь успешной пересборки WXT и откройте новую
+вкладку заново. Если Chrome не применил обновление автоматически, нажмите
+«Обновить» на карточке расширения в `chrome://extensions`.
+
+Рекомендуемый цикл перед завершением работы:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+## Production build и ZIP
+
+Готовая распакованная production-сборка:
 
 ```bash
 pnpm build
 ```
 
-2. Открыть в Chrome:
+Результат находится точно в:
 
 ```text
-chrome://extensions
+<корень-репозитория>/.output/chrome-mv3
 ```
 
-3. Включить **Режим разработчика**.
-
-4. Нажать **Загрузить распакованное расширение**.
-
-5. Выбрать каталог `.output/chrome-mv3` внутри проекта.
-
-6. Открыть новую вкладку:
-
-```text
-chrome://newtab
-```
-
-или нажать:
-
-```text
-Ctrl + T
-```
-
-Если расширение установлено корректно, вместо стандартной страницы Chrome будет отображаться пользовательская страница Chrome Start Page.
-
-## Проверка типов
+ZIP с готовым Chrome extension:
 
 ```bash
-pnpm typecheck
+pnpm package
 ```
 
-## Разрешения расширения
+`wxt zip` самостоятельно выполняет production build и создаёт:
 
-- `storage` — сохраняет настройки страницы и виджеты локально;
-- `favicon` — позволяет получать иконки сайтов из локального хранилища Chrome
-  через внутренний endpoint `_favicon`. URL пользователя не отправляются во
-  внешние favicon-сервисы.
+```text
+<корень-репозитория>/.output/chrome-start-page-0.1.0-chrome.zip
+```
+
+Каталоги `.output/` и `.wxt/` являются генерируемыми и не коммитятся.
+
+## Локальная установка production-сборки
+
+1. Выполните `pnpm build`.
+2. Откройте `chrome://extensions`.
+3. Включите «Режим разработчика».
+4. Нажмите «Загрузить распакованное расширение».
+5. Выберите **точно** каталог `.output/chrome-mv3` в корне репозитория.
+6. Откройте `chrome://newtab` или создайте новую вкладку.
+
+После новой production-сборки нажмите «Обновить» на карточке расширения и
+переоткройте новую вкладку.
+
+## Команды
+
+| Команда          | Назначение                                      |
+| ---------------- | ----------------------------------------------- |
+| `pnpm dev`       | Development-сборка WXT с наблюдением за файлами |
+| `pnpm build`     | Production-сборка в `.output/chrome-mv3`        |
+| `pnpm package`   | Production-сборка и ZIP-архив расширения        |
+| `pnpm lint`      | Проверка ESLint                                 |
+| `pnpm typecheck` | Проверка TypeScript без генерации файлов        |
+| `pnpm test`      | Однократный запуск тестов Vitest                |
+| `pnpm format`    | Форматирование файлов через Prettier            |
+
+## Структура проекта
+
+```text
+entrypoints/newtab/    WXT entrypoint новой вкладки и корневой React App
+components/dashboard/ Dashboard, управление виджетами и grid layout
+components/ui/        Небольшие переиспользуемые UI-примитивы
+hooks/                Загрузка, изменение и сохранение конфигурации
+widgets/              Widget Registry, общие типы и реализации виджетов
+widgets/links/        LinksWidget, editor, parser и URL validation
+storage/              Схема, defaults, migrations и WXT Storage abstraction
+public/icons/         PNG-иконки, попадающие в extension build
+assets/icons/         Исходный SVG иконки
+tests/                Тесты storage, domain logic и React-сценариев
+docs/                 Техническая документация
+```
+
+Подробное описание потока данных и расширения registry находится в
+[docs/architecture.md](docs/architecture.md).
+
+## Хранение данных и privacy
+
+Вся пользовательская конфигурация хранится под ключом
+`local:dashboard-config` в `chrome.storage.local`. Она включает версию схемы,
+оформление, layout и исходный Markdown каждого виджета. `LinksWidget.content`
+является единственным источником данных для текста и ссылок: отдельный список
+URL не сохраняется.
+
+У расширения нет backend, авторизации, аналитики и телеметрии. Пользовательские
+настройки и URL не отправляются разработчику или сторонним сервисам. Favicon
+загружаются через внутренний endpoint Chrome `_favicon` из локального
+хранилища браузера.
+
+Разрешения Manifest V3:
+
+- `storage` — чтение и запись конфигурации в `chrome.storage.local`;
+- `favicon` — доступ к локальному endpoint Chrome `_favicon`.
+
+`host_permissions` не используются.
+
+## Ограничения MVP
+
+- доступен только тип виджета `LinksWidget`;
+- parser поддерживает обычный текст и inline-ссылки `[label](url)`, а не полный
+  синтаксис Markdown;
+- ссылки ограничены протоколами HTTP и HTTPS;
+- конфигурация не синхронизируется между профилями и устройствами;
+- нет импорта, экспорта и сброса настроек;
+- нет backend, аккаунтов и совместного доступа;
+- публикация в Chrome Web Store не настроена.
+
+На узких экранах сохраняется desktop-layout шириной не менее 960 px и
+появляется горизонтальная прокрутка: координаты виджетов не перестраиваются и
+не теряются.
+
+## Roadmap
+
+- Notes widget;
+- Clock widget;
+- Google Calendar widget.
