@@ -81,6 +81,24 @@ describe('LinksWidget', () => {
     );
   });
 
+  it('renders dangerous input as text without executable DOM', () => {
+    const { container } = render(
+      <LinksWidget
+        config={createConfig(
+          '<script>alert("xss")</script> [Run](javascript:alert(1))',
+        )}
+      />,
+    );
+
+    expect(container).toHaveTextContent(
+      '<script>alert("xss")</script> [Run](javascript:alert(1))',
+    );
+    expect(container.querySelector('script')).not.toBeInTheDocument();
+    expect(
+      container.querySelector('a[href^="javascript:"]'),
+    ).not.toBeInTheDocument();
+  });
+
   it('keeps rendered links keyboard-focusable', async () => {
     const user = userEvent.setup();
     render(<LinksWidget config={createConfig('[GitHub](github.com)')} />);

@@ -271,4 +271,34 @@ describe('LinksWidget editing', () => {
       ),
     );
   });
+
+  it('restores autosaved Markdown after the app is mounted again', async () => {
+    await seedWidgets([
+      createLinksWidget('work-links', 'Работа', '[Mail](mail.example.com)'),
+    ]);
+    const user = userEvent.setup();
+    const firstRender = render(<App />);
+    await enableDashboardEditing(user);
+    await openWidgetEditor(user, 'Работа');
+
+    changeMarkdown(
+      screen.getByRole('textbox', { name: 'Markdown-содержимое' }),
+      'Документы: [Docs](docs.example.com)',
+    );
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await waitFor(async () =>
+      expect((await getStoredConfig())?.widgets[0]?.content).toBe(
+        'Документы: [Docs](docs.example.com)',
+      ),
+    );
+
+    firstRender.unmount();
+    render(<App />);
+
+    expect(await screen.findByText('Документы:')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Docs' })).toHaveAttribute(
+      'href',
+      'https://docs.example.com/',
+    );
+  });
 });
