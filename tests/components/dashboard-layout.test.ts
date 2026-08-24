@@ -24,6 +24,19 @@ function createWidget(
   };
 }
 
+function createSearchWidget(
+  id: string,
+  layout: WidgetConfig['layout'],
+): WidgetConfig {
+  return {
+    id,
+    type: 'search',
+    title: '',
+    engine: 'google',
+    layout,
+  };
+}
+
 describe('dashboard layout', () => {
   it('converts persisted widget layouts to constrained grid items', () => {
     expect(
@@ -37,6 +50,27 @@ describe('dashboard layout', () => {
         h: 6,
         minW: WIDGET_MIN_WIDTH,
         minH: WIDGET_MIN_HEIGHT,
+        resizeHandles: ['se'],
+      },
+    ]);
+  });
+
+  it('fixes SearchWidget height and exposes only its east resize handle', () => {
+    expect(
+      createGridLayout([
+        createSearchWidget('search', { x: 2, y: 4, w: 6, h: 3 }),
+      ]),
+    ).toEqual([
+      {
+        i: 'search',
+        x: 2,
+        y: 4,
+        w: 6,
+        h: 1,
+        minW: 3,
+        minH: 1,
+        maxH: 1,
+        resizeHandles: ['e'],
       },
     ]);
   });
@@ -106,5 +140,15 @@ describe('dashboard layout', () => {
       layout: { x: 1, y: 2, w: 4, h: 3 },
     });
     expect(changed[1]).toBe(widgets[1]);
+  });
+
+  it('applies horizontal SearchWidget resizing without changing its height', () => {
+    const widgets = [createSearchWidget('search', { x: 0, y: 0, w: 6, h: 1 })];
+
+    const result = applyGridLayout(widgets, [
+      { i: 'search', x: 1, y: 2, w: 8, h: 4 },
+    ]);
+
+    expect(result[0]?.layout).toEqual({ x: 1, y: 2, w: 8, h: 1 });
   });
 });

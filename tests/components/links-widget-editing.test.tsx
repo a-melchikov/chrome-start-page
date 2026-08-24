@@ -39,6 +39,13 @@ async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
 
+async function getStoredLinksWidget(
+  index = 0,
+): Promise<LinksWidgetConfig | undefined> {
+  const widget = (await getStoredConfig())?.widgets[index];
+  return widget?.type === 'links' ? widget : undefined;
+}
+
 async function enableDashboardEditing(
   user: ReturnType<typeof userEvent.setup>,
 ) {
@@ -104,9 +111,9 @@ describe('LinksWidget editing', () => {
 
     changeMarkdown(textarea, '[Docs](docs.example.com)');
 
-    expect((await getStoredConfig())?.widgets[0]?.content).toBe(initialContent);
+    expect((await getStoredLinksWidget())?.content).toBe(initialContent);
     await waitFor(async () =>
-      expect((await getStoredConfig())?.widgets[0]?.content).toBe(
+      expect((await getStoredLinksWidget())?.content).toBe(
         '[Docs](docs.example.com)',
       ),
     );
@@ -142,7 +149,7 @@ describe('LinksWidget editing', () => {
       'https://new.example.com/',
     );
     await waitFor(async () =>
-      expect((await getStoredConfig())?.widgets[0]?.content).toBe(
+      expect((await getStoredLinksWidget())?.content).toBe(
         'Новая [ссылка](new.example.com)',
       ),
     );
@@ -232,7 +239,9 @@ describe('LinksWidget editing', () => {
     await user.click(screen.getByRole('button', { name: 'Готово' }));
 
     await waitFor(async () => {
-      const widgets = (await getStoredConfig())?.widgets;
+      const widgets = (await getStoredConfig())?.widgets.filter(
+        (widget): widget is LinksWidgetConfig => widget.type === 'links',
+      );
       expect(widgets?.map(({ id, content }) => ({ id, content }))).toEqual([
         {
           id: 'first-links',
@@ -261,14 +270,12 @@ describe('LinksWidget editing', () => {
       screen.getByRole('textbox', { name: 'Markdown-содержимое' }),
       updatedContent,
     );
-    expect((await getStoredConfig())?.widgets[0]?.content).toBe(initialContent);
+    expect((await getStoredLinksWidget())?.content).toBe(initialContent);
 
     unmount();
 
     await waitFor(async () =>
-      expect((await getStoredConfig())?.widgets[0]?.content).toBe(
-        updatedContent,
-      ),
+      expect((await getStoredLinksWidget())?.content).toBe(updatedContent),
     );
   });
 
@@ -287,7 +294,7 @@ describe('LinksWidget editing', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Готово' }));
     await waitFor(async () =>
-      expect((await getStoredConfig())?.widgets[0]?.content).toBe(
+      expect((await getStoredLinksWidget())?.content).toBe(
         'Документы: [Docs](docs.example.com)',
       ),
     );

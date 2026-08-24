@@ -39,11 +39,30 @@ describe('dashboard storage', () => {
           content: '[Mail](https://mail.example.com/)',
           layout: { x: 1, y: 2, w: 3, h: 4 },
         },
+        {
+          id: 'ec39ba5f-89f2-471c-b774-0b84d592ad87',
+          type: 'search',
+          title: 'Поиск',
+          engine: 'bing',
+          layout: { x: 4, y: 2, w: 6, h: 3 },
+        },
       ],
     };
 
     await saveDashboardConfig(config);
 
-    await expect(loadDashboardConfig()).resolves.toEqual(config);
+    const normalizedConfig = {
+      ...config,
+      widgets: config.widgets.map((widget) =>
+        widget.type === 'search'
+          ? { ...widget, layout: { ...widget.layout, h: 1 } }
+          : widget,
+      ),
+    };
+
+    await expect(loadDashboardConfig()).resolves.toEqual(normalizedConfig);
+    await expect(
+      storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
+    ).resolves.toEqual(normalizedConfig);
   });
 });

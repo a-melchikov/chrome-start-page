@@ -3,6 +3,7 @@ import {
   useId,
   useRef,
   type ComponentPropsWithoutRef,
+  type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   type SyntheticEvent,
@@ -33,6 +34,7 @@ export function Dialog({
   closeLabel = 'Закрыть',
   className,
   children,
+  onKeyDown,
   ...props
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -93,6 +95,15 @@ export function Dialog({
     }
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDialogElement>) => {
+    onKeyDown?.(event);
+
+    if (!event.defaultPrevented && event.key === 'Escape') {
+      event.preventDefault();
+      close();
+    }
+  };
+
   return (
     <dialog
       {...props}
@@ -105,6 +116,7 @@ export function Dialog({
       )}
       onCancel={handleCancel}
       onClick={handleBackdropClick}
+      onKeyDown={handleKeyDown}
     >
       <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">

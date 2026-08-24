@@ -27,6 +27,11 @@ async function addLinksWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Список ссылок' }));
 }
 
+async function addSearchWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Поиск' }));
+}
+
 async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
@@ -102,6 +107,100 @@ describe('widget lifecycle', () => {
       expect(widgets).toHaveLength(2);
       expect(widgets[0]?.id).not.toBe(widgets[1]?.id);
       expect(widgets.map((widget) => widget.layout.y)).toEqual([0, 3]);
+    });
+  });
+
+  it('creates and immediately persists a SearchWidget', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+
+    await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+    expect(screen.getByRole('button', { name: 'Поиск' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+    await addSearchWidget(user);
+
+    expect(await screen.findByRole('article', { name: 'Поиск' })).toBeVisible();
+    expect(
+      screen.getByRole('search', { name: 'Поиск в Google' }),
+    ).toBeVisible();
+    await waitFor(async () => {
+      const config = await getStoredConfig();
+      expect(config?.widgets).toHaveLength(1);
+      expect(config?.widgets[0]).toMatchObject({
+        type: 'search',
+        title: '',
+        engine: 'google',
+        layout: { x: 0, y: 0, w: 6, h: 1 },
+      });
+    });
+  });
+
+  it('edits and persists SearchWidget settings independently from the query', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+    await addSearchWidget(user);
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Редактировать виджет «Поиск»',
+      }),
+    );
+    expect(
+      screen.getByRole('dialog', { name: 'Настройки поиска' }),
+    ).toBeVisible();
+    expect(screen.queryByLabelText('Заголовок')).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Поисковик'), 'yandex');
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Поиск' })).toBeVisible();
+    expect(
+      screen.getByRole('search', { name: 'Поиск в Яндекс' }),
+    ).toBeVisible();
+    await waitFor(async () => {
+      const widget = (await getStoredConfig())?.widgets[0];
+      expect(widget).toMatchObject({
+        type: 'search',
+        title: '',
+        engine: 'yandex',
+      });
+      expect(widget).not.toHaveProperty('query');
+    });
+  });
+
+  it('renders SearchWidget without card chrome and closes its settings on Escape', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+    await addSearchWidget(user);
+
+    const article = await screen.findByRole('article', { name: 'Поиск' });
+    expect(article.querySelector('h2')).toBeNull();
+    expect(article).not.toHaveClass('rounded-xl', 'border', 'bg-white', 'p-4');
+
+    const editButton = screen.getByRole('button', {
+      name: 'Редактировать виджет «Поиск»',
+    });
+    expect(editButton.closest('[role="toolbar"]')).toHaveClass('bottom-full');
+    await user.click(editButton);
+    await user.selectOptions(screen.getByLabelText('Поисковик'), 'bing');
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Редактировать виджет «Поиск»',
+        }),
+      ).toHaveFocus(),
+    );
+    await waitFor(async () => {
+      expect((await getStoredConfig())?.widgets[0]).toMatchObject({
+        type: 'search',
+        engine: 'bing',
+      });
     });
   });
 

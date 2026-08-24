@@ -1,6 +1,10 @@
 import type { Layout, LayoutItem } from 'react-grid-layout';
 
 import type { WidgetConfig } from '../../storage/schema';
+import {
+  getWidgetDefinition,
+  type WidgetLayoutConstraints,
+} from '../../widgets/registry';
 import type { WidgetLayout } from '../../widgets/types';
 
 export const DASHBOARD_GRID_COLUMNS = 12;
@@ -10,6 +14,12 @@ export const DASHBOARD_CANVAS_MIN_WIDTH = 960;
 export const WIDGET_MIN_WIDTH = 3;
 export const WIDGET_MIN_HEIGHT = 3;
 
+const DEFAULT_LAYOUT_CONSTRAINTS: WidgetLayoutConstraints = {
+  minW: WIDGET_MIN_WIDTH,
+  minH: WIDGET_MIN_HEIGHT,
+  resizeHandles: ['se'],
+};
+
 export function getDashboardGridWidth(containerWidth: number): number {
   return Math.max(containerWidth, DASHBOARD_CANVAS_MIN_WIDTH);
 }
@@ -18,14 +28,18 @@ function finiteInteger(value: number, fallback: number): number {
   return Number.isFinite(value) ? Math.round(value) : fallback;
 }
 
-export function normalizeWidgetLayout(layout: WidgetLayout): WidgetLayout {
+export function normalizeWidgetLayout(
+  layout: WidgetLayout,
+  constraints: WidgetLayoutConstraints = DEFAULT_LAYOUT_CONSTRAINTS,
+): WidgetLayout {
+  const maxWidth = DASHBOARD_GRID_COLUMNS;
   const w = Math.min(
-    DASHBOARD_GRID_COLUMNS,
-    Math.max(WIDGET_MIN_WIDTH, finiteInteger(layout.w, WIDGET_MIN_WIDTH)),
+    maxWidth,
+    Math.max(constraints.minW, finiteInteger(layout.w, constraints.minW)),
   );
-  const h = Math.max(
-    WIDGET_MIN_HEIGHT,
-    finiteInteger(layout.h, WIDGET_MIN_HEIGHT),
+  const h = Math.min(
+    constraints.maxH ?? Number.POSITIVE_INFINITY,
+    Math.max(constraints.minH, finiteInteger(layout.h, constraints.minH)),
   );
   const x = Math.min(
     DASHBOARD_GRID_COLUMNS - w,
@@ -37,21 +51,35 @@ export function normalizeWidgetLayout(layout: WidgetLayout): WidgetLayout {
 }
 
 export function createGridLayout(widgets: readonly WidgetConfig[]): Layout {
-  return widgets.map(({ id, layout }) => ({
-    i: id,
-    ...normalizeWidgetLayout(layout),
-    minW: WIDGET_MIN_WIDTH,
-    minH: WIDGET_MIN_HEIGHT,
-  }));
+  return widgets.map(({ id, layout, type }) => {
+    const constraints =
+      getWidgetDefinition(type)?.presentation.layout ??
+      DEFAULT_LAYOUT_CONSTRAINTS;
+
+    return {
+      i: id,
+      ...normalizeWidgetLayout(layout, constraints),
+      minW: constraints.minW,
+      minH: constraints.minH,
+      ...(constraints.maxH === undefined ? {} : { maxH: constraints.maxH }),
+      resizeHandles: [...constraints.resizeHandles],
+    };
+  });
 }
 
-function toWidgetLayout(item: LayoutItem): WidgetLayout {
-  return normalizeWidgetLayout({
-    x: item.x,
-    y: item.y,
-    w: item.w,
-    h: item.h,
-  });
+function toWidgetLayout(
+  item: LayoutItem,
+  constraints: WidgetLayoutConstraints,
+): WidgetLayout {
+  return normalizeWidgetLayout(
+    {
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+    },
+    constraints,
+  );
 }
 
 function layoutsEqual(left: WidgetLayout, right: WidgetLayout): boolean {
@@ -77,7 +105,10 @@ export function applyGridLayout(
       return widget;
     }
 
-    const nextLayout = toWidgetLayout(gridItem);
+    const constraints =
+      getWidgetDefinition(widget.type)?.presentation.layout ??
+      DEFAULT_LAYOUT_CONSTRAINTS;
+    const nextLayout = toWidgetLayout(gridItem, constraints);
 
     if (layoutsEqual(widget.layout, nextLayout)) {
       return widget;

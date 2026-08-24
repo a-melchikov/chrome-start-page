@@ -7,10 +7,32 @@ import { LinksWidget } from './links/LinksWidget';
 import { LinksWidgetEditor } from './links/LinksWidgetEditor';
 import { parseLinksContent } from './links/parser';
 import type { LinksWidgetConfig } from './links/types';
+import { createDefaultSearchWidget } from './search/defaults';
+import { isSearchEngine } from './search/engines';
+import { SearchWidget } from './search/SearchWidget';
+import { SearchWidgetEditor } from './search/SearchWidgetEditor';
+import type { SearchWidgetConfig } from './search/types';
 
 export interface WidgetMetadata {
   name: string;
   description: string;
+}
+
+export type WidgetResizeHandle = 'e' | 'se';
+
+export interface WidgetLayoutConstraints {
+  minW: number;
+  minH: number;
+  maxH?: number;
+  resizeHandles: readonly WidgetResizeHandle[];
+}
+
+export interface WidgetPresentation {
+  chrome: 'card' | 'bare';
+  editor: 'inline' | 'dialog';
+  allowCustomTitle: boolean;
+  editorTitle?: string;
+  layout: WidgetLayoutConstraints;
 }
 
 export interface WidgetRenderProps<TConfig extends WidgetConfig> {
@@ -31,11 +53,13 @@ interface WidgetDefinition<TConfig extends WidgetConfig> {
   Renderer: ComponentType<WidgetRenderProps<TConfig>>;
   Editor?: ComponentType<WidgetEditorProps<TConfig>>;
   canFinishEditing?: (config: TConfig) => boolean;
+  presentation: WidgetPresentation;
 }
 
 export interface RegisteredWidgetDefinition {
   type: WidgetType;
   metadata: WidgetMetadata;
+  presentation: WidgetPresentation;
   create: (id: string, index: number) => WidgetConfig;
   render: (config: unknown) => ReactNode | null;
   renderEditor?: (
@@ -55,6 +79,7 @@ function defineWidget<TConfig extends WidgetConfig>(
   return {
     type: definition.type,
     metadata: definition.metadata,
+    presentation: definition.presentation,
     create: definition.create,
     render: (config) =>
       definition.isConfig(config) ? <Renderer config={config} /> : null,
@@ -88,6 +113,17 @@ function isLinksWidgetConfig(value: unknown): value is LinksWidgetConfig {
   );
 }
 
+function isSearchWidgetConfig(value: unknown): value is SearchWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'search' &&
+    'engine' in value &&
+    isSearchEngine(value.engine)
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<LinksWidgetConfig>({
     type: 'links',
@@ -101,6 +137,39 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     Editor: LinksWidgetEditor,
     canFinishEditing: (config) =>
       parseLinksContent(config.content).validation.isValid,
+    presentation: {
+      chrome: 'card',
+      editor: 'inline',
+      allowCustomTitle: true,
+      layout: {
+        minW: 3,
+        minH: 3,
+        resizeHandles: ['se'],
+      },
+    },
+  }),
+  defineWidget<SearchWidgetConfig>({
+    type: 'search',
+    metadata: {
+      name: 'Поиск',
+      description: 'Поиск через выбранную поисковую систему.',
+    },
+    create: createDefaultSearchWidget,
+    isConfig: isSearchWidgetConfig,
+    Renderer: SearchWidget,
+    Editor: SearchWidgetEditor,
+    presentation: {
+      chrome: 'bare',
+      editor: 'dialog',
+      allowCustomTitle: false,
+      editorTitle: 'Настройки поиска',
+      layout: {
+        minW: 3,
+        minH: 1,
+        maxH: 1,
+        resizeHandles: ['e'],
+      },
+    },
   }),
 ];
 

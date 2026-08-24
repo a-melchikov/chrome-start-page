@@ -11,6 +11,12 @@ import {
 import type { DashboardConfig } from '../../storage/schema';
 import type { LinksWidgetConfig } from '../../widgets/links/types';
 
+async function getStoredLinksWidget(): Promise<LinksWidgetConfig | undefined> {
+  const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
+  const widget = config?.widgets[0];
+  return widget?.type === 'links' ? widget : undefined;
+}
+
 describe('useDashboardConfig layout persistence', () => {
   beforeEach(() => {
     fakeBrowser.reset();
@@ -80,18 +86,12 @@ describe('useDashboardConfig layout persistence', () => {
         content: '[Docs](docs.example.com)',
       });
     });
-    expect(
-      (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
-        ?.widgets[0]?.content,
-    ).toBe(widget.content);
+    expect((await getStoredLinksWidget())?.content).toBe(widget.content);
 
     act(() => window.dispatchEvent(new Event('pagehide')));
 
     await waitFor(async () => {
-      const storedConfig = await storage.getItem<DashboardConfig>(
-        DASHBOARD_STORAGE_KEY,
-      );
-      expect(storedConfig?.widgets[0]?.content).toBe(
+      expect((await getStoredLinksWidget())?.content).toBe(
         '[Docs](docs.example.com)',
       );
     });

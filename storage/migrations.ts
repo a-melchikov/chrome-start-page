@@ -4,6 +4,7 @@ import {
   type Theme,
   type WidgetConfig,
 } from './schema';
+import { isSearchEngine } from '../widgets/search/engines';
 
 export class InvalidDashboardConfigError extends Error {
   constructor(message = 'Dashboard config has an invalid structure') {
@@ -42,16 +43,24 @@ function isWidgetLayout(value: unknown): boolean {
 }
 
 function isWidgetConfig(value: unknown): value is WidgetConfig {
-  if (!isRecord(value) || value.type !== 'links') {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    (value.title !== undefined && typeof value.title !== 'string') ||
+    !isWidgetLayout(value.layout)
+  ) {
     return false;
   }
 
-  return (
-    typeof value.id === 'string' &&
-    (value.title === undefined || typeof value.title === 'string') &&
-    typeof value.content === 'string' &&
-    isWidgetLayout(value.layout)
-  );
+  if (value.type === 'links') {
+    return typeof value.content === 'string';
+  }
+
+  if (value.type === 'search') {
+    return isSearchEngine(value.engine);
+  }
+
+  return false;
 }
 
 function isDashboardConfigV1(value: unknown): value is DashboardConfig {
@@ -81,6 +90,26 @@ function readVersion(value: unknown): number {
   return value.version as number;
 }
 
+function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
+  let hasChanges = false;
+  const widgets = config.widgets.map((widget) => {
+    if (widget.type !== 'search' || widget.layout.h === 1) {
+      return widget;
+    }
+
+    hasChanges = true;
+    return {
+      ...widget,
+      layout: {
+        ...widget.layout,
+        h: 1,
+      },
+    };
+  });
+
+  return hasChanges ? { ...config, widgets } : config;
+}
+
 export function migrateDashboardConfig(value: unknown): DashboardConfig {
   const version = readVersion(value);
 
@@ -92,5 +121,5 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     throw new InvalidDashboardConfigError();
   }
 
-  return value;
+  return normalizeDashboardConfig(value);
 }

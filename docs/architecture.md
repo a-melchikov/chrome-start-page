@@ -16,6 +16,7 @@ flowchart TD
   Dashboard --> Canvas[WidgetCanvas]
   Canvas --> Registry[Widget Registry]
   Registry --> Links[LinksWidget or LinksWidgetEditor]
+  Registry --> Search[SearchWidget or SearchWidgetEditor]
   Links --> Parser[Markdown parser]
   Parser --> Model[render model and validation]
 ```
@@ -69,6 +70,7 @@ interface DashboardConfig {
 ```ts
 interface WidgetConfigMap {
   links: LinksWidgetConfig;
+  search: SearchWidgetConfig;
 }
 
 type WidgetType = keyof WidgetConfigMap;
@@ -88,7 +90,10 @@ type WidgetConfig = WidgetConfigMap[WidgetType];
 - runtime type guard;
 - renderer;
 - необязательным editor;
-- правилом, разрешающим завершить редактирование.
+- правилом, разрешающим завершить редактирование;
+- presentation-параметрами: карточка или безрамочное представление, inline- или
+  dialog-editor, возможность пользовательского заголовка и индивидуальные
+  ограничения layout/resize.
 
 UI получает доступные типы через `getAvailableWidgetDefinitions`, создаёт
 экземпляр через `createWidgetConfig` и отображает его через найденный
@@ -112,6 +117,34 @@ Markdown в `content` — единственный source of truth. Parsed links
 `LinksWidget` отображает обычный текст и native `<a>` для валидных ссылок.
 Ссылки открываются в текущей вкладке. `LinkFavicon` использует локальный
 `_favicon` endpoint Chrome и заменяет недоступную favicon встроенной иконкой.
+
+## SearchWidget
+
+`SearchWidgetConfig` хранит только выбранный `engine` и общие поля виджета.
+Допустимые значения — `google`, `yandex`, `bing` и `duckduckgo`; Google
+используется по умолчанию. Внутреннее имя «Поиск» используется для доступности,
+диалога и подтверждения удаления, но не отображается как заголовок. Поисковик
+меняется через отдельный диалог `SearchWidgetEditor` и сохраняется тем же
+debounce-механизмом, что и другие изменения виджетов. «Готово» и Escape
+закрывают диалог и принудительно записывают ожидающее изменение.
+
+Renderer использует нативную GET-форму с фиксированным HTTPS endpoint. Google,
+Bing и DuckDuckGo принимают параметр `q`, Яндекс — `text`. Форма не имеет
+`target`, поэтому результаты заменяют текущую новую вкладку. Пустой запрос
+блокируется, непустой обрезается по краям и кодируется браузером. Текст запроса
+не попадает в DashboardConfig, а подсказки и фоновые обращения к поисковикам
+отсутствуют.
+
+SearchWidget имеет bare-представление: `WidgetHost` не добавляет фон, padding,
+рамку, тень и `<h2>`. Форма состоит из input высотой 40 px и отдельной всегда
+белой кнопки 40×40. `SearchEngineIcon` получает цветную иконку выбранного
+поисковика из локальных SVG-ассетов расширения; внешние запросы и Chrome
+`_favicon` для них не используются. Все четыре знака взяты из CoreUI Brands
+2.0.1, приведены к сетке 32×32 и отображаются в области 24×24 в фирменных
+цветах. При ошибке загрузки показывается чёрная контурная лупа.
+
+`SiteFavicon` остаётся общей обёрткой только для favicon пользовательских ссылок
+LinksWidget. Поэтому разрешение Manifest V3 `favicon` по-прежнему необходимо.
 
 ## Parser, render model и validation
 
@@ -150,8 +183,11 @@ React при рендеринге.
 Storage намеренно читает значение как `unknown` и передаёт его в
 `migrateDashboardConfig`. Текущая версия схемы — `1`. Migration layer сначала
 проверяет наличие поддерживаемой версии, затем всю структуру, включая типы
-виджетов, appearance и числовые поля layout. Некорректные и будущие
-неподдерживаемые версии дают явные ошибки, а не частично загруженное состояние.
+виджетов, допустимый search engine, appearance и числовые поля layout.
+Сохранённые SearchWidget с прежней высотой нормализуются до `h: 1` и сразу
+перезаписываются без повышения версии, поскольку остальные данные полностью
+совместимы. Некорректные и будущие неподдерживаемые версии дают явные ошибки, а
+не частично загруженное состояние.
 
 При появлении версии 2 в `migrations.ts` следует добавить последовательное
 преобразование `v1 -> v2`, валидировать результат и сохранять мигрированную
@@ -170,11 +206,13 @@ debounce-механизмом. Записи выстраиваются в оче
 `components/dashboard/dashboard-layout.ts` нормализуют значения и преобразуют
 их между domain config и форматом `react-grid-layout`.
 
-Сетка содержит 12 колонок, минимальный размер виджета — 3×3, высота строки —
-48 px. `WidgetCanvas` разрешает drag и resize только в режиме редактирования и
-сохраняет layout после `onDragStop` или `onResizeStop`, а не на каждом событии
-движения. При ширине окна менее 960 px остаётся desktop-canvas с горизонтальной
-прокруткой; persisted coordinates не перестраиваются.
+Сетка содержит 12 колонок, высота строки — 48 px. LinksWidget имеет минимальный
+размер 3×3 и угловой resize, а SearchWidget — фиксированную высоту 1, минимальную
+ширину 3 и resize только за правую грань. `WidgetCanvas` разрешает drag и resize
+только в режиме редактирования и сохраняет layout после `onDragStop` или
+`onResizeStop`, а не на каждом событии движения. При ширине окна менее 960 px
+остаётся desktop-canvas с горизонтальной прокруткой; persisted coordinates не
+перестраиваются.
 
 ## Appearance
 
