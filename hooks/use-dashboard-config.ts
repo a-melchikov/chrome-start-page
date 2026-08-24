@@ -66,6 +66,12 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   }, [enqueueConfigSave]);
 
   useEffect(() => {
+    window.addEventListener('pagehide', flushWidgetUpdates);
+
+    return () => window.removeEventListener('pagehide', flushWidgetUpdates);
+  }, [flushWidgetUpdates]);
+
+  useEffect(() => {
     let isActive = true;
     isMountedRef.current = true;
 

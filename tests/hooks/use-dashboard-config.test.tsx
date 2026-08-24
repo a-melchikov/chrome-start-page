@@ -57,4 +57,43 @@ describe('useDashboardConfig layout persistence', () => {
       ),
     );
   });
+
+  it('flushes a pending widget change before the page is hidden', async () => {
+    const widget: LinksWidgetConfig = {
+      id: 'work-links',
+      type: 'links',
+      title: 'Работа',
+      content: '[Mail](mail.example.com)',
+      layout: { x: 0, y: 0, w: 4, h: 3 },
+    };
+    await saveDashboardConfig({
+      version: 1,
+      widgets: [widget],
+      appearance: { theme: 'system', backgroundColor: '#18181b' },
+    });
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    act(() => {
+      dashboard.result.current.updateWidget({
+        ...widget,
+        content: '[Docs](docs.example.com)',
+      });
+    });
+    expect(
+      (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
+        ?.widgets[0]?.content,
+    ).toBe(widget.content);
+
+    act(() => window.dispatchEvent(new Event('pagehide')));
+
+    await waitFor(async () => {
+      const storedConfig = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(storedConfig?.widgets[0]?.content).toBe(
+        '[Docs](docs.example.com)',
+      );
+    });
+  });
 });

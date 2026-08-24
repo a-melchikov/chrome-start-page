@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
 
@@ -130,5 +136,46 @@ describe('App', () => {
     );
     expect(screen.getByLabelText('Цвет фона')).toHaveValue('#abcdef');
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+  });
+
+  it('updates the system theme when prefers-color-scheme changes', async () => {
+    let isDark = false;
+    const listeners = new Set<EventListener>();
+    const mediaQuery = {
+      get matches() {
+        return isDark;
+      },
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addEventListener: vi.fn(
+        (_type: string, listener: EventListenerOrEventListenerObject) => {
+          if (typeof listener === 'function') {
+            listeners.add(listener);
+          }
+        },
+      ),
+      removeEventListener: vi.fn(
+        (_type: string, listener: EventListenerOrEventListenerObject) => {
+          if (typeof listener === 'function') {
+            listeners.delete(listener);
+          }
+        },
+      ),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    } as MediaQueryList;
+    vi.mocked(window.matchMedia).mockReturnValue(mediaQuery);
+
+    render(<App />);
+    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+
+    act(() => {
+      isDark = true;
+      listeners.forEach((listener) => listener(new Event('change')));
+    });
+
+    expect(document.documentElement).toHaveClass('dark');
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
   });
 });
