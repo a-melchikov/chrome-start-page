@@ -8,6 +8,7 @@ import {
   type SyntheticEvent,
 } from 'react';
 
+import { CloseIcon } from '../icons';
 import { classNames } from './class-names';
 import { IconButton } from './IconButton';
 
@@ -123,12 +124,11 @@ export function Dialog({
           <IconButton
             aria-label={closeLabel}
             size="small"
+            title={closeLabel}
             variant="ghost"
             onClick={close}
           >
-            <span aria-hidden="true" className="text-xl leading-none">
-              ×
-            </span>
+            <CloseIcon className="size-7" />
           </IconButton>
         </header>
         <div className="min-h-0 overflow-y-auto overscroll-contain p-5">

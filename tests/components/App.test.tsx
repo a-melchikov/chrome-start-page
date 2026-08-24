@@ -53,6 +53,29 @@ describe('App', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('turns off edit mode when Escape is pressed', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Добавить виджет' }),
+    ).toBeVisible();
+
+    await user.keyboard('{Escape}');
+
+    expect(
+      screen.queryByRole('button', { name: 'Добавить виджет' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Включить режим редактирования' }),
+    ).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('opens the widget picker and closes it on cancel', async () => {
     const user = userEvent.setup();
     render(<App />);

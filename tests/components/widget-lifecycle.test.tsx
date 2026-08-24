@@ -46,6 +46,20 @@ describe('widget lifecycle', () => {
     expect(
       await screen.findByRole('article', { name: 'Список ссылок' }),
     ).toBeVisible();
+    expect(
+      screen
+        .getByRole('button', {
+          name: 'Редактировать виджет «Список ссылок»',
+        })
+        .querySelector('svg'),
+    ).not.toBeNull();
+    expect(
+      screen
+        .getByRole('button', {
+          name: 'Удалить виджет «Список ссылок»',
+        })
+        .querySelector('svg'),
+    ).not.toBeNull();
     await waitFor(async () => {
       const config = await getStoredConfig();
       expect(config?.widgets).toHaveLength(1);

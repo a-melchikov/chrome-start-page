@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { AppearanceConfig, WidgetType } from '../../storage/schema';
-import { PaletteIcon, PlusIcon } from '../icons';
+import { PaletteIcon, PencilIcon, PlusIcon } from '../icons';
 import { Button, IconButton } from '../ui';
 import { AddWidgetDialog } from './AddWidgetDialog';
 import { AppearanceDialog } from './AppearanceDialog';
@@ -26,6 +26,26 @@ export function DashboardControls({
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
 
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const exitEditingOnEscape = (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !document.querySelector('dialog[open]')
+      ) {
+        event.preventDefault();
+        onEditingChange(false);
+      }
+    };
+
+    window.addEventListener('keydown', exitEditingOnEscape);
+    return () => window.removeEventListener('keydown', exitEditingOnEscape);
+  }, [isEditing, onEditingChange]);
+
   const toggleEditing = () => {
     const nextValue = !isEditing;
     onEditingChange(nextValue);
@@ -38,7 +58,7 @@ export function DashboardControls({
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-zinc-200/80 bg-white/95 p-1 shadow-lg backdrop-blur-sm dark:border-zinc-700/80 dark:bg-zinc-900/95">
+      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
         {isEditing ? (
           <>
             <Button
@@ -47,7 +67,7 @@ export function DashboardControls({
               variant="secondary"
               onClick={() => setIsAddWidgetOpen(true)}
             >
-              <PlusIcon className="size-4" />
+              <PlusIcon className="size-7" />
               Добавить виджет
             </Button>
             <IconButton
@@ -58,7 +78,7 @@ export function DashboardControls({
               variant="ghost"
               onClick={() => setIsAppearanceOpen(true)}
             >
-              <PaletteIcon className="size-4" />
+              <PaletteIcon className="size-7" />
             </IconButton>
           </>
         ) : null}
@@ -74,15 +94,13 @@ export function DashboardControls({
           size="small"
           title={
             isEditing
-              ? 'Выключить режим редактирования'
+              ? 'Выключить режим редактирования (Esc)'
               : 'Включить режим редактирования'
           }
-          variant="primary"
+          variant="ghost"
           onClick={toggleEditing}
         >
-          <span aria-hidden="true" className="text-xl leading-none">
-            ✎
-          </span>
+          <PencilIcon className="size-7" />
         </IconButton>
       </div>
 

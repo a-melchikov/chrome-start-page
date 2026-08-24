@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 
 import type { WidgetConfig } from '../../storage/schema';
 import { getWidgetDefinition } from '../../widgets/registry';
-import { Button } from '../ui';
+import { CloseIcon, PencilIcon } from '../icons';
+import { IconButton } from '../ui';
 import {
   getWidgetDisplayName,
   type RenderableWidgetConfig,
@@ -55,11 +56,9 @@ export function WidgetHost({
   return (
     <article
       aria-labelledby={titleId}
-      className="relative flex h-full min-h-40 min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-200/80 bg-white/95 p-4 shadow-sm backdrop-blur-sm dark:border-zinc-700/80 dark:bg-zinc-900/95"
+      className={`relative flex h-full min-h-40 min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${isEditing ? 'cursor-move' : ''}`}
     >
-      <header
-        className={`mb-3 flex min-h-8 shrink-0 items-start justify-between gap-3 ${isEditing ? 'widget-drag-handle cursor-move select-none' : ''}`}
-      >
+      <header className="mb-3 flex min-h-8 shrink-0 items-start justify-between gap-3">
         <h2
           className="min-w-0 flex-1 truncate pt-1.5 text-sm font-semibold"
           id={titleId}
@@ -74,24 +73,26 @@ export function WidgetHost({
             role="toolbar"
           >
             {definition?.renderEditor && !isWidgetEditing && onRequestEdit ? (
-              <Button
+              <IconButton
                 ref={editButtonRef}
                 aria-label={`Редактировать виджет «${displayName}»`}
                 size="small"
+                title={`Редактировать виджет «${displayName}»`}
                 variant="secondary"
                 onClick={startEditing}
               >
-                Изменить
-              </Button>
+                <PencilIcon className="size-7" />
+              </IconButton>
             ) : null}
-            <Button
+            <IconButton
               aria-label={`Удалить виджет «${displayName}»`}
               size="small"
-              variant="danger"
+              title={`Удалить виджет «${displayName}»`}
+              variant="danger-ghost"
               onClick={() => onRequestDelete(widget)}
             >
-              Удалить
-            </Button>
+              <CloseIcon className="size-7" />
+            </IconButton>
           </div>
         ) : null}
       </header>

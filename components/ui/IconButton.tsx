@@ -15,8 +15,8 @@ export type IconButtonProps = Omit<
 };
 
 const sizeClasses: Record<IconButtonSize, string> = {
-  small: 'size-8',
-  medium: 'size-10',
+  small: 'size-10',
+  medium: 'size-11',
 };
 
 export function IconButton({

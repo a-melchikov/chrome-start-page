@@ -2,7 +2,8 @@ import type { ComponentPropsWithRef } from 'react';
 
 import { classNames } from './class-names';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant =
+  'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-ghost';
 type ButtonSize = 'small' | 'medium';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {
@@ -18,11 +19,13 @@ const variantClasses: Record<ButtonVariant, string> = {
   ghost:
     'bg-transparent text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800',
   danger: 'bg-red-600 text-white hover:bg-red-500',
+  'danger-ghost':
+    'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900 dark:hover:text-red-200',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  small: 'h-8 px-3 text-sm',
-  medium: 'h-10 px-4 text-sm',
+  small: 'h-10 px-3 text-sm',
+  medium: 'h-11 px-4 text-sm',
 };
 
 export function Button({
@@ -35,7 +38,7 @@ export function Button({
   return (
     <button
       className={classNames(
-        'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-zinc-400 dark:focus-visible:ring-offset-zinc-950',
+        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-zinc-400 dark:focus-visible:ring-offset-zinc-950',
         variantClasses[variant],
         sizeClasses[size],
         className,

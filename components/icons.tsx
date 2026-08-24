@@ -1,60 +1,70 @@
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
 type IconProps = ComponentPropsWithoutRef<'svg'>;
 
-export function PlusIcon(props: IconProps) {
+interface BaseIconProps extends IconProps {
+  children: ReactNode;
+}
+
+function BaseIcon({ children, ...props }: BaseIconProps) {
   return (
     <svg
+      height="24"
+      width="24"
+      {...props}
       aria-hidden="true"
       fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
+      focusable="false"
+      shapeRendering="geometricPrecision"
       stroke="currentColor"
-      {...props}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2.25"
+      viewBox="0 0 24 24"
     >
-      <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+      {children}
     </svg>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </BaseIcon>
   );
 }
 
 export function PaletteIcon(props: IconProps) {
   return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
-      stroke="currentColor"
-      {...props}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 3a9 9 0 0 0 0 18h1.5a1.5 1.5 0 0 0 0-3H12a1.5 1.5 0 0 1 0-3h2.25A6.75 6.75 0 0 0 21 8.25C21 5.35 16.97 3 12 3Z"
-      />
-      <path
-        strokeLinecap="round"
-        d="M7.5 10.5h.008v.008H7.5v-.008Zm2.25-3h.008v.008H9.75V7.5Zm4.5 0h.008v.008h-.008V7.5Zm2.25 3h.008v.008H16.5v-.008Z"
-      />
-    </svg>
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+    </BaseIcon>
   );
 }
 
 export function LinkIcon(props: IconProps) {
   return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="2"
-      stroke="currentColor"
-      {...props}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.5 13.5a4.5 4.5 0 0 0 6.36.1l2.25-2.25a4.5 4.5 0 0 0-6.36-6.36L11.46 6.3m2.04 4.2a4.5 4.5 0 0 0-6.36-.1l-2.25 2.25a4.5 4.5 0 0 0 6.36 6.36l1.29-1.31"
-      />
-    </svg>
+    <BaseIcon {...props}>
+      <path d="M10.5 13.5a4.5 4.5 0 0 0 6.36.1l2.25-2.25a4.5 4.5 0 0 0-6.36-6.36L11.46 6.3m2.04 4.2a4.5 4.5 0 0 0-6.36-.1l-2.25 2.25a4.5 4.5 0 0 0 6.36 6.36l1.29-1.31" />
+    </BaseIcon>
+  );
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 20h4L19.5 8.5a2.83 2.83 0 0 0-4-4L4 16v4Z" />
+      <path d="m13.5 6.5 4 4" />
+    </BaseIcon>
+  );
+}
+
+export function CloseIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M19 5 5 19M5 5l14 14" />
+    </BaseIcon>
   );
 }

@@ -100,8 +100,8 @@ export function WidgetCanvas({
               dragConfig={{
                 enabled: isEditing,
                 bounded: true,
-                handle: '.widget-drag-handle',
-                cancel: 'button, input, textarea, a',
+                cancel:
+                  'button, input, textarea, select, option, label, a, [contenteditable="true"]',
               }}
               gridConfig={{
                 cols: DASHBOARD_GRID_COLUMNS,
