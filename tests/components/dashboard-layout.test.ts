@@ -9,6 +9,7 @@ import {
   WIDGET_MIN_HEIGHT,
   WIDGET_MIN_WIDTH,
 } from '../../components/dashboard/dashboard-layout';
+import { createDashboardDragConfig } from '../../components/dashboard/dashboard-drag';
 import type { WidgetConfig } from '../../storage/schema';
 
 function createWidget(
@@ -38,6 +39,13 @@ function createSearchWidget(
 }
 
 describe('dashboard layout', () => {
+  it('allows dragging into empty rows below the current grid', () => {
+    expect(createDashboardDragConfig(true)).toMatchObject({
+      enabled: true,
+      bounded: false,
+    });
+  });
+
   it('converts persisted widget layouts to constrained grid items', () => {
     expect(
       createGridLayout([createWidget('first', { x: 2, y: 4, w: 5, h: 6 })]),

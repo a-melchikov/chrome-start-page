@@ -9,6 +9,7 @@ import {
 
 import type { WidgetConfig } from '../../storage/schema';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
+import { createDashboardDragConfig } from './dashboard-drag';
 import {
   applyGridLayout,
   createGridLayout,
@@ -97,12 +98,7 @@ export function WidgetCanvas({
             <GridLayout
               className={isEditing ? 'dashboard-grid--editing' : undefined}
               compactor={collisionBlockingCompactor}
-              dragConfig={{
-                enabled: isEditing,
-                bounded: true,
-                cancel:
-                  'button, input, textarea, select, option, label, a, [contenteditable="true"]',
-              }}
+              dragConfig={createDashboardDragConfig(isEditing)}
               gridConfig={{
                 cols: DASHBOARD_GRID_COLUMNS,
                 rowHeight: DASHBOARD_GRID_ROW_HEIGHT,
