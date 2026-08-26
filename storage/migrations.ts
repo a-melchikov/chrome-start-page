@@ -52,6 +52,56 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
     return false;
   }
 
+  if (value.type === 'markdown') {
+    return typeof value.content === 'string';
+  }
+
+  if (value.type === 'search') {
+    return isSearchEngine(value.engine);
+  }
+
+  return false;
+}
+
+function hasValidDashboardEnvelope(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  widgets: unknown[];
+  appearance: { theme: Theme; backgroundColor: string };
+} {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const appearance = value.appearance;
+
+  return (
+    Array.isArray(value.widgets) &&
+    isRecord(appearance) &&
+    isTheme(appearance.theme) &&
+    typeof appearance.backgroundColor === 'string'
+  );
+}
+
+function isDashboardConfigV2(value: unknown): value is DashboardConfig {
+  return (
+    hasValidDashboardEnvelope(value) &&
+    value.version === DASHBOARD_CONFIG_VERSION &&
+    value.widgets.every(isWidgetConfig)
+  );
+}
+
+function isLegacyWidgetConfig(value: unknown): boolean {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    (value.title !== undefined && typeof value.title !== 'string') ||
+    !isWidgetLayout(value.layout)
+  ) {
+    return false;
+  }
+
   if (value.type === 'links') {
     return typeof value.content === 'string';
   }
@@ -63,20 +113,18 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
   return false;
 }
 
-function isDashboardConfigV1(value: unknown): value is DashboardConfig {
-  if (!isRecord(value)) {
-    return false;
-  }
-
-  const appearance = value.appearance;
-
+function isDashboardConfigV1(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  version: 1;
+  widgets: Array<Record<string, unknown>>;
+  appearance: DashboardConfig['appearance'];
+} {
   return (
-    value.version === DASHBOARD_CONFIG_VERSION &&
-    Array.isArray(value.widgets) &&
-    value.widgets.every(isWidgetConfig) &&
-    isRecord(appearance) &&
-    isTheme(appearance.theme) &&
-    typeof appearance.backgroundColor === 'string'
+    hasValidDashboardEnvelope(value) &&
+    value.version === 1 &&
+    value.widgets.every(isLegacyWidgetConfig)
   );
 }
 
@@ -113,13 +161,29 @@ function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
 export function migrateDashboardConfig(value: unknown): DashboardConfig {
   const version = readVersion(value);
 
-  if (version !== DASHBOARD_CONFIG_VERSION) {
-    throw new UnsupportedDashboardConfigVersionError(version);
+  if (version === 1) {
+    if (!isDashboardConfigV1(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return normalizeDashboardConfig({
+      version: DASHBOARD_CONFIG_VERSION,
+      appearance: value.appearance,
+      widgets: value.widgets.map((widget) =>
+        widget.type === 'links'
+          ? ({ ...widget, type: 'markdown' } as WidgetConfig)
+          : (widget as unknown as WidgetConfig),
+      ),
+    });
   }
 
-  if (!isDashboardConfigV1(value)) {
-    throw new InvalidDashboardConfigError();
+  if (version === DASHBOARD_CONFIG_VERSION) {
+    if (!isDashboardConfigV2(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return normalizeDashboardConfig(value);
   }
 
-  return normalizeDashboardConfig(value);
+  throw new UnsupportedDashboardConfigVersionError(version);
 }

@@ -17,7 +17,7 @@ function createWidget(
 ): WidgetConfig {
   return {
     id,
-    type: 'links',
+    type: 'markdown',
     title: id,
     content: `[${id}](${id}.example.com)`,
     layout,

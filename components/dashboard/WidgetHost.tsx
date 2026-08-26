@@ -34,7 +34,7 @@ export function WidgetHost({
   const [shouldRestoreEditFocus, setShouldRestoreEditFocus] = useState(false);
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
-  const content = definition?.render(widget);
+  const content = definition?.render(widget, onWidgetChange);
   const isBare = definition?.presentation.chrome === 'bare';
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
@@ -117,7 +117,12 @@ export function WidgetHost({
           <>
             <header className="mb-3 flex min-h-8 shrink-0 items-start justify-between gap-3">
               <h2
-                className="min-w-0 flex-1 truncate pt-1.5 text-sm font-semibold"
+                className={classNames(
+                  'min-w-0 flex-1 truncate font-semibold',
+                  definition?.presentation.titleStyle === 'prominent'
+                    ? 'text-xl'
+                    : 'pt-1.5 text-sm',
+                )}
                 id={titleId}
                 title={displayName}
               >
@@ -126,15 +131,16 @@ export function WidgetHost({
               {controls}
             </header>
             <div className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain">
-              {editor ?? content ?? fallback}
+              {(usesDialogEditor ? content : editor) ?? content ?? fallback}
             </div>
           </>
         )}
       </article>
 
-      {isBare && usesDialogEditor && editor ? (
+      {usesDialogEditor && editor ? (
         <Dialog
           open={isWidgetEditing}
+          size={definition?.presentation.editorDialogSize}
           title={definition?.presentation.editorTitle ?? displayName}
           onOpenChange={(open) => {
             if (!open) {

@@ -14,11 +14,49 @@ describe('migrateDashboardConfig', () => {
     expect(migrateDashboardConfig(config)).toBe(config);
   });
 
+  it('migrates mixed v1 widgets to v2 without losing data', () => {
+    const legacyConfig = {
+      version: 1,
+      appearance: { theme: 'light', backgroundColor: '#f4f4f5' },
+      widgets: [
+        {
+          id: 'links-widget',
+          type: 'links',
+          title: 'Работа',
+          content: '[Mail](https://mail.example.com/)',
+          layout: { x: 2, y: 3, w: 7, h: 5 },
+        },
+        {
+          id: 'search-widget',
+          type: 'search',
+          title: '',
+          engine: 'bing',
+          layout: { x: 0, y: 8, w: 6, h: 3 },
+        },
+      ],
+    } as const;
+
+    expect(migrateDashboardConfig(legacyConfig)).toEqual({
+      version: 2,
+      appearance: legacyConfig.appearance,
+      widgets: [
+        {
+          ...legacyConfig.widgets[0],
+          type: 'markdown',
+        },
+        {
+          ...legacyConfig.widgets[1],
+          layout: { ...legacyConfig.widgets[1].layout, h: 1 },
+        },
+      ],
+    });
+  });
+
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 2,
+        version: 3,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
   });
@@ -57,6 +95,22 @@ describe('migrateDashboardConfig', () => {
     });
   });
 
+  it('rejects a MarkdownWidget without string content', () => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'markdown-widget',
+            type: 'markdown',
+            content: null,
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
+
   it('rejects a SearchWidget with an unknown engine', () => {
     expect(() =>
       migrateDashboardConfig({
@@ -66,7 +120,7 @@ describe('migrateDashboardConfig', () => {
             id: 'search-widget',
             type: 'search',
             engine: 'unknown',
-            layout: { x: 0, y: 0, w: 6, h: 3 },
+            layout: { x: 0, y: 0, w: 6, h: 1 },
           },
         ],
       }),

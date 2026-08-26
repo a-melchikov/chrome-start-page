@@ -93,7 +93,7 @@ describe('App', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Добавить виджет' });
     expect(dialog).toHaveAttribute('open');
-    expect(screen.getByRole('button', { name: 'Список ссылок' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Markdown' })).toHaveFocus();
 
     fireEvent(dialog, new Event('cancel', { cancelable: true }));
 
@@ -134,7 +134,7 @@ describe('App', () => {
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 1,
+      version: 2,
       widgets: [],
       appearance: {
         theme: 'light',

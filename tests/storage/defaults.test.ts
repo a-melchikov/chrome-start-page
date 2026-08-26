@@ -7,7 +7,7 @@ import {
 import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 
 describe('createDefaultDashboardConfig', () => {
-  it('creates an empty version 1 dashboard with neutral appearance', () => {
+  it('creates an empty version 2 dashboard with neutral appearance', () => {
     expect(createDefaultDashboardConfig()).toEqual({
       version: DASHBOARD_CONFIG_VERSION,
       widgets: [],

@@ -23,7 +23,10 @@ export type DialogProps = Omit<
   description?: ReactNode;
   footer?: ReactNode;
   closeLabel?: string;
+  size?: DialogSize;
 };
+
+export type DialogSize = 'default' | 'fullscreen';
 
 export function Dialog({
   open,
@@ -32,6 +35,7 @@ export function Dialog({
   description,
   footer,
   closeLabel = 'Закрыть',
+  size = 'default',
   className,
   children,
   onKeyDown,
@@ -41,6 +45,7 @@ export function Dialog({
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const descriptionId = useId();
+  const isFullscreen = size === 'fullscreen';
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -111,39 +116,61 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
-        'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50',
+        'overflow-hidden bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-50',
+        isFullscreen
+          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none rounded-none border-0'
+          : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700',
         className,
       )}
       onCancel={handleCancel}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
     >
-      <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
-          <div className="min-w-0">
-            <h2 id={titleId} className="text-base font-semibold">
-              {title}
-            </h2>
-            {description ? (
-              <p
-                id={descriptionId}
-                className="mt-1 text-sm text-zinc-600 dark:text-zinc-400"
-              >
-                {description}
-              </p>
-            ) : null}
+      <div
+        className={classNames(
+          'flex flex-col',
+          isFullscreen ? 'h-full max-h-dvh' : 'max-h-[calc(100dvh-2rem)]',
+        )}
+      >
+        {isFullscreen ? (
+          <div className="sr-only">
+            <h2 id={titleId}>{title}</h2>
+            {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
-          <IconButton
-            aria-label={closeLabel}
-            size="small"
-            title={closeLabel}
-            variant="ghost"
-            onClick={close}
-          >
-            <CloseIcon className="size-7" />
-          </IconButton>
-        </header>
-        <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
+        ) : (
+          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+            <div className="min-w-0">
+              <h2 id={titleId} className="text-base font-semibold">
+                {title}
+              </h2>
+              {description ? (
+                <p
+                  id={descriptionId}
+                  className="mt-1 text-sm text-zinc-600 dark:text-zinc-400"
+                >
+                  {description}
+                </p>
+              ) : null}
+            </div>
+            <IconButton
+              aria-label={closeLabel}
+              size="small"
+              title={closeLabel}
+              variant="ghost"
+              onClick={close}
+            >
+              <CloseIcon className="size-7" />
+            </IconButton>
+          </header>
+        )}
+        <div
+          className={classNames(
+            'min-h-0',
+            isFullscreen
+              ? 'flex-1 overflow-hidden'
+              : 'overflow-y-auto overscroll-contain p-5',
+          )}
+        >
           {children}
         </div>
         {footer ? (

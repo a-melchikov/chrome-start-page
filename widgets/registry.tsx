@@ -2,11 +2,10 @@ import type { ComponentType, ReactNode } from 'react';
 
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
-import { createDefaultLinksWidget } from './links/defaults';
-import { LinksWidget } from './links/LinksWidget';
-import { LinksWidgetEditor } from './links/LinksWidgetEditor';
-import { parseLinksContent } from './links/parser';
-import type { LinksWidgetConfig } from './links/types';
+import { createDefaultMarkdownWidget } from './markdown/defaults';
+import { MarkdownWidget } from './markdown/MarkdownWidget';
+import { MarkdownWidgetEditor } from './markdown/MarkdownWidgetEditor';
+import type { MarkdownWidgetConfig } from './markdown/types';
 import { createDefaultSearchWidget } from './search/defaults';
 import { isSearchEngine } from './search/engines';
 import { SearchWidget } from './search/SearchWidget';
@@ -32,11 +31,14 @@ export interface WidgetPresentation {
   editor: 'inline' | 'dialog';
   allowCustomTitle: boolean;
   editorTitle?: string;
+  editorDialogSize?: 'default' | 'fullscreen';
+  titleStyle?: 'default' | 'prominent';
   layout: WidgetLayoutConstraints;
 }
 
 export interface WidgetRenderProps<TConfig extends WidgetConfig> {
   config: TConfig;
+  onChange?: (config: TConfig) => void;
 }
 
 export interface WidgetEditorProps<TConfig extends WidgetConfig> {
@@ -61,7 +63,10 @@ export interface RegisteredWidgetDefinition {
   metadata: WidgetMetadata;
   presentation: WidgetPresentation;
   create: (id: string, index: number) => WidgetConfig;
-  render: (config: unknown) => ReactNode | null;
+  render: (
+    config: unknown,
+    onChange?: (config: WidgetConfig) => void,
+  ) => ReactNode | null;
   renderEditor?: (
     config: unknown,
     onChange: (config: WidgetConfig) => void,
@@ -81,8 +86,13 @@ function defineWidget<TConfig extends WidgetConfig>(
     metadata: definition.metadata,
     presentation: definition.presentation,
     create: definition.create,
-    render: (config) =>
-      definition.isConfig(config) ? <Renderer config={config} /> : null,
+    render: (config, onChange) =>
+      definition.isConfig(config) ? (
+        <Renderer
+          config={config}
+          onChange={onChange ? (nextConfig) => onChange(nextConfig) : undefined}
+        />
+      ) : null,
     renderEditor: Editor
       ? (config, onChange, onRequestFinish) =>
           definition.isConfig(config) ? (
@@ -102,12 +112,12 @@ function defineWidget<TConfig extends WidgetConfig>(
   };
 }
 
-function isLinksWidgetConfig(value: unknown): value is LinksWidgetConfig {
+function isMarkdownWidgetConfig(value: unknown): value is MarkdownWidgetConfig {
   return (
     typeof value === 'object' &&
     value !== null &&
     'type' in value &&
-    value.type === 'links' &&
+    value.type === 'markdown' &&
     'content' in value &&
     typeof value.content === 'string'
   );
@@ -125,22 +135,23 @@ function isSearchWidgetConfig(value: unknown): value is SearchWidgetConfig {
 }
 
 const definitions: readonly RegisteredWidgetDefinition[] = [
-  defineWidget<LinksWidgetConfig>({
-    type: 'links',
+  defineWidget<MarkdownWidgetConfig>({
+    type: 'markdown',
     metadata: {
-      name: 'Список ссылок',
-      description: 'Компактный список ссылок из Markdown-текста.',
+      name: 'Markdown',
+      description: 'Текст, списки, ссылки, таблицы, задачи и код.',
     },
-    create: createDefaultLinksWidget,
-    isConfig: isLinksWidgetConfig,
-    Renderer: LinksWidget,
-    Editor: LinksWidgetEditor,
-    canFinishEditing: (config) =>
-      parseLinksContent(config.content).validation.isValid,
+    create: createDefaultMarkdownWidget,
+    isConfig: isMarkdownWidgetConfig,
+    Renderer: MarkdownWidget,
+    Editor: MarkdownWidgetEditor,
     presentation: {
       chrome: 'card',
-      editor: 'inline',
+      editor: 'dialog',
       allowCustomTitle: true,
+      editorTitle: 'Редактор Markdown',
+      editorDialogSize: 'fullscreen',
+      titleStyle: 'prominent',
       layout: {
         minW: 3,
         minH: 3,

@@ -1,7 +1,7 @@
-import type { LinksWidgetConfig } from '../widgets/links/types';
+import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 
-export const DASHBOARD_CONFIG_VERSION = 1 as const;
+export const DASHBOARD_CONFIG_VERSION = 2 as const;
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -11,7 +11,7 @@ export interface AppearanceConfig {
 }
 
 export interface WidgetConfigMap {
-  links: LinksWidgetConfig;
+  markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;
 }
 

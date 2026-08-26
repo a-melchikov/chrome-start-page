@@ -9,12 +9,14 @@ import {
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
 import type { DashboardConfig } from '../../storage/schema';
-import type { LinksWidgetConfig } from '../../widgets/links/types';
+import type { MarkdownWidgetConfig } from '../../widgets/markdown/types';
 
-async function getStoredLinksWidget(): Promise<LinksWidgetConfig | undefined> {
+async function getStoredMarkdownWidget(): Promise<
+  MarkdownWidgetConfig | undefined
+> {
   const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
   const widget = config?.widgets[0];
-  return widget?.type === 'links' ? widget : undefined;
+  return widget?.type === 'markdown' ? widget : undefined;
 }
 
 describe('useDashboardConfig layout persistence', () => {
@@ -23,15 +25,15 @@ describe('useDashboardConfig layout persistence', () => {
   });
 
   it('saves x/y/w/h and restores them for a new dashboard session', async () => {
-    const widget: LinksWidgetConfig = {
-      id: 'work-links',
-      type: 'links',
+    const widget: MarkdownWidgetConfig = {
+      id: 'work-markdown',
+      type: 'markdown',
       title: 'Работа',
       content: '[Mail](mail.example.com)',
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 1,
+      version: 2,
       widgets: [widget],
       appearance: { theme: 'system', backgroundColor: '#18181b' },
     });
@@ -65,15 +67,15 @@ describe('useDashboardConfig layout persistence', () => {
   });
 
   it('flushes a pending widget change before the page is hidden', async () => {
-    const widget: LinksWidgetConfig = {
-      id: 'work-links',
-      type: 'links',
+    const widget: MarkdownWidgetConfig = {
+      id: 'work-markdown',
+      type: 'markdown',
       title: 'Работа',
       content: '[Mail](mail.example.com)',
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 1,
+      version: 2,
       widgets: [widget],
       appearance: { theme: 'system', backgroundColor: '#18181b' },
     });
@@ -86,12 +88,12 @@ describe('useDashboardConfig layout persistence', () => {
         content: '[Docs](docs.example.com)',
       });
     });
-    expect((await getStoredLinksWidget())?.content).toBe(widget.content);
+    expect((await getStoredMarkdownWidget())?.content).toBe(widget.content);
 
     act(() => window.dispatchEvent(new Event('pagehide')));
 
     await waitFor(async () => {
-      expect((await getStoredLinksWidget())?.content).toBe(
+      expect((await getStoredMarkdownWidget())?.content).toBe(
         '[Docs](docs.example.com)',
       );
     });

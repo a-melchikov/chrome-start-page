@@ -7,22 +7,26 @@ Chrome Start Page — расширение Manifest V3 для Google Chrome, к�
 ## Возможности MVP
 
 - включение режима редактирования кнопкой с карандашом;
-- добавление нескольких виджетов «Список ссылок»;
+- добавление нескольких универсальных Markdown-виджетов;
 - добавление нескольких компактных поисковых строк с выбором Google, Яндекса,
   Bing или DuckDuckGo и встроенной фирменной иконкой выбранного сервиса;
-- редактирование содержимого виджета как обычного Markdown-текста;
-- отображение текста, переносов строк и нескольких Markdown-ссылок в одной
-  строке;
+- полноэкранный split-editor с исходным Markdown и живым preview;
+- CommonMark, GFM-таблицы, task lists, зачёркивание, ссылки, HTTPS-изображения,
+  цитаты, footnotes, безопасный HTML и блоки кода с копированием;
+- интерактивные task-list checkbox, которые обновляют исходный Markdown;
 - локальные favicon сайтов без внешнего favicon API;
 - перемещение и изменение размера виджетов в 12-колоночной сетке;
 - темы `system`, `light` и `dark`, а также произвольный цвет фона;
 - автоматическое сохранение содержимого, оформления и layout;
 - восстановление конфигурации после перезапуска Chrome.
 
-Поддерживаемый формат ссылки:
+Например:
 
 ```md
-[Mail](https://mail.example.com/) [Docs](docs.example.com)
+# Рабочее
+
+- [ ] Проверить [почту](https://mail.example.com/)
+- [x] Открыть [документацию](docs.example.com)
 ```
 
 URL без протокола нормализуется в `https://`, если адрес однозначен. Разрешены
@@ -35,6 +39,7 @@ URL без протокола нормализуется в `https://`, если
 - Vite через WXT;
 - Tailwind CSS 4;
 - `react-grid-layout`;
+- `react-markdown`, `remark-gfm`, `rehype-raw` и `rehype-sanitize`;
 - WXT Storage поверх `chrome.storage.local`;
 - Vitest и React Testing Library;
 - ESLint и Prettier;
@@ -150,7 +155,7 @@ components/dashboard/ Dashboard, управление виджетами и grid
 components/ui/        Небольшие переиспользуемые UI-примитивы
 hooks/                Загрузка, изменение и сохранение конфигурации
 widgets/              Widget Registry, общие типы и реализации виджетов
-widgets/links/        LinksWidget, editor, parser и URL validation
+widgets/markdown/     MarkdownWidget, renderer, editor и URL validation
 widgets/search/       SearchWidget, editor и фиксированные поисковые endpoints
 storage/              Схема, defaults, migrations и WXT Storage abstraction
 public/icons/         PNG-иконки, попадающие в extension build
@@ -167,9 +172,9 @@ docs/                 Техническая документация
 
 Вся пользовательская конфигурация хранится под ключом
 `local:dashboard-config` в `chrome.storage.local`. Она включает версию схемы,
-оформление, layout, исходный Markdown LinksWidget и выбранный поисковик
-SearchWidget. `LinksWidget.content` является единственным источником данных для
-текста и ссылок: отдельный список URL не сохраняется. Текст поискового запроса
+оформление, layout, исходный текст MarkdownWidget и выбранный поисковик
+SearchWidget. `MarkdownWidget.content` является единственным источником данных:
+отрендеренная разметка и отдельный список URL не сохраняются. Текст поискового запроса
 не сохраняется и отправляется выбранному поисковику только после Enter или
 нажатия кнопки поиска.
 
@@ -180,7 +185,7 @@ SearchWidget отображается без карточки и заголов�
 У расширения нет backend, авторизации, аналитики и телеметрии. Пользовательские
 настройки и URL не отправляются разработчику или сторонним сервисам. Иконки
 поисковиков встроены в расширение и не загружаются из сети. Только favicon
-пользовательских ссылок запрашиваются через внутренний endpoint Chrome
+ссылок внутри Markdown запрашиваются через внутренний endpoint Chrome
 `_favicon` из локального хранилища браузера.
 
 Разрешения Manifest V3:
@@ -192,9 +197,12 @@ SearchWidget отображается без карточки и заголов�
 
 ## Ограничения MVP
 
-- доступны виджеты `LinksWidget` и `SearchWidget`;
-- parser поддерживает обычный текст и inline-ссылки `[label](url)`, а не полный
-  синтаксис Markdown;
+- доступны виджеты `MarkdownWidget` и `SearchWidget`;
+- Math, Mermaid, YAML frontmatter, загрузка файлов и offline-кэш изображений не
+  поддерживаются;
+- HTML проходит через sanitizer: скрипты, формы, iframe, event-атрибуты,
+  произвольные стили и опасные URL удаляются;
+- изображения разрешены только по HTTPS;
 - SearchWidget не поддерживает историю, онлайн-подсказки и пользовательские
   URL-шаблоны;
 - ссылки ограничены протоколами HTTP и HTTPS;
@@ -209,6 +217,5 @@ SearchWidget отображается без карточки и заголов�
 
 ## Roadmap
 
-- Notes widget;
 - Clock widget;
 - Google Calendar widget.

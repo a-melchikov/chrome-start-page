@@ -15,10 +15,10 @@ flowchart TD
   Storage --> Migrations[schema validation and migrations]
   Dashboard --> Canvas[WidgetCanvas]
   Canvas --> Registry[Widget Registry]
-  Registry --> Links[LinksWidget or LinksWidgetEditor]
+  Registry --> Markdown[MarkdownWidget or fullscreen editor]
   Registry --> Search[SearchWidget or SearchWidgetEditor]
-  Links --> Parser[Markdown parser]
-  Parser --> Model[render model and validation]
+  Markdown --> Pipeline[remark-gfm + rehype-raw + sanitize]
+  Pipeline --> Render[Safe interactive React renderer]
 ```
 
 `DashboardConfig` движется между UI и storage как единый типизированный объект.
@@ -57,7 +57,7 @@ flowchart TD
 
 ```ts
 interface DashboardConfig {
-  version: 1;
+  version: 2;
   widgets: WidgetConfig[];
   appearance: AppearanceConfig;
 }
@@ -69,7 +69,7 @@ interface DashboardConfig {
 
 ```ts
 interface WidgetConfigMap {
-  links: LinksWidgetConfig;
+  markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;
 }
 
@@ -92,8 +92,10 @@ type WidgetConfig = WidgetConfigMap[WidgetType];
 - необязательным editor;
 - правилом, разрешающим завершить редактирование;
 - presentation-параметрами: карточка или безрамочное представление, inline- или
-  dialog-editor, возможность пользовательского заголовка и индивидуальные
-  ограничения layout/resize.
+  dialog-editor, обычный или полноэкранный диалог, стиль заголовка, возможность
+  пользовательского заголовка и индивидуальные ограничения layout/resize;
+- callback для изменений конфигурации непосредственно из renderer — например,
+  при клике по task-list checkbox.
 
 UI получает доступные типы через `getAvailableWidgetDefinitions`, создаёт
 экземпляр через `createWidgetConfig` и отображает его через найденный
@@ -101,22 +103,34 @@ definition. Неизвестный или некорректный тип не �
 произвольного компонента: registry возвращает `undefined` или `null`, а
 `WidgetHost` показывает безопасный fallback.
 
-## LinksWidget
+## MarkdownWidget
 
-`LinksWidgetConfig` добавляет к базовым полям строку `content`. Исходный
-Markdown в `content` — единственный source of truth. Parsed links не
-дублируются в storage, поэтому renderer и editor всегда работают с одним и тем
-же пользовательским текстом.
+`MarkdownWidgetConfig` добавляет к базовым полям строку `content`. Исходный
+Markdown — единственный source of truth; AST и HTML в storage не сохраняются.
+Новый экземпляр имеет размер 4×3 и минимум 3×3. Карточка содержит отдельный
+фиксированный заголовок размером 20 px, а прокрутка ограничена областью
+содержимого. Markdown H1 отображается размером 18 px, поэтому не конкурирует с
+заголовком карточки.
 
-`LinksWidgetEditor` редактирует заголовок и raw Markdown. Изменения виджета
-сохраняются с debounce 300 мс; завершение редактирования, событие `pagehide` и
-размонтирование принудительно сбрасывают ожидающее сохранение. Если
-распознанная Markdown-ссылка имеет некорректный URL, editor показывает позицию
-ошибки и не позволяет завершить редактирование.
+`MarkdownWidgetEditor` открывается в полноэкранном dialog. Верхняя панель
+содержит поле заголовка и «Готово», а рабочая область — raw Markdown слева и
+живой preview справа. Доступный separator управляется мышью, pointer и
+клавиатурой, ограничивает доли 30/70 и при каждом открытии начинается с 50/50.
+Изменения сохраняются с debounce 300 мс; «Готово», Escape, `pagehide` и
+размонтирование принудительно записывают последнее ожидающее состояние.
 
-`LinksWidget` отображает обычный текст и native `<a>` для валидных ссылок.
-Ссылки открываются в текущей вкладке. `LinkFavicon` использует локальный
-`_favicon` endpoint Chrome и заменяет недоступную favicon встроенной иконкой.
+Renderer поддерживает CommonMark, GFM-таблицы и task lists, strikethrough,
+autolinks, reference links, footnotes, изображения, цитаты и inline/fenced
+code. Блоки кода не подсвечиваются, имеют горизонтальную прокрутку и кнопку
+копирования. Клик по checkbox использует source position элемента списка и
+изменяет соответствующий marker `[ ]`/`[x]` в исходной строке; одинаковый текст
+и task-подобные строки внутри fenced code не затрагиваются.
+
+Ссылки становятся native `<a>` только после HTTP/HTTPS-нормализации, открываются
+в текущей вкладке и получают favicon через локальный Chrome `_favicon` endpoint.
+Недоступная favicon заменяется встроенной иконкой. Изображения допускаются
+только по HTTPS, загружаются lazy с `decoding="async"` и
+`referrerPolicy="no-referrer"`, а CSS ограничивает их размерами карточки.
 
 ## SearchWidget
 
@@ -143,35 +157,29 @@ SearchWidget имеет bare-представление: `WidgetHost` не до�
 2.0.1, приведены к сетке 32×32 и отображаются в области 24×24 в фирменных
 цветах. При ошибке загрузки показывается чёрная контурная лупа.
 
-`SiteFavicon` остаётся общей обёрткой только для favicon пользовательских ссылок
-LinksWidget. Поэтому разрешение Manifest V3 `favicon` по-прежнему необходимо.
+`SiteFavicon` остаётся общей обёрткой только для favicon ссылок MarkdownWidget.
+Поэтому разрешение Manifest V3 `favicon` по-прежнему необходимо.
 
-## Parser, render model и validation
+## Markdown pipeline и безопасность
 
-`parseLinksContent` выполняет один проход по строкам и преобразует распознанные
-конструкции `[label](url)` в модель, независимую от React:
+`react-markdown` строит React-дерево без `dangerouslySetInnerHTML`.
+`remark-gfm` расширяет Markdown, `rehype-raw` разбирает разрешённый raw HTML, а
+`rehype-sanitize` фильтрует его до передачи компонентам renderer. Расширенная
+schema допускает безопасные структурные и форматирующие элементы, включая
+`details`, `summary`, `mark`, `kbd`, `sub`, `sup`, `ins` и таблицы. Она удаляет
+`script`, `style`, `iframe`, `object`, `embed`, формы, event-атрибуты,
+произвольные CSS-классы/стили и опасные URL.
 
-```text
-Markdown content
-  -> LinksRenderLine[]
-  -> text | link | invalid-link segments
-  + LinksValidationResult
-```
-
-Переносы и пустые строки сохраняются как логические строки render model.
-Нераспознанный Markdown и HTML-подобный ввод остаются текстом и экранируются
-React при рендеринге.
-
-`normalizeLinkUrl` отделён от parser. Он:
+`normalizeLinkUrl` отделён от renderer. Он:
 
 - принимает только HTTP и HTTPS;
 - добавляет `https://` к однозначному hostname;
 - отклоняет пустые, неоднозначные и содержащие пробелы URL;
 - блокирует `javascript:`, `data:` и другие неподдерживаемые схемы.
 
-Результат validation содержит reason, строку и столбец. Одна и та же функция
-используется для preview, ошибок editor и проверки возможности завершить
-редактирование.
+`normalizeImageUrl` требует абсолютный HTTPS URL. Дополнительные component
+overrides повторно проверяют ссылку или изображение после sanitization, поэтому
+опасное значение не становится кликабельным даже при неожиданной разметке.
 
 ## Storage, версия и migrations
 
@@ -181,18 +189,13 @@ React при рендеринге.
 Прямых обращений UI к `chrome.storage` и `localStorage` нет.
 
 Storage намеренно читает значение как `unknown` и передаёт его в
-`migrateDashboardConfig`. Текущая версия схемы — `1`. Migration layer сначала
-проверяет наличие поддерживаемой версии, затем всю структуру, включая типы
-виджетов, допустимый search engine, appearance и числовые поля layout.
-Сохранённые SearchWidget с прежней высотой нормализуются до `h: 1` и сразу
-перезаписываются без повышения версии, поскольку остальные данные полностью
-совместимы. Некорректные и будущие неподдерживаемые версии дают явные ошибки, а
-не частично загруженное состояние.
-
-При появлении версии 2 в `migrations.ts` следует добавить последовательное
-преобразование `v1 -> v2`, валидировать результат и сохранять мигрированную
-конфигурацию обратно. Номер `DASHBOARD_CONFIG_VERSION` меняется только вместе с
-таким преобразованием.
+`migrateDashboardConfig`. Текущая версия схемы — `2`. Migration layer проверяет
+всю структуру, включая типы виджетов, допустимый search engine, appearance и
+числовые поля layout. Миграция `v1 -> v2` заменяет каждый `links` config на
+`markdown`, сохраняя ID, заголовок, content и layout. SearchWidget остаётся
+совместимым; прежняя высота нормализуется до `h: 1`. Мигрированный объект сразу
+записывается обратно в storage. Некорректные и будущие неподдерживаемые версии
+дают явные ошибки, а не частично загруженное состояние.
 
 `useDashboardConfig` держит актуальную конфигурацию в React state и ref, чтобы
 операции не теряли предыдущие изменения. Добавление, удаление, appearance и
@@ -206,8 +209,8 @@ debounce-механизмом. Записи выстраиваются в оче
 `components/dashboard/dashboard-layout.ts` нормализуют значения и преобразуют
 их между domain config и форматом `react-grid-layout`.
 
-Сетка содержит 12 колонок, высота строки — 48 px. LinksWidget имеет минимальный
-размер 3×3 и угловой resize, а SearchWidget — фиксированную высоту 1, минимальную
+Сетка содержит 12 колонок, высота строки — 48 px. MarkdownWidget имеет
+начальный размер 4×3, минимум 3×3 и угловой resize, а SearchWidget — фиксированную высоту 1, минимальную
 ширину 3 и resize только за правую грань. `WidgetCanvas` разрешает drag и resize
 только в режиме редактирования и сохраняет layout после `onDragStop` или
 `onResizeStop`, а не на каждом событии движения. При ширине окна менее 960 px
@@ -255,11 +258,11 @@ Dashboard и диалог добавления не должны импорти�
   не зависит от React-компонентов.
 - **Domain types и registry** задают допустимые конфигурации и связывают тип с
   реализацией без ветвлений по всему Dashboard.
-- **Parser и validation** — чистые функции без DOM, React и browser API; их
-  можно тестировать быстро и детерминированно.
+- **Markdown pipeline и URL validation** отделяют синтаксический разбор,
+  sanitization и browser-навигацию; чистые helpers тестируются независимо.
 - **Layout helpers** изолируют правила сетки от `react-grid-layout` callbacks и
   сохраняют domain-модель стабильной.
 
-Разделение уменьшает область изменений: новый синтаксис ссылки не требует
+Разделение уменьшает область изменений: новый Markdown-компонент не требует
 правки storage, новый widget не меняет layout engine, а смена механизма
-хранения не затрагивает parser или renderer.
+хранения не затрагивает renderer.

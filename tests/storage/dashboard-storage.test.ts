@@ -26,7 +26,7 @@ describe('dashboard storage', () => {
 
   it('saves and loads a config without losing widget data', async () => {
     const config: DashboardConfig = {
-      version: 1,
+      version: 2,
       appearance: {
         theme: 'light',
         backgroundColor: '#f4f4f5',
@@ -34,7 +34,7 @@ describe('dashboard storage', () => {
       widgets: [
         {
           id: '12c8b540-4847-45b3-98b7-d13b00833040',
-          type: 'links',
+          type: 'markdown',
           title: 'Работа',
           content: '[Mail](https://mail.example.com/)',
           layout: { x: 1, y: 2, w: 3, h: 4 },
@@ -64,5 +64,33 @@ describe('dashboard storage', () => {
     await expect(
       storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
     ).resolves.toEqual(normalizedConfig);
+  });
+
+  it('migrates a stored v1 LinksWidget and writes v2 back to storage', async () => {
+    const legacyConfig = {
+      version: 1,
+      appearance: { theme: 'system', backgroundColor: '#18181b' },
+      widgets: [
+        {
+          id: 'legacy-links',
+          type: 'links',
+          title: 'Ссылки',
+          content: '[Docs](https://example.com/docs)',
+          layout: { x: 3, y: 4, w: 6, h: 5 },
+        },
+      ],
+    };
+    await storage.setItem(DASHBOARD_STORAGE_KEY, legacyConfig);
+
+    const migrated = await loadDashboardConfig();
+
+    expect(migrated).toEqual({
+      ...legacyConfig,
+      version: 2,
+      widgets: [{ ...legacyConfig.widgets[0], type: 'markdown' }],
+    });
+    await expect(
+      storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
+    ).resolves.toEqual(migrated);
   });
 });

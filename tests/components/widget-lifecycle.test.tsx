@@ -22,9 +22,9 @@ async function enableEditMode(user: User) {
   await waitFor(() => expect(addWidgetButton).toBeEnabled());
 }
 
-async function addLinksWidget(user: User) {
+async function addMarkdownWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
-  await user.click(screen.getByRole('button', { name: 'Список ссылок' }));
+  await user.click(screen.getByRole('button', { name: 'Markdown' }));
 }
 
 async function addSearchWidget(user: User) {
@@ -41,27 +41,27 @@ describe('widget lifecycle', () => {
     fakeBrowser.reset();
   });
 
-  it('creates and immediately persists a LinksWidget', async () => {
+  it('creates and immediately persists a MarkdownWidget', async () => {
     const user = userEvent.setup();
     render(<App />);
     await enableEditMode(user);
 
-    await addLinksWidget(user);
+    await addMarkdownWidget(user);
 
     expect(
-      await screen.findByRole('article', { name: 'Список ссылок' }),
+      await screen.findByRole('article', { name: 'Markdown' }),
     ).toBeVisible();
     expect(
       screen
         .getByRole('button', {
-          name: 'Редактировать виджет «Список ссылок»',
+          name: 'Редактировать виджет «Markdown»',
         })
         .querySelector('svg'),
     ).not.toBeNull();
     expect(
       screen
         .getByRole('button', {
-          name: 'Удалить виджет «Список ссылок»',
+          name: 'Удалить виджет «Markdown»',
         })
         .querySelector('svg'),
     ).not.toBeNull();
@@ -72,7 +72,7 @@ describe('widget lifecycle', () => {
         id: expect.stringMatching(
           /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
         ),
-        type: 'links',
+        type: 'markdown',
         title: '',
         content: '',
         layout: { x: 0, y: 0, w: 4, h: 3 },
@@ -86,7 +86,7 @@ describe('widget lifecycle', () => {
     );
     expect(
       screen.queryByRole('button', {
-        name: 'Удалить виджет «Список ссылок»',
+        name: 'Удалить виджет «Markdown»',
       }),
     ).not.toBeInTheDocument();
   });
@@ -96,12 +96,12 @@ describe('widget lifecycle', () => {
     render(<App />);
     await enableEditMode(user);
 
-    await addLinksWidget(user);
-    await addLinksWidget(user);
+    await addMarkdownWidget(user);
+    await addMarkdownWidget(user);
 
-    expect(
-      screen.getAllByRole('article', { name: 'Список ссылок' }),
-    ).toHaveLength(2);
+    expect(screen.getAllByRole('article', { name: 'Markdown' })).toHaveLength(
+      2,
+    );
     await waitFor(async () => {
       const widgets = (await getStoredConfig())?.widgets ?? [];
       expect(widgets).toHaveLength(2);
@@ -208,11 +208,11 @@ describe('widget lifecycle', () => {
     const user = userEvent.setup();
     render(<App />);
     await enableEditMode(user);
-    await addLinksWidget(user);
+    await addMarkdownWidget(user);
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Удалить виджет «Список ссылок»',
+        name: 'Удалить виджет «Markdown»',
       }),
     );
     expect(
@@ -222,7 +222,7 @@ describe('widget lifecycle', () => {
 
     await waitFor(() =>
       expect(
-        screen.queryByRole('article', { name: 'Список ссылок' }),
+        screen.queryByRole('article', { name: 'Markdown' }),
       ).not.toBeInTheDocument(),
     );
     await waitFor(async () =>
@@ -234,20 +234,18 @@ describe('widget lifecycle', () => {
     const user = userEvent.setup();
     render(<App />);
     await enableEditMode(user);
-    await addLinksWidget(user);
+    await addMarkdownWidget(user);
 
     await user.click(
       screen.getByRole('button', {
-        name: 'Удалить виджет «Список ссылок»',
+        name: 'Удалить виджет «Markdown»',
       }),
     );
     const cancelButton = screen.getByRole('button', { name: 'Отмена' });
     expect(cancelButton).toHaveFocus();
     await user.click(cancelButton);
 
-    expect(
-      screen.getByRole('article', { name: 'Список ссылок' }),
-    ).toBeVisible();
+    expect(screen.getByRole('article', { name: 'Markdown' })).toBeVisible();
     await waitFor(async () =>
       expect((await getStoredConfig())?.widgets).toHaveLength(1),
     );
