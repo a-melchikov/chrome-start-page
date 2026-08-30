@@ -166,7 +166,7 @@ docs/                 Техническая документация
 ```
 
 Подробное описание потока данных и расширения registry находится в
-[docs/architecture.md](docs/architecture.md).
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Хранение данных и privacy
 
