@@ -127,6 +127,7 @@ describe('App', () => {
       expect(storedConfig?.appearance).toEqual({
         theme: 'dark',
         backgroundColor: '#123456',
+        wallpaper: { type: 'none' },
       });
     });
   });
@@ -134,11 +135,12 @@ describe('App', () => {
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 2,
+      version: 3,
       widgets: [],
       appearance: {
         theme: 'light',
         backgroundColor: '#abcdef',
+        wallpaper: { type: 'none' },
       },
     });
 

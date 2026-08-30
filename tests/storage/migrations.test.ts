@@ -14,7 +14,7 @@ describe('migrateDashboardConfig', () => {
     expect(migrateDashboardConfig(config)).toBe(config);
   });
 
-  it('migrates mixed v1 widgets to v2 without losing data', () => {
+  it('migrates mixed v1 widgets to v3 without losing data', () => {
     const legacyConfig = {
       version: 1,
       appearance: { theme: 'light', backgroundColor: '#f4f4f5' },
@@ -37,8 +37,11 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 2,
-      appearance: legacyConfig.appearance,
+      version: 3,
+      appearance: {
+        ...legacyConfig.appearance,
+        wallpaper: { type: 'none' },
+      },
       widgets: [
         {
           ...legacyConfig.widgets[0],
@@ -52,13 +55,48 @@ describe('migrateDashboardConfig', () => {
     });
   });
 
+  it('migrates a v2 dashboard to v3 with no wallpaper', () => {
+    const legacyConfig = {
+      version: 2,
+      widgets: [],
+      appearance: { theme: 'dark', backgroundColor: '#123456' },
+    } as const;
+
+    expect(migrateDashboardConfig(legacyConfig)).toEqual({
+      version: 3,
+      widgets: [],
+      appearance: {
+        theme: 'dark',
+        backgroundColor: '#123456',
+        wallpaper: { type: 'none' },
+      },
+    });
+  });
+
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 3,
+        version: 4,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
+  });
+
+  it.each([
+    { type: 'url', url: 'http://example.com/wallpaper.jpg' },
+    { type: 'url', url: 'not a url' },
+    { type: 'local', assetId: 'not-a-uuid' },
+    { type: 'unknown' },
+  ])('rejects invalid wallpaper config %#', (wallpaper) => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        appearance: {
+          ...createDefaultDashboardConfig().appearance,
+          wallpaper,
+        },
+      }),
+    ).toThrow(InvalidDashboardConfigError);
   });
 
   it('rejects malformed current-version data', () => {

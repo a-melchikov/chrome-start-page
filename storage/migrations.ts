@@ -2,7 +2,9 @@ import {
   DASHBOARD_CONFIG_VERSION,
   type DashboardConfig,
   type Theme,
+  type WallpaperConfig,
   type WidgetConfig,
+  isWallpaperAssetId,
 } from './schema';
 import { isSearchEngine } from '../widgets/search/engines';
 
@@ -30,6 +32,35 @@ function isFiniteNumber(value: unknown): value is number {
 
 function isTheme(value: unknown): value is Theme {
   return value === 'system' || value === 'light' || value === 'dark';
+}
+
+function isAbsoluteHttpsUrl(value: unknown): value is string {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function isWallpaperConfig(value: unknown): value is WallpaperConfig {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (value.type === 'none') {
+    return true;
+  }
+
+  if (value.type === 'url') {
+    return isAbsoluteHttpsUrl(value.url);
+  }
+
+  return value.type === 'local' && isWallpaperAssetId(value.assetId);
 }
 
 function isWidgetLayout(value: unknown): boolean {
@@ -63,12 +94,17 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
   return false;
 }
 
-function hasValidDashboardEnvelope(value: unknown): value is Record<
+interface LegacyAppearanceConfig {
+  theme: Theme;
+  backgroundColor: string;
+}
+
+function hasValidLegacyDashboardEnvelope(value: unknown): value is Record<
   string,
   unknown
 > & {
   widgets: unknown[];
-  appearance: { theme: Theme; backgroundColor: string };
+  appearance: Record<string, unknown> & LegacyAppearanceConfig;
 } {
   if (!isRecord(value)) {
     return false;
@@ -84,10 +120,26 @@ function hasValidDashboardEnvelope(value: unknown): value is Record<
   );
 }
 
-function isDashboardConfigV2(value: unknown): value is DashboardConfig {
+function isDashboardConfigV2(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  version: 2;
+  widgets: WidgetConfig[];
+  appearance: LegacyAppearanceConfig;
+} {
   return (
-    hasValidDashboardEnvelope(value) &&
+    hasValidLegacyDashboardEnvelope(value) &&
+    value.version === 2 &&
+    value.widgets.every(isWidgetConfig)
+  );
+}
+
+function isDashboardConfigV3(value: unknown): value is DashboardConfig {
+  return (
+    hasValidLegacyDashboardEnvelope(value) &&
     value.version === DASHBOARD_CONFIG_VERSION &&
+    isWallpaperConfig(value.appearance.wallpaper) &&
     value.widgets.every(isWidgetConfig)
   );
 }
@@ -119,10 +171,10 @@ function isDashboardConfigV1(value: unknown): value is Record<
 > & {
   version: 1;
   widgets: Array<Record<string, unknown>>;
-  appearance: DashboardConfig['appearance'];
+  appearance: LegacyAppearanceConfig;
 } {
   return (
-    hasValidDashboardEnvelope(value) &&
+    hasValidLegacyDashboardEnvelope(value) &&
     value.version === 1 &&
     value.widgets.every(isLegacyWidgetConfig)
   );
@@ -168,7 +220,10 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
 
     return normalizeDashboardConfig({
       version: DASHBOARD_CONFIG_VERSION,
-      appearance: value.appearance,
+      appearance: {
+        ...value.appearance,
+        wallpaper: { type: 'none' },
+      },
       widgets: value.widgets.map((widget) =>
         widget.type === 'links'
           ? ({ ...widget, type: 'markdown' } as WidgetConfig)
@@ -177,8 +232,23 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     });
   }
 
-  if (version === DASHBOARD_CONFIG_VERSION) {
+  if (version === 2) {
     if (!isDashboardConfigV2(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return normalizeDashboardConfig({
+      version: DASHBOARD_CONFIG_VERSION,
+      appearance: {
+        ...value.appearance,
+        wallpaper: { type: 'none' },
+      },
+      widgets: value.widgets,
+    });
+  }
+
+  if (version === DASHBOARD_CONFIG_VERSION) {
+    if (!isDashboardConfigV3(value)) {
       throw new InvalidDashboardConfigError();
     }
 

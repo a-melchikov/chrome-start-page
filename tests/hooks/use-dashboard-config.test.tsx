@@ -33,9 +33,13 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 2,
+      version: 3,
       widgets: [widget],
-      appearance: { theme: 'system', backgroundColor: '#18181b' },
+      appearance: {
+        theme: 'system',
+        backgroundColor: '#18181b',
+        wallpaper: { type: 'none' },
+      },
     });
 
     const firstSession = renderHook(() => useDashboardConfig());
@@ -75,9 +79,13 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 2,
+      version: 3,
       widgets: [widget],
-      appearance: { theme: 'system', backgroundColor: '#18181b' },
+      appearance: {
+        theme: 'system',
+        backgroundColor: '#18181b',
+        wallpaper: { type: 'none' },
+      },
     });
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());

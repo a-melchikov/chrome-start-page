@@ -29,9 +29,13 @@ function createMarkdownWidget(
 
 async function seedWidgets(widgets: MarkdownWidgetConfig[]) {
   await saveDashboardConfig({
-    version: 2,
+    version: 3,
     widgets,
-    appearance: { theme: 'system', backgroundColor: '#18181b' },
+    appearance: {
+      theme: 'system',
+      backgroundColor: '#18181b',
+      wallpaper: { type: 'none' },
+    },
   });
 }
 

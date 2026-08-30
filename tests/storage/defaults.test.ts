@@ -7,11 +7,14 @@ import {
 import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 
 describe('createDefaultDashboardConfig', () => {
-  it('creates an empty version 2 dashboard with neutral appearance', () => {
+  it('creates an empty version 3 dashboard with neutral appearance', () => {
     expect(createDefaultDashboardConfig()).toEqual({
       version: DASHBOARD_CONFIG_VERSION,
       widgets: [],
-      appearance: DEFAULT_APPEARANCE,
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        wallpaper: { type: 'none' },
+      },
     });
   });
 
@@ -22,5 +25,8 @@ describe('createDefaultDashboardConfig', () => {
     expect(firstConfig).not.toBe(secondConfig);
     expect(firstConfig.widgets).not.toBe(secondConfig.widgets);
     expect(firstConfig.appearance).not.toBe(secondConfig.appearance);
+    expect(firstConfig.appearance.wallpaper).not.toBe(
+      secondConfig.appearance.wallpaper,
+    );
   });
 });
