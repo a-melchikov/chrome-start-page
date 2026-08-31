@@ -6,7 +6,8 @@ Last updated: 2026-08-31
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
 - Version 3 local dashboard schema, defaults, runtime validation, queued saves,
-  v1 LinksWidget → MarkdownWidget migration, and v1/v2 appearance migration.
+  v1 LinksWidget → MarkdownWidget migration, v1/v2 appearance migration, and
+  recovery of old v2 profiles by removing retired WIP Google Calendar widgets.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,

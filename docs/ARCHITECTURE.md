@@ -70,6 +70,8 @@ Current migration behavior:
 
 - v1 `links` becomes `markdown`, preserving ID, title, content, and layout;
 - v1 and v2 appearance data gains `{type: 'none'}` wallpaper state in v3;
+- retired WIP `google-calendar` widgets are removed from v2 while all supported
+  widgets and appearance data are preserved;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
 - malformed and unsupported/future versions throw explicit errors.
 

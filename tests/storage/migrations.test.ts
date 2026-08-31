@@ -73,6 +73,38 @@ describe('migrateDashboardConfig', () => {
     });
   });
 
+  it('removes a retired Google Calendar widget while migrating v2', () => {
+    const legacyConfig = {
+      version: 2,
+      widgets: [
+        {
+          id: 'calendar-widget',
+          type: 'google-calendar',
+          title: 'Календарь',
+          selectedCalendarIds: ['primary'],
+          layout: { x: 0, y: 0, w: 6, h: 5 },
+        },
+        {
+          id: 'markdown-widget',
+          type: 'markdown',
+          title: 'Заметки',
+          content: 'Сохранить меня',
+          layout: { x: 6, y: 0, w: 6, h: 3 },
+        },
+      ],
+      appearance: { theme: 'dark', backgroundColor: '#123456' },
+    } as const;
+
+    expect(migrateDashboardConfig(legacyConfig)).toEqual({
+      version: 3,
+      widgets: [legacyConfig.widgets[1]],
+      appearance: {
+        ...legacyConfig.appearance,
+        wallpaper: { type: 'none' },
+      },
+    });
+  });
+
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({

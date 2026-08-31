@@ -94,6 +94,31 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
   return false;
 }
 
+interface RetiredGoogleCalendarWidgetConfig {
+  id: string;
+  type: 'google-calendar';
+  title?: string;
+  selectedCalendarIds: string[] | null;
+  layout: { x: number; y: number; w: number; h: number };
+}
+
+function isRetiredGoogleCalendarWidgetConfig(
+  value: unknown,
+): value is RetiredGoogleCalendarWidgetConfig {
+  return (
+    isRecord(value) &&
+    value.type === 'google-calendar' &&
+    typeof value.id === 'string' &&
+    (value.title === undefined || typeof value.title === 'string') &&
+    isWidgetLayout(value.layout) &&
+    (value.selectedCalendarIds === null ||
+      (Array.isArray(value.selectedCalendarIds) &&
+        value.selectedCalendarIds.every(
+          (calendarId) => typeof calendarId === 'string',
+        )))
+  );
+}
+
 interface LegacyAppearanceConfig {
   theme: Theme;
   backgroundColor: string;
@@ -125,13 +150,16 @@ function isDashboardConfigV2(value: unknown): value is Record<
   unknown
 > & {
   version: 2;
-  widgets: WidgetConfig[];
+  widgets: Array<WidgetConfig | RetiredGoogleCalendarWidgetConfig>;
   appearance: LegacyAppearanceConfig;
 } {
   return (
     hasValidLegacyDashboardEnvelope(value) &&
     value.version === 2 &&
-    value.widgets.every(isWidgetConfig)
+    value.widgets.every(
+      (widget) =>
+        isWidgetConfig(widget) || isRetiredGoogleCalendarWidgetConfig(widget),
+    )
   );
 }
 
@@ -243,7 +271,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
         ...value.appearance,
         wallpaper: { type: 'none' },
       },
-      widgets: value.widgets,
+      widgets: value.widgets.filter(isWidgetConfig),
     });
   }
 
