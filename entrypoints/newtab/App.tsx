@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 
 import { Dashboard } from '../../components/dashboard/Dashboard';
+import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
+import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
 import { DEFAULT_APPEARANCE } from '../../storage/defaults';
 
 export function App() {
@@ -25,6 +27,10 @@ export function App() {
         ? 'dark'
         : 'light'
       : appearance.theme;
+  const wallpaperImage = useWallpaperImage(appearance.wallpaper);
+  const visibleError =
+    error ??
+    (wallpaperImage.sourceType === 'local' ? wallpaperImage.error : null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -42,29 +48,33 @@ export function App() {
   return (
     <main
       aria-busy={isLoading}
-      className="relative min-h-screen text-zinc-950 transition-colors dark:text-zinc-50"
+      className="relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50"
       style={{ backgroundColor: appearance.backgroundColor }}
     >
-      {error ? (
+      <WallpaperLayer src={wallpaperImage.src} />
+
+      {visibleError ? (
         <p
           className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
           role="alert"
         >
-          {error}
+          {visibleError}
         </p>
       ) : null}
 
-      <Dashboard
-        appearance={appearance}
-        config={config}
-        isLoading={isLoading}
-        onAddWidget={addWidget}
-        onAppearanceChange={updateAppearance}
-        onFlushWidgetUpdates={flushWidgetUpdates}
-        onRemoveWidget={removeWidget}
-        onUpdateWidget={updateWidget}
-        onUpdateWidgetLayouts={updateWidgetLayouts}
-      />
+      <div className="relative z-10">
+        <Dashboard
+          appearance={appearance}
+          config={config}
+          isLoading={isLoading}
+          onAddWidget={addWidget}
+          onAppearanceChange={updateAppearance}
+          onFlushWidgetUpdates={flushWidgetUpdates}
+          onRemoveWidget={removeWidget}
+          onUpdateWidget={updateWidget}
+          onUpdateWidgetLayouts={updateWidgetLayouts}
+        />
+      </div>
     </main>
   );
 }
