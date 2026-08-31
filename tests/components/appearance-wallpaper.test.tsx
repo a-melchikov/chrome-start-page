@@ -33,10 +33,47 @@ function renderDialog(
 }
 
 describe('AppearanceDialog wallpaper controls', () => {
+  it('starts with every appearance section collapsed', () => {
+    const { container } = renderDialog();
+
+    expect(container.querySelectorAll('details')).not.toHaveLength(0);
+    expect(
+      [...container.querySelectorAll('details')].every(
+        (section) => !section.open,
+      ),
+    ).toBe(true);
+  });
+
+  it('collapses opened sections before the dialog is opened again', async () => {
+    const user = userEvent.setup();
+    const { container, props, rerender } = renderDialog();
+    const themeSection = screen
+      .getByText('Тема', { selector: 'summary' })
+      .closest('details');
+
+    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    expect(themeSection).toHaveAttribute('open');
+
+    rerender(<AppearanceDialog {...props} open={false} />);
+    await waitFor(() => expect(themeSection).not.toHaveAttribute('open'));
+    rerender(<AppearanceDialog {...props} open />);
+
+    expect(
+      [...container.querySelectorAll('details')].every(
+        (section) => !section.open,
+      ),
+    ).toBe(true);
+  });
+
   it('accepts all supported local image formats and submits the selected file', async () => {
     const user = userEvent.setup();
     const onSetLocalWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetLocalWallpaper });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(
+      screen.getByText('Локальное изображение', { selector: 'summary' }),
+    );
 
     const input = screen.getByLabelText('Локальное изображение');
     expect(input).toHaveAttribute(
@@ -63,6 +100,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     const onSetUrlWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetUrlWallpaper });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
 
     const input = screen.getByLabelText('Ссылка на изображение');
     await user.type(input, 'https://example.com/wallpaper.jpg');
@@ -94,6 +134,8 @@ describe('AppearanceDialog wallpaper controls', () => {
       onRemoveWallpaper,
     });
 
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+
     expect(screen.getByTestId('wallpaper-preview')).toHaveAttribute(
       'src',
       'https://example.com/wallpaper.jpg',
@@ -106,8 +148,11 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(onRemoveWallpaper).toHaveBeenCalledOnce();
   });
 
-  it('disables conflicting actions while an image is being checked', () => {
+  it('disables conflicting actions while an image is being checked', async () => {
+    const user = userEvent.setup();
     renderDialog({ isWallpaperUpdating: true });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
 
     expect(screen.getByLabelText('Локальное изображение')).toBeDisabled();
     expect(screen.getByLabelText('Ссылка на изображение')).toBeDisabled();
@@ -126,6 +171,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     });
     const { props } = renderDialog({ onSetUrlWallpaper });
 
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
+
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
       'https://example.com/wallpaper.jpg',
@@ -139,5 +187,31 @@ describe('AppearanceDialog wallpaper controls', () => {
 
     await waitFor(() => expect(receivedSignal?.aborted).toBe(true));
     expect(props.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('shows persisted local wallpaper status instead of a native empty filename', async () => {
+    const user = userEvent.setup();
+    renderDialog({
+      appearance: {
+        ...appearance,
+        wallpaper: {
+          type: 'local',
+          assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
+        },
+      },
+      wallpaperPreviewSrc: 'blob:wallpaper',
+    });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(
+      screen.getByText('Локальное изображение', { selector: 'summary' }),
+    );
+
+    expect(screen.getByText('Локальные обои установлены')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Заменить файл' })).toBeVisible();
+    expect(screen.getByLabelText('Локальное изображение')).toHaveClass(
+      'sr-only',
+    );
+    expect(screen.queryByText(/файл не выбран/i)).not.toBeInTheDocument();
   });
 });

@@ -23,6 +23,8 @@ Last updated: 2026-08-31
 - Accessible shared controls, focus restoration, cancellation of in-flight
   wallpaper validation, error reporting that preserves prior wallpaper, and
   Russian UI.
+- Compact appearance dialog with initially collapsed Theme, Background, and
+  Wallpaper sections; wallpaper sources are nested as Local and URL controls.
 - Automated tests for storage/migrations, wallpaper codecs/assets/transactions,
   image validation, state persistence, widget lifecycle, layout constraints,
   Markdown/security/tasks/editor, Search behavior, and App appearance/edit

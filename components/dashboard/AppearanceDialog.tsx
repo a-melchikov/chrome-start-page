@@ -40,12 +40,17 @@ export function AppearanceDialog({
   onSetUrlWallpaper,
 }: AppearanceDialogProps) {
   const [urlDraft, setUrlDraft] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const operationControllerRef = useRef<AbortController | null>(null);
+  const sectionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
       operationControllerRef.current?.abort();
       operationControllerRef.current = null;
+      sectionsRef.current
+        ?.querySelectorAll('details')
+        .forEach((section) => (section.open = false));
     }
 
     return () => operationControllerRef.current?.abort();
@@ -54,6 +59,9 @@ export function AppearanceDialog({
   const closeDialog = () => {
     operationControllerRef.current?.abort();
     operationControllerRef.current = null;
+    sectionsRef.current
+      ?.querySelectorAll('details')
+      .forEach((section) => (section.open = false));
     onOpenChange(false);
   };
 
@@ -96,37 +104,56 @@ export function AppearanceDialog({
         nextOpen ? onOpenChange(true) : closeDialog()
       }
     >
-      <div className="space-y-5">
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">Тема</legend>
-          <div className="flex flex-wrap gap-2">
-            {themeOptions.map((option) => (
-              <Button
-                key={option.value}
-                aria-pressed={appearance.theme === option.value}
-                data-dialog-initial-focus={
-                  appearance.theme === option.value ? true : undefined
-                }
-                size="small"
-                variant={
-                  appearance.theme === option.value ? 'primary' : 'secondary'
-                }
-                onClick={() => onAppearanceChange({ theme: option.value })}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
-
-        <div>
-          <label
-            className="mb-2 block text-sm font-medium"
-            htmlFor="background-color"
+      <div ref={sectionsRef} className="space-y-3">
+        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+          <summary
+            className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500"
+            data-dialog-initial-focus
           >
+            Тема
+            <span
+              aria-hidden="true"
+              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+            >
+              ›
+            </span>
+          </summary>
+          <fieldset
+            aria-label="Тема"
+            className="border-t border-zinc-200 p-4 dark:border-zinc-700"
+          >
+            <div className="flex flex-wrap gap-2">
+              {themeOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  aria-pressed={appearance.theme === option.value}
+                  size="small"
+                  variant={
+                    appearance.theme === option.value ? 'primary' : 'secondary'
+                  }
+                  onClick={() => onAppearanceChange({ theme: option.value })}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </fieldset>
+        </details>
+
+        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
             Цвет фона
-          </label>
-          <div className="flex items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+            >
+              ›
+            </span>
+          </summary>
+          <div className="flex items-center gap-3 border-t border-zinc-200 p-4 dark:border-zinc-700">
+            <label className="sr-only" htmlFor="background-color">
+              Цвет фона
+            </label>
             <Input
               id="background-color"
               className="h-10 w-16 cursor-pointer p-1"
@@ -140,116 +167,167 @@ export function AppearanceDialog({
               {appearance.backgroundColor}
             </code>
           </div>
-        </div>
+        </details>
 
-        <section aria-labelledby="wallpaper-heading" className="space-y-4">
-          <div>
-            <h3 id="wallpaper-heading" className="text-sm font-medium">
-              Обои
-            </h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+            Обои
+            <span
+              aria-hidden="true"
+              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+            >
+              ›
+            </span>
+          </summary>
+          <div className="space-y-4 border-t border-zinc-200 p-4 dark:border-zinc-700">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Изображение заполнит весь экран; края могут быть обрезаны.
             </p>
-          </div>
 
-          {wallpaperPreviewSrc ? (
-            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
-              <img
-                aria-hidden="true"
-                alt=""
-                className="aspect-video w-full object-cover object-center"
-                data-testid="wallpaper-preview"
-                draggable={false}
-                referrerPolicy="no-referrer"
-                src={wallpaperPreviewSrc}
-              />
-            </div>
-          ) : null}
+            {wallpaperPreviewSrc ? (
+              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                <img
+                  aria-hidden="true"
+                  alt=""
+                  className="aspect-video w-full object-cover object-center"
+                  data-testid="wallpaper-preview"
+                  draggable={false}
+                  referrerPolicy="no-referrer"
+                  src={wallpaperPreviewSrc}
+                />
+              </div>
+            ) : null}
 
-          <div>
-            <label
-              className="mb-2 block text-sm font-medium"
-              htmlFor="wallpaper-file"
-            >
-              Локальное изображение
-            </label>
-            <Input
-              accept={ACCEPTED_WALLPAPER_FILES}
-              disabled={isWallpaperUpdating}
-              id="wallpaper-file"
-              type="file"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = '';
+            <details className="group/local rounded-md border border-zinc-200 dark:border-zinc-700">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+                Локальное изображение
+                <span
+                  aria-hidden="true"
+                  className="text-lg leading-none text-zinc-500 transition-transform group-open/local:rotate-90"
+                >
+                  ›
+                </span>
+              </summary>
+              <div className="space-y-3 border-t border-zinc-200 p-3 dark:border-zinc-700">
+                {appearance.wallpaper.type === 'local' ? (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Локальные обои установлены
+                  </p>
+                ) : null}
+                <input
+                  ref={fileInputRef}
+                  accept={ACCEPTED_WALLPAPER_FILES}
+                  aria-label="Локальное изображение"
+                  className="sr-only"
+                  disabled={isWallpaperUpdating}
+                  id="wallpaper-file"
+                  type="file"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
 
-                if (file) {
-                  void runWallpaperAction((signal) =>
-                    onSetLocalWallpaper(file, signal),
-                  );
-                }
-              }}
-            />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              PNG, JPEG, WebP, GIF, AVIF или SVG. Файлы больше 6 МБ будут сжаты
-              без потери качества, если это возможно.
-            </p>
-          </div>
+                    if (file) {
+                      void runWallpaperAction((signal) =>
+                        onSetLocalWallpaper(file, signal),
+                      );
+                    }
+                  }}
+                />
+                <Button
+                  disabled={isWallpaperUpdating}
+                  size="small"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {appearance.wallpaper.type === 'local'
+                    ? 'Заменить файл'
+                    : 'Выбрать файл'}
+                </Button>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  PNG, JPEG, WebP, GIF, AVIF или SVG. Файлы больше 6 МБ будут
+                  сжаты без потери качества, если это возможно.
+                </p>
+              </div>
+            </details>
 
-          <form className="space-y-2" onSubmit={submitUrl}>
-            <label
-              className="block text-sm font-medium"
-              htmlFor="wallpaper-url"
-            >
-              Ссылка на изображение
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                disabled={isWallpaperUpdating}
-                id="wallpaper-url"
-                inputMode="url"
-                placeholder="https://example.com/wallpaper.jpg"
-                type="url"
-                value={urlDraft}
-                onChange={(event) => setUrlDraft(event.target.value)}
-              />
-              <Button
-                className="shrink-0"
-                disabled={isWallpaperUpdating || !urlDraft.trim()}
-                size="small"
-                type="submit"
-                variant="secondary"
+            <details className="group/url rounded-md border border-zinc-200 dark:border-zinc-700">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+                По ссылке
+                <span
+                  aria-hidden="true"
+                  className="text-lg leading-none text-zinc-500 transition-transform group-open/url:rotate-90"
+                >
+                  ›
+                </span>
+              </summary>
+              <form
+                className="space-y-2 border-t border-zinc-200 p-3 dark:border-zinc-700"
+                onSubmit={submitUrl}
               >
-                Установить по ссылке
-              </Button>
-            </div>
-          </form>
+                {appearance.wallpaper.type === 'url' ? (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Обои установлены по ссылке
+                  </p>
+                ) : null}
+                <label
+                  className="block text-sm font-medium"
+                  htmlFor="wallpaper-url"
+                >
+                  Ссылка на изображение
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    disabled={isWallpaperUpdating}
+                    id="wallpaper-url"
+                    inputMode="url"
+                    placeholder="https://example.com/wallpaper.jpg"
+                    type="url"
+                    value={urlDraft}
+                    onChange={(event) => setUrlDraft(event.target.value)}
+                  />
+                  <Button
+                    className="shrink-0"
+                    disabled={isWallpaperUpdating || !urlDraft.trim()}
+                    size="small"
+                    type="submit"
+                    variant="secondary"
+                  >
+                    Установить по ссылке
+                  </Button>
+                </div>
+              </form>
+            </details>
 
-          {isWallpaperUpdating ? (
-            <p
-              aria-live="polite"
-              className="text-sm text-zinc-600 dark:text-zinc-400"
+            {isWallpaperUpdating ? (
+              <p
+                aria-live="polite"
+                className="text-sm text-zinc-600 dark:text-zinc-400"
+              >
+                Проверяем изображение…
+              </p>
+            ) : null}
+
+            {wallpaperError ? (
+              <p
+                className="text-sm text-red-600 dark:text-red-400"
+                role="alert"
+              >
+                {wallpaperError}
+              </p>
+            ) : null}
+
+            <Button
+              disabled={
+                isWallpaperUpdating || appearance.wallpaper.type === 'none'
+              }
+              size="small"
+              variant="danger-ghost"
+              onClick={() => void runWallpaperAction(() => onRemoveWallpaper())}
             >
-              Проверяем изображение…
-            </p>
-          ) : null}
-
-          {wallpaperError ? (
-            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-              {wallpaperError}
-            </p>
-          ) : null}
-
-          <Button
-            disabled={
-              isWallpaperUpdating || appearance.wallpaper.type === 'none'
-            }
-            size="small"
-            variant="danger-ghost"
-            onClick={() => void runWallpaperAction(() => onRemoveWallpaper())}
-          >
-            Удалить обои
-          </Button>
-        </section>
+              Удалить обои
+            </Button>
+          </div>
+        </details>
       </div>
     </Dialog>
   );

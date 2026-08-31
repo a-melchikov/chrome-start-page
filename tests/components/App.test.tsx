@@ -113,8 +113,11 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    expect(screen.getByRole('button', { name: 'Системная' })).toHaveFocus();
+    const themeSection = screen.getByText('Тема', { selector: 'summary' });
+    expect(themeSection).toHaveFocus();
+    await user.click(themeSection);
     await user.click(screen.getByRole('button', { name: 'Тёмная' }));
+    await user.click(screen.getByText('Цвет фона', { selector: 'summary' }));
     fireEvent.change(screen.getByLabelText('Цвет фона'), {
       target: { value: '#123456' },
     });
@@ -154,6 +157,8 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
+    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    await user.click(screen.getByText('Цвет фона', { selector: 'summary' }));
 
     expect(screen.getByRole('button', { name: 'Светлая' })).toHaveAttribute(
       'aria-pressed',
@@ -188,6 +193,8 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
       'http://example.com/wallpaper.jpg',
