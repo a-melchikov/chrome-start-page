@@ -4,19 +4,38 @@ import {
   loadDashboardConfig,
   saveDashboardConfig,
 } from '../storage/dashboard-storage';
+import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
+import { encodeWallpaperAsset } from '../storage/wallpaper-codec';
+import {
+  installLocalWallpaper,
+  installUrlWallpaper,
+  removeWallpaper as removeWallpaperTransaction,
+  type WallpaperTransactionResult,
+} from '../storage/wallpaper-transactions';
 import type {
   AppearanceConfig,
   DashboardConfig,
   WidgetConfig,
 } from '../storage/schema';
+import {
+  WallpaperValidationAbortedError,
+  validateLocalWallpaper,
+  validateWallpaperUrl,
+} from '../wallpaper/image-validation';
 
 interface UseDashboardConfigResult {
   config: DashboardConfig | null;
   error: string | null;
   isLoading: boolean;
+  isWallpaperUpdating: boolean;
+  wallpaperError: string | null;
   addWidget: (widget: WidgetConfig) => void;
+  clearWallpaperError: () => void;
   flushWidgetUpdates: () => void;
+  removeWallpaper: () => Promise<void>;
   removeWidget: (widgetId: string) => void;
+  setLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
+  setUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
   updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
@@ -34,22 +53,41 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const [config, setConfig] = useState<DashboardConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWallpaperUpdating, setIsWallpaperUpdating] = useState(false);
+  const [wallpaperError, setWallpaperError] = useState<string | null>(null);
   const configRef = useRef<DashboardConfig | null>(null);
   const isMountedRef = useRef(false);
   const pendingWidgetConfigRef = useRef<DashboardConfig | null>(null);
+  const wallpaperOperationRef = useRef(false);
   const widgetSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
-  const enqueueConfigSave = useCallback((nextConfig: DashboardConfig) => {
-    saveQueueRef.current = saveQueueRef.current
-      .catch(() => undefined)
-      .then(() => saveDashboardConfig(nextConfig))
-      .catch((saveError: unknown) => {
-        if (isMountedRef.current) {
-          setError(getErrorMessage(saveError));
-        }
-      });
-  }, []);
+  const enqueueStorageOperation = useCallback(
+    <T>(operation: () => Promise<T>): Promise<T> => {
+      const result = saveQueueRef.current
+        .catch(() => undefined)
+        .then(operation);
+      saveQueueRef.current = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      return result;
+    },
+    [],
+  );
+
+  const enqueueConfigSave = useCallback(
+    (nextConfig: DashboardConfig) => {
+      void enqueueStorageOperation(() => saveDashboardConfig(nextConfig)).catch(
+        (saveError: unknown) => {
+          if (isMountedRef.current) {
+            setError(getErrorMessage(saveError));
+          }
+        },
+      );
+    },
+    [enqueueStorageOperation],
+  );
 
   const flushWidgetUpdates = useCallback(() => {
     if (widgetSaveTimerRef.current !== null) {
@@ -76,13 +114,25 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     isMountedRef.current = true;
 
     void loadDashboardConfig()
-      .then((loadedConfig) => {
+      .then(async (loadedConfig) => {
         if (!isActive) {
           return;
         }
 
         configRef.current = loadedConfig;
         setConfig(loadedConfig);
+
+        const wallpaper = loadedConfig.appearance.wallpaper;
+        const activeAssetId =
+          wallpaper.type === 'local' ? wallpaper.assetId : null;
+
+        try {
+          await cleanupOrphanedWallpaperAssets(activeAssetId);
+        } catch (cleanupError) {
+          if (isActive) {
+            setWallpaperError(getErrorMessage(cleanupError));
+          }
+        }
       })
       .catch((loadError: unknown) => {
         if (isActive) {
@@ -112,6 +162,111 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       }
     };
   }, [enqueueConfigSave]);
+
+  const runWallpaperOperation = useCallback(
+    async (
+      operation: () => Promise<WallpaperTransactionResult>,
+    ): Promise<void> => {
+      if (wallpaperOperationRef.current) {
+        throw new Error('Операция с обоями уже выполняется');
+      }
+
+      wallpaperOperationRef.current = true;
+
+      if (isMountedRef.current) {
+        setIsWallpaperUpdating(true);
+        setWallpaperError(null);
+      }
+
+      try {
+        const result = await operation();
+        configRef.current = result.config;
+
+        if (isMountedRef.current) {
+          setConfig(result.config);
+          setError(null);
+          setWallpaperError(result.warning);
+        }
+      } catch (operationError) {
+        if (
+          isMountedRef.current &&
+          !(operationError instanceof WallpaperValidationAbortedError)
+        ) {
+          setWallpaperError(getErrorMessage(operationError));
+        }
+
+        throw operationError;
+      } finally {
+        wallpaperOperationRef.current = false;
+
+        if (isMountedRef.current) {
+          setIsWallpaperUpdating(false);
+        }
+      }
+    },
+    [],
+  );
+
+  const enqueueWallpaperTransaction = useCallback(
+    (
+      transaction: (
+        currentConfig: DashboardConfig,
+      ) => Promise<WallpaperTransactionResult>,
+    ) => {
+      flushWidgetUpdates();
+
+      return enqueueStorageOperation(() => {
+        const currentConfig = configRef.current;
+
+        if (!currentConfig) {
+          throw new Error('Настройки дашборда ещё не загружены');
+        }
+
+        return transaction(currentConfig);
+      });
+    },
+    [enqueueStorageOperation, flushWidgetUpdates],
+  );
+
+  const setLocalWallpaper = useCallback(
+    (file: File, signal?: AbortSignal) =>
+      runWallpaperOperation(async () => {
+        const { bytes, mimeType } = await validateLocalWallpaper(file, signal);
+        const asset = await encodeWallpaperAsset(
+          crypto.randomUUID(),
+          mimeType,
+          bytes,
+        );
+
+        return enqueueWallpaperTransaction((currentConfig) =>
+          installLocalWallpaper(currentConfig, asset),
+        );
+      }),
+    [enqueueWallpaperTransaction, runWallpaperOperation],
+  );
+
+  const setUrlWallpaper = useCallback(
+    (url: string, signal?: AbortSignal) =>
+      runWallpaperOperation(async () => {
+        const validatedUrl = await validateWallpaperUrl(url, signal);
+        return enqueueWallpaperTransaction((currentConfig) =>
+          installUrlWallpaper(currentConfig, validatedUrl),
+        );
+      }),
+    [enqueueWallpaperTransaction, runWallpaperOperation],
+  );
+
+  const removeWallpaper = useCallback(
+    () =>
+      runWallpaperOperation(() =>
+        enqueueWallpaperTransaction(removeWallpaperTransaction),
+      ),
+    [enqueueWallpaperTransaction, runWallpaperOperation],
+  );
+
+  const clearWallpaperError = useCallback(() => {
+    setWallpaperError(null);
+  }, []);
 
   const commitConfig = useCallback(
     (
@@ -224,9 +379,15 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     config,
     error,
     isLoading,
+    isWallpaperUpdating,
+    wallpaperError,
     addWidget,
+    clearWallpaperError,
     flushWidgetUpdates,
+    removeWallpaper,
     removeWidget,
+    setLocalWallpaper,
+    setUrlWallpaper,
     updateAppearance,
     updateWidget,
     updateWidgetLayouts,
