@@ -10,18 +10,32 @@ interface DashboardControlsProps {
   appearance: AppearanceConfig;
   canManageWidgets: boolean;
   isEditing: boolean;
+  isWallpaperUpdating: boolean;
+  wallpaperError: string | null;
+  wallpaperPreviewSrc: string | null;
   onAddWidget: (type: WidgetType) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onClearWallpaperError: () => void;
   onEditingChange: (isEditing: boolean) => void;
+  onRemoveWallpaper: () => Promise<void>;
+  onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
+  onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
 }
 
 export function DashboardControls({
   appearance,
   canManageWidgets,
   isEditing,
+  isWallpaperUpdating,
+  wallpaperError,
+  wallpaperPreviewSrc,
   onAddWidget,
   onAppearanceChange,
+  onClearWallpaperError,
   onEditingChange,
+  onRemoveWallpaper,
+  onSetLocalWallpaper,
+  onSetUrlWallpaper,
 }: DashboardControlsProps) {
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
@@ -106,9 +120,16 @@ export function DashboardControls({
 
       <AppearanceDialog
         appearance={appearance}
+        isWallpaperUpdating={isWallpaperUpdating}
         open={isAppearanceOpen}
+        wallpaperError={wallpaperError}
+        wallpaperPreviewSrc={wallpaperPreviewSrc}
         onAppearanceChange={onAppearanceChange}
+        onClearWallpaperError={onClearWallpaperError}
         onOpenChange={setIsAppearanceOpen}
+        onRemoveWallpaper={onRemoveWallpaper}
+        onSetLocalWallpaper={onSetLocalWallpaper}
+        onSetUrlWallpaper={onSetUrlWallpaper}
       />
       <AddWidgetDialog
         open={isAddWidgetOpen}

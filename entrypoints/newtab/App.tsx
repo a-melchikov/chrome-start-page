@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Dashboard } from '../../components/dashboard/Dashboard';
 import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
@@ -12,14 +12,23 @@ export function App() {
     config,
     error,
     isLoading,
+    isWallpaperUpdating,
+    wallpaperError,
     addWidget,
+    clearWallpaperError,
     flushWidgetUpdates,
+    removeWallpaper,
     removeWidget,
+    setLocalWallpaper,
+    setUrlWallpaper,
     updateAppearance,
     updateWidget,
     updateWidgetLayouts,
   } = useDashboardConfig();
   const systemDarkMode = useSystemDarkMode();
+  const [failedRemoteWallpaperSrc, setFailedRemoteWallpaperSrc] = useState<
+    string | null
+  >(null);
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
   const resolvedTheme =
     appearance.theme === 'system'
@@ -31,6 +40,13 @@ export function App() {
   const visibleError =
     error ??
     (wallpaperImage.sourceType === 'local' ? wallpaperImage.error : null);
+  const remoteWallpaperError =
+    wallpaperImage.sourceType === 'url' &&
+    failedRemoteWallpaperSrc === wallpaperImage.src
+      ? 'Не удалось загрузить обои по ссылке'
+      : null;
+  const dialogWallpaperError =
+    wallpaperError ?? wallpaperImage.error ?? remoteWallpaperError;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -51,7 +67,15 @@ export function App() {
       className="relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50"
       style={{ backgroundColor: appearance.backgroundColor }}
     >
-      <WallpaperLayer src={wallpaperImage.src} />
+      <WallpaperLayer
+        src={wallpaperImage.src}
+        onLoad={() => setFailedRemoteWallpaperSrc(null)}
+        onLoadError={() => {
+          if (wallpaperImage.sourceType === 'url') {
+            setFailedRemoteWallpaperSrc(wallpaperImage.src);
+          }
+        }}
+      />
 
       {visibleError ? (
         <p
@@ -67,10 +91,20 @@ export function App() {
           appearance={appearance}
           config={config}
           isLoading={isLoading}
+          isWallpaperUpdating={isWallpaperUpdating}
+          wallpaperError={dialogWallpaperError}
+          wallpaperPreviewSrc={wallpaperImage.src}
           onAddWidget={addWidget}
           onAppearanceChange={updateAppearance}
+          onClearWallpaperError={() => {
+            clearWallpaperError();
+            setFailedRemoteWallpaperSrc(null);
+          }}
           onFlushWidgetUpdates={flushWidgetUpdates}
+          onRemoveWallpaper={removeWallpaper}
           onRemoveWidget={removeWidget}
+          onSetLocalWallpaper={setLocalWallpaper}
+          onSetUrlWallpaper={setUrlWallpaper}
           onUpdateWidget={updateWidget}
           onUpdateWidgetLayouts={updateWidgetLayouts}
         />

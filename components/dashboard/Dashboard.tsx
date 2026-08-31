@@ -17,10 +17,17 @@ interface DashboardProps {
   appearance: AppearanceConfig;
   config: DashboardConfig | null;
   isLoading: boolean;
+  isWallpaperUpdating: boolean;
+  wallpaperError: string | null;
+  wallpaperPreviewSrc: string | null;
   onAddWidget: (widget: WidgetConfig) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onClearWallpaperError: () => void;
   onFlushWidgetUpdates: () => void;
+  onRemoveWallpaper: () => Promise<void>;
   onRemoveWidget: (widgetId: string) => void;
+  onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
+  onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   onUpdateWidget: (widget: WidgetConfig) => void;
   onUpdateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
 }
@@ -29,10 +36,17 @@ export function Dashboard({
   appearance,
   config,
   isLoading,
+  isWallpaperUpdating,
+  wallpaperError,
+  wallpaperPreviewSrc,
   onAddWidget,
   onAppearanceChange,
+  onClearWallpaperError,
   onFlushWidgetUpdates,
+  onRemoveWallpaper,
   onRemoveWidget,
+  onSetLocalWallpaper,
+  onSetUrlWallpaper,
   onUpdateWidget,
   onUpdateWidgetLayouts,
 }: DashboardProps) {
@@ -113,9 +127,16 @@ export function Dashboard({
         appearance={appearance}
         canManageWidgets={!isLoading && config !== null}
         isEditing={isEditing}
+        isWallpaperUpdating={isWallpaperUpdating}
+        wallpaperError={wallpaperError}
+        wallpaperPreviewSrc={wallpaperPreviewSrc}
         onAddWidget={addWidget}
         onAppearanceChange={onAppearanceChange}
+        onClearWallpaperError={onClearWallpaperError}
         onEditingChange={changeEditing}
+        onRemoveWallpaper={onRemoveWallpaper}
+        onSetLocalWallpaper={onSetLocalWallpaper}
+        onSetUrlWallpaper={onSetUrlWallpaper}
       />
     </>
   );

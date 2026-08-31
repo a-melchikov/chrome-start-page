@@ -163,6 +163,48 @@ describe('App', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
   });
 
+  it('keeps the previous wallpaper and shows an error for an invalid URL', async () => {
+    const user = userEvent.setup();
+    const previousWallpaper = {
+      type: 'url' as const,
+      url: 'https://example.com/previous.jpg',
+    };
+    await saveDashboardConfig({
+      version: 3,
+      widgets: [],
+      appearance: {
+        theme: 'system',
+        backgroundColor: '#f4f4f5',
+        wallpaper: previousWallpaper,
+      },
+    });
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.type(
+      screen.getByLabelText('Ссылка на изображение'),
+      'http://example.com/wallpaper.jpg',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Установить по ссылке' }),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Разрешены только HTTPS-ссылки',
+    );
+    const storedConfig = await storage.getItem<DashboardConfig>(
+      DASHBOARD_STORAGE_KEY,
+    );
+    expect(storedConfig?.appearance.wallpaper).toEqual(previousWallpaper);
+  });
+
   it('updates the system theme when prefers-color-scheme changes', async () => {
     let isDark = false;
     const listeners = new Set<EventListener>();
