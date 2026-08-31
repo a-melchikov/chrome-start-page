@@ -14,12 +14,7 @@ const ASSET_ID = 'f7f44d0c-550a-4c1a-99c7-1e285dfba3fd';
 describe('wallpaper asset codec', () => {
   it('keeps files at or below the threshold byte-for-byte', async () => {
     const bytes = new Uint8Array([1, 2, 3, 4]);
-    const asset = await encodeWallpaperAsset(
-      ASSET_ID,
-      'image/png',
-      bytes,
-      4,
-    );
+    const asset = await encodeWallpaperAsset(ASSET_ID, 'image/png', bytes, 4);
 
     expect(asset.encoding).toBe('base64');
     expect(asset.originalByteLength).toBe(bytes.byteLength);
@@ -47,12 +42,7 @@ describe('wallpaper asset codec', () => {
 
   it('falls back to the original when gzip stays above the threshold', async () => {
     const bytes = crypto.getRandomValues(new Uint8Array(512));
-    const asset = await encodeWallpaperAsset(
-      ASSET_ID,
-      'image/jpeg',
-      bytes,
-      8,
-    );
+    const asset = await encodeWallpaperAsset(ASSET_ID, 'image/jpeg', bytes, 8);
 
     expect(asset.encoding).toBe('base64');
     expect(asset.storedByteLength).toBe(bytes.byteLength);

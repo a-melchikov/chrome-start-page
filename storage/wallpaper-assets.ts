@@ -57,7 +57,9 @@ export async function cleanupOrphanedWallpaperAssets(
   activeAssetId: string | null,
 ): Promise<void> {
   if (activeAssetId !== null && !isWallpaperAssetId(activeAssetId)) {
-    throw new InvalidWallpaperAssetError('Active wallpaper asset ID is invalid');
+    throw new InvalidWallpaperAssetError(
+      'Active wallpaper asset ID is invalid',
+    );
   }
 
   const snapshot = await storage.snapshot('local');

@@ -1,12 +1,12 @@
 # Current State
 
-Last updated: 2026-08-30
+Last updated: 2026-08-31
 
 ## Implemented
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
-- Version 2 local dashboard schema, defaults, runtime validation, queued saves,
-  and v1 LinksWidget → MarkdownWidget migration.
+- Version 3 local dashboard schema, defaults, runtime validation, queued saves,
+  v1 LinksWidget → MarkdownWidget migration, and v1/v2 appearance migration.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,
@@ -14,11 +14,18 @@ Last updated: 2026-08-30
   copyable code blocks, and fullscreen live split editing.
 - Multiple compact Search widgets with Google/Yandex/Bing/DuckDuckGo, fixed GET
   endpoints, local brand SVGs, icon fallback, one-row layout, and dialog settings.
-- Light/dark/system themes, arbitrary persisted background, accessible shared
-  controls, focus restoration, and Russian UI.
-- Automated tests for storage/migrations, state persistence, widget lifecycle,
-  layout constraints, Markdown/security/tasks/editor, Search behavior, and App
-  appearance/edit flows.
+- Light/dark/system themes, arbitrary persisted background, and local or HTTPS
+  wallpaper rendered full-screen with cover cropping.
+- Local PNG/JPEG/WebP/GIF/AVIF/SVG validation, conditional lossless compression
+  above 6 MiB, transactional asset replacement, and original-byte fallback
+  under `unlimitedStorage`.
+- Accessible shared controls, focus restoration, cancellation of in-flight
+  wallpaper validation, error reporting that preserves prior wallpaper, and
+  Russian UI.
+- Automated tests for storage/migrations, wallpaper codecs/assets/transactions,
+  image validation, state persistence, widget lifecycle, layout constraints,
+  Markdown/security/tasks/editor, Search behavior, and App appearance/edit
+  flows.
 
 ## Partially Implemented
 

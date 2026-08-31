@@ -16,7 +16,9 @@ export default defineConfig({
     },
     // `favicon` exposes Chrome's local _favicon endpoint. It avoids external
     // favicon services and does not require access to users' linked websites.
-    permissions: ['storage', 'favicon'],
+    // `unlimitedStorage` lets local wallpapers retain their original bytes
+    // when lossless compression cannot bring them below the 6 MiB target.
+    permissions: ['storage', 'unlimitedStorage', 'favicon'],
   },
   vite: () => ({
     plugins: [tailwindcss()],

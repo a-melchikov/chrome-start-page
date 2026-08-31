@@ -17,6 +17,8 @@ Chrome Start Page — расширение Manifest V3 для Google Chrome, к�
 - локальные favicon сайтов без внешнего favicon API;
 - перемещение и изменение размера виджетов в 12-колоночной сетке;
 - темы `system`, `light` и `dark`, а также произвольный цвет фона;
+- обои из локального PNG, JPEG, WebP, GIF, AVIF или SVG-файла либо по
+  HTTPS-ссылке, с заполнением экрана и обрезкой краёв;
 - автоматическое сохранение содержимого, оформления и layout;
 - восстановление конфигурации после перезапуска Chrome.
 
@@ -158,6 +160,7 @@ widgets/              Widget Registry, общие типы и реализаци
 widgets/markdown/     MarkdownWidget, renderer, editor и URL validation
 widgets/search/       SearchWidget, editor и фиксированные поисковые endpoints
 storage/              Схема, defaults, migrations и WXT Storage abstraction
+wallpaper/            Проверка локальных файлов и HTTPS-источников обоев
 public/icons/         PNG-иконки, попадающие в extension build
 public/search-engines/ Локальные SVG-иконки поисковиков и сведения об источнике
 assets/icons/         Исходный SVG иконки
@@ -170,10 +173,12 @@ docs/                 Техническая документация
 
 ## Хранение данных и privacy
 
-Вся пользовательская конфигурация хранится под ключом
-`local:dashboard-config` в `chrome.storage.local`. Она включает версию схемы,
-оформление, layout, исходный текст MarkdownWidget и выбранный поисковик
-SearchWidget. `MarkdownWidget.content` является единственным источником данных:
+Пользовательская конфигурация хранится под ключом `local:dashboard-config` в
+`chrome.storage.local`. Локальные обои хранятся отдельно под ключами
+`local:dashboard-wallpaper:<uuid>`, а конфигурация содержит только их UUID.
+Она также включает версию схемы, оформление, layout, исходный текст
+MarkdownWidget и выбранный поисковик SearchWidget.
+`MarkdownWidget.content` является единственным источником данных:
 отрендеренная разметка и отдельный список URL не сохраняются. Текст поискового запроса
 не сохраняется и отправляется выбранному поисковику только после Enter или
 нажатия кнопки поиска.
@@ -190,7 +195,10 @@ SearchWidget отображается без карточки и заголов�
 
 Разрешения Manifest V3:
 
-- `storage` — чтение и запись конфигурации в `chrome.storage.local`;
+- `storage` — чтение и запись конфигурации и локальных обоев в
+  `chrome.storage.local`;
+- `unlimitedStorage` — сохранение оригинала локальных обоев, если файл больше
+  6 МБ и lossless-сжатие не уменьшает его до 6 МБ;
 - `favicon` — доступ к локальному endpoint Chrome `_favicon`.
 
 `host_permissions` не используются.
@@ -198,8 +206,8 @@ SearchWidget отображается без карточки и заголов�
 ## Ограничения MVP
 
 - доступны виджеты `MarkdownWidget` и `SearchWidget`;
-- Math, Mermaid, YAML frontmatter, загрузка файлов и offline-кэш изображений не
-  поддерживаются;
+- Math, Mermaid, YAML frontmatter, загрузка файлов внутрь Markdown и
+  offline-кэш Markdown-изображений не поддерживаются;
 - HTML проходит через sanitizer: скрипты, формы, iframe, event-атрибуты,
   произвольные стили и опасные URL удаляются;
 - изображения разрешены только по HTTPS;

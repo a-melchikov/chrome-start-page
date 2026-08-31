@@ -4,7 +4,7 @@
 
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `2`; current widget types:
+Russian-language. Current persisted schema version: `3`; current widget types:
 `markdown` and `search`.
 
 Source code and configuration are the source of truth for implementation state.
@@ -84,13 +84,14 @@ specification.
 
 ## State / Storage Rules
 
-- Persistent key: `local:dashboard-config`; use WXT Storage only, never
-  `localStorage` or `chrome.storage.sync`.
+- Persistent config key: `local:dashboard-config`; local wallpaper assets use
+  `local:dashboard-wallpaper:<uuid>`. Use WXT Storage only, never `localStorage`
+  or `chrome.storage.sync`.
 - Immediate saves: add/remove, appearance, completed drag/resize. Widget editor
   changes are debounced and must flush on finish, Escape, `pagehide`, and
   unmount. Preserve queued write ordering.
-- Schema v2 supports `markdown` and `search`; v1 `links` widgets migrate to
-  `markdown` without losing ID, title, content, or layout.
+- Schema v3 supports `markdown`, `search`, and wallpaper references; v1 `links`
+  widgets migrate to `markdown` without losing ID, title, content, or layout.
 - Search widget height is normalized to `1` during load/save.
 
 ## Error Handling and Security

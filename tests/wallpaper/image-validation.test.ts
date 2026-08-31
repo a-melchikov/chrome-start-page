@@ -41,7 +41,10 @@ class FakeImage {
       if (imageBehavior === 'error') {
         this.onerror?.(new Event('error'));
       } else {
-        this.onload?.call(this as unknown as GlobalEventHandlers, new Event('load'));
+        this.onload?.call(
+          this as unknown as GlobalEventHandlers,
+          new Event('load'),
+        );
       }
     });
   }
@@ -85,8 +88,8 @@ const formatFixtures = [
     name: 'AVIF',
     mimeType: 'image/avif',
     bytes: new Uint8Array([
-      0, 0, 0, 24, 102, 116, 121, 112, 97, 118, 105, 102, 0, 0, 0, 0,
-      109, 105, 102, 49, 97, 118, 105, 102,
+      0, 0, 0, 24, 102, 116, 121, 112, 97, 118, 105, 102, 0, 0, 0, 0, 109, 105,
+      102, 49, 97, 118, 105, 102,
     ]),
   },
   {
@@ -178,15 +181,16 @@ describe('wallpaper image validation', () => {
     });
   });
 
-  it.each(['http://example.com/a.png', 'data:image/png;base64,AQ==', 'bad url'])(
-    'rejects a non-HTTPS URL: %s',
-    async (url) => {
-      await expect(validateWallpaperUrl(url)).rejects.toThrow(
-        InvalidWallpaperImageError,
-      );
-      expect(imageInstances).toHaveLength(0);
-    },
-  );
+  it.each([
+    'http://example.com/a.png',
+    'data:image/png;base64,AQ==',
+    'bad url',
+  ])('rejects a non-HTTPS URL: %s', async (url) => {
+    await expect(validateWallpaperUrl(url)).rejects.toThrow(
+      InvalidWallpaperImageError,
+    );
+    expect(imageInstances).toHaveLength(0);
+  });
 
   it('rejects a URL that does not decode as an image', async () => {
     imageBehavior = 'decode-error';

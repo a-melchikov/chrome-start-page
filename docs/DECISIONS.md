@@ -135,10 +135,11 @@ Status: Accepted
 
 ### Decision
 
-Keep the extension backend-free and telemetry-free. Manifest permissions remain
-`storage` and `favicon`; no host permissions. User links use Chrome's local
-favicon endpoint, while external images and explicit search submissions follow
-their documented network behavior.
+Keep the extension backend-free and telemetry-free. Manifest permissions are
+`storage`, `unlimitedStorage`, and `favicon`; no host permissions. User links
+use Chrome's local favicon endpoint, while external images and explicit search
+submissions follow their documented network behavior. `unlimitedStorage` is
+reserved for user-selected local wallpapers whose original bytes must be kept.
 
 ### Why
 
@@ -154,3 +155,35 @@ need explicit justification and documentation.
 
 - Backend, authorization, analytics, telemetry, broad `host_permissions`, and
   external favicon APIs.
+
+## ADR-007 — Validated local or HTTPS wallpaper sources
+
+Status: Accepted
+
+### Decision
+
+Allow one full-screen wallpaper from either a validated local image or a direct
+HTTPS URL. Persist only the URL or local asset UUID in schema v3. Store local
+assets separately, attempt gzip only above 6 MiB, and use the compressed form
+only when it reaches 6 MiB or less; otherwise retain the original. Render with
+centered cover cropping.
+
+### Why
+
+Both source types are useful on a personal start page. Pre-save decoding avoids
+replacing working wallpaper state with corrupt or non-image data, while
+separate asset storage keeps the main configuration small and transactional.
+
+### Consequences
+
+PNG, JPEG, WebP, GIF, AVIF, and SVG are supported. Failed validation preserves
+the previous wallpaper and shows an error. URL loading depends on the remote
+server and is not cached. Local asset writes and config updates require rollback
+and orphan cleanup. The manifest needs `unlimitedStorage` but no host access.
+
+### Rejected Alternatives
+
+- Persisting local data URLs inside the dashboard configuration.
+- Lossy resize/re-encoding or rejecting every file above 6 MiB.
+- Fetching remote images with broad `host_permissions`.
+- Replacing the saved wallpaper before validation completes.

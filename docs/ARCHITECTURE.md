@@ -8,9 +8,12 @@ flowchart LR
   WXT --> App[React App]
   App --> Hook[useDashboardConfig]
   Hook <--> Repo[dashboard-storage]
+  Hook <--> Assets[wallpaper-assets + transactions]
   Repo --> Validate[validation + migrations]
   Repo <--> Local[(chrome.storage.local)]
+  Assets <--> Local
   App --> Dashboard
+  App --> Wallpaper[WallpaperLayer]
   Dashboard --> Grid[WidgetCanvas]
   Grid --> Host[WidgetHost]
   Host --> Registry[Widget Registry]
@@ -38,7 +41,7 @@ Renderer-derived state is not persisted.
 
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 2 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 3 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
 adds `engine`.
@@ -65,7 +68,8 @@ migrated/normalized object. Saving validates through the same boundary.
 
 Current migration behavior:
 
-- v1 `links` becomes v2 `markdown`, preserving ID, title, content, and layout;
+- v1 `links` becomes `markdown`, preserving ID, title, content, and layout;
+- v1 and v2 appearance data gains `{type: 'none'}` wallpaper state in v3;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
 - malformed and unsupported/future versions throw explicit errors.
 
@@ -74,6 +78,28 @@ against the latest config. Add/remove, appearance, and completed layout changes
 save immediately. Widget/editor changes use a 300 ms debounce. Saves are queued
 to prevent an older slow write from overwriting newer state; pending widget
 changes flush on editor finish, Escape, `pagehide`, and unmount.
+
+## Wallpaper Pipeline
+
+`AppearanceConfig.wallpaper` is a discriminated union: no wallpaper, an HTTPS
+URL, or a local asset UUID. Remote URLs are validated by browser image loading
+without broad host permissions or an extension `fetch`. Local files support
+PNG, JPEG, WebP, GIF, AVIF, and SVG; signatures/content and browser decoding are
+checked before the persisted config changes.
+
+Local bytes are stored separately through `storage/wallpaper-assets.ts` under
+`local:dashboard-wallpaper:<uuid>`. Files at or below 6 MiB remain byte-for-byte
+unchanged. Larger files are gzip-compressed only when the lossless result fits
+within 6 MiB; otherwise the original is retained under `unlimitedStorage`.
+`storage/wallpaper-transactions.ts` saves the new asset and config before
+removing the old asset, rolls a new asset back on config failure, and cleans up
+orphaned wallpaper keys on startup.
+
+`useWallpaperImage` decodes and revalidates local assets before creating a Blob
+URL, revoking it on replacement/unmount. `WallpaperLayer` is a decorative fixed
+layer behind the dashboard and uses centered `object-cover`, so it fills the
+viewport and crops overflow. Failed validation leaves the previous wallpaper
+intact and is surfaced in the appearance dialog.
 
 ## Dashboard Layout
 
@@ -127,6 +153,7 @@ brands and remains enabled only for user Markdown links.
 
 ## Extension Boundary
 
-`wxt.config.ts` is the manifest source. The only permissions are `storage` and
-`favicon`; no host permissions exist. Static assets in `public/` are bundled,
-and generated `.wxt/` and `.output/` directories are never source files.
+`wxt.config.ts` is the manifest source. Permissions are `storage`,
+`unlimitedStorage`, and `favicon`; no host permissions exist. Static assets in
+`public/` are bundled, and generated `.wxt/` and `.output/` directories are
+never source files.

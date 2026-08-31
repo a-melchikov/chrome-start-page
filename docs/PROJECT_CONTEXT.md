@@ -18,9 +18,10 @@ Version 0.1.0 implements two repeatable widget types:
   DuckDuckGo use fixed GET endpoints and bundled brand icons. Its height is
   fixed; only width and engine are configurable.
 
-The dashboard has light/dark/system themes, an arbitrary background color, a
-12-column draggable/resizable grid, autosave, deletion confirmation, keyboard
-dialog behavior, and restoration after Chrome restarts.
+The dashboard has light/dark/system themes, an arbitrary background color,
+validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
+draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
+behavior, and restoration after Chrome restarts.
 
 ## Core Requirements
 
@@ -33,8 +34,12 @@ dialog behavior, and restoration after Chrome restarts.
   blank queries are blocked and query text is never stored.
 - Markdown source is the only content source of truth. Task checkbox clicks
   update the exact source marker rather than a derived model.
-- Existing v1 `links` data migrates to v2 `markdown` without data or layout
-  loss. Existing search height is normalized to one row.
+- Existing v1 `links` data migrates to `markdown` without data or layout loss.
+  V1/v2 appearance migrates to schema v3 with no wallpaper. Existing search
+  height is normalized to one row.
+- Wallpaper accepts PNG, JPEG, WebP, GIF, AVIF, and SVG files or a direct HTTPS
+  URL. Every source is decoded before save; failure preserves the old value and
+  shows a message.
 
 ## Durable Decisions
 
@@ -48,13 +53,16 @@ dialog behavior, and restoration after Chrome restarts.
   and work offline. External favicon APIs are forbidden.
 - Narrow screens keep a 960 px desktop canvas and horizontal scrolling so saved
   coordinates are never silently rearranged.
+- Local wallpaper bytes live under UUID asset keys. Files above 6 MiB are
+  losslessly compressed only when that reaches the 6 MiB target; otherwise the
+  original remains available through `unlimitedStorage`.
 
 Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Platform and Privacy Constraints
 
-- Manifest V3 permissions are limited to `storage` and `favicon`; there are no
-  `host_permissions`.
+- Manifest V3 permissions are limited to `storage`, `unlimitedStorage`, and
+  `favicon`; there are no `host_permissions`.
 - Links allow HTTP/HTTPS. Images require absolute HTTPS and use `no-referrer`.
 - Search endpoints are fixed in code; custom templates, suggestions, and search
   history are outside current scope.
@@ -66,7 +74,7 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 - No sync, import/export, reset UI, accounts, sharing, or Chrome Web Store
   publishing workflow.
-- Markdown has no Math, Mermaid, YAML frontmatter, file upload, syntax
+- Markdown has no Math, Mermaid, YAML frontmatter, embedded file upload, syntax
   highlighting, or offline image cache.
 - Search has no history, online suggestions, or custom engines.
 - Invalid/future storage schemas surface an error; there is no user-facing

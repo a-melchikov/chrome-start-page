@@ -169,7 +169,9 @@ function loadImage(src: string, signal?: AbortSignal): Promise<void> {
     image.referrerPolicy = 'no-referrer';
     image.decoding = 'async';
     image.onerror = () => {
-      finish(new InvalidWallpaperImageError('Не удалось загрузить изображение'));
+      finish(
+        new InvalidWallpaperImageError('Не удалось загрузить изображение'),
+      );
     };
     image.onload = () => {
       void image.decode().then(

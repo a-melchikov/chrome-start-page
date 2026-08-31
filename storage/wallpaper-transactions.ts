@@ -1,9 +1,6 @@
 import { saveDashboardConfig } from './dashboard-storage';
 import type { DashboardConfig, WallpaperConfig } from './schema';
-import {
-  deleteWallpaperAsset,
-  saveWallpaperAsset,
-} from './wallpaper-assets';
+import { deleteWallpaperAsset, saveWallpaperAsset } from './wallpaper-assets';
 import type { LocalWallpaperAssetV1 } from './wallpaper-codec';
 
 export interface WallpaperTransactionResult {
@@ -30,10 +27,7 @@ async function removePreviousLocalAsset(
 ): Promise<string | null> {
   const previous = current.appearance.wallpaper;
 
-  if (
-    previous.type !== 'local' ||
-    previous.assetId === nextLocalAssetId
-  ) {
+  if (previous.type !== 'local' || previous.assetId === nextLocalAssetId) {
     return null;
   }
 

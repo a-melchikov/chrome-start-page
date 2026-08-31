@@ -40,8 +40,7 @@ function copyBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
 export function useWallpaperImage(
   wallpaper: WallpaperConfig,
 ): WallpaperImageState {
-  const localAssetId =
-    wallpaper.type === 'local' ? wallpaper.assetId : null;
+  const localAssetId = wallpaper.type === 'local' ? wallpaper.assetId : null;
   const [localState, setLocalState] = useState<LocalWallpaperImageState | null>(
     null,
   );
