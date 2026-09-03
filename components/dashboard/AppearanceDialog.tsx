@@ -344,13 +344,16 @@ export function AppearanceDialog({
               <span className="text-sm font-medium">Эффект Liquid Glass</span>
               <input
                 aria-label="Эффект Liquid Glass"
-                checked={appearance.liquidGlassEnabled}
+                checked={appearance.liquidGlass.enabled}
                 className="size-5 accent-zinc-900 dark:accent-zinc-100"
                 role="switch"
                 type="checkbox"
                 onChange={(event) =>
                   onAppearanceChange({
-                    liquidGlassEnabled: event.target.checked,
+                    liquidGlass: {
+                      ...appearance.liquidGlass,
+                      enabled: event.target.checked,
+                    },
                   })
                 }
               />

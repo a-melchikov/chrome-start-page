@@ -29,13 +29,18 @@ function createMarkdownWidget(
 
 async function seedWidgets(widgets: MarkdownWidgetConfig[]) {
   await saveDashboardConfig({
-    version: 4,
+    version: 5,
     widgets,
     appearance: {
       theme: 'system',
       backgroundColor: '#18181b',
       wallpaper: { type: 'none' },
-      liquidGlassEnabled: true,
+      liquidGlass: {
+        enabled: true,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
+      },
     },
   });
 }

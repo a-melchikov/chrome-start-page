@@ -67,7 +67,7 @@ export function App() {
       aria-busy={isLoading}
       className={classNames(
         'relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50',
-        appearance.liquidGlassEnabled && 'liquid-glass-enabled',
+        appearance.liquidGlass.enabled && 'liquid-glass-enabled',
       )}
       style={{ backgroundColor: appearance.backgroundColor }}
     >

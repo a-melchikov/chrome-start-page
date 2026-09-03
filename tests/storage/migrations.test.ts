@@ -37,11 +37,16 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 4,
+      version: 5,
       appearance: {
         ...legacyConfig.appearance,
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
       widgets: [
         {
@@ -64,13 +69,18 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 4,
+      version: 5,
       widgets: [],
       appearance: {
         theme: 'dark',
         backgroundColor: '#123456',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
   });
@@ -98,17 +108,22 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 4,
+      version: 5,
       widgets: [legacyConfig.widgets[1]],
       appearance: {
         ...legacyConfig.appearance,
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
   });
 
-  it('migrates v3 wallpaper appearance to v4 with Liquid Glass enabled', () => {
+  it('migrates v3 wallpaper appearance to v5 with Liquid Glass defaults', () => {
     const v3Config = {
       version: 3,
       widgets: [],
@@ -124,19 +139,56 @@ describe('migrateDashboardConfig', () => {
 
     expect(migrateDashboardConfig(v3Config)).toEqual({
       ...v3Config,
-      version: 4,
+      version: 5,
       appearance: {
         ...v3Config.appearance,
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
   });
+
+  it.each([true, false])(
+    'migrates v4 and preserves Liquid Glass enabled=%s',
+    (enabled) => {
+      const v4Config = {
+        version: 4,
+        widgets: [],
+        appearance: {
+          theme: 'dark',
+          backgroundColor: '#123456',
+          wallpaper: { type: 'none' },
+          liquidGlassEnabled: enabled,
+        },
+      } as const;
+
+      expect(migrateDashboardConfig(v4Config)).toEqual({
+        version: 5,
+        widgets: [],
+        appearance: {
+          theme: 'dark',
+          backgroundColor: '#123456',
+          wallpaper: { type: 'none' },
+          liquidGlass: {
+            enabled,
+            transparency: 40,
+            blur: 18,
+            shadow: 50,
+          },
+        },
+      });
+    },
+  );
 
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 5,
+        version: 6,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
   });
@@ -167,13 +219,42 @@ describe('migrateDashboardConfig', () => {
     ).toThrow(InvalidDashboardConfigError);
   });
 
-  it('rejects a non-boolean Liquid Glass preference', () => {
+  it.each([
+    { transparency: -1, blur: 18, shadow: 50 },
+    { transparency: 101, blur: 18, shadow: 50 },
+    { transparency: 40.5, blur: 18, shadow: 50 },
+    { transparency: 40, blur: -1, shadow: 50 },
+    { transparency: 40, blur: 41, shadow: 50 },
+    { transparency: 40, blur: 18.5, shadow: 50 },
+    { transparency: 40, blur: 18, shadow: -1 },
+    { transparency: 40, blur: 18, shadow: 101 },
+    { transparency: 40, blur: 18, shadow: 50.5 },
+  ])('rejects invalid Liquid Glass values %#', (values) => {
+    const config = createDefaultDashboardConfig();
+
     expect(() =>
       migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
+        ...config,
         appearance: {
-          ...createDefaultDashboardConfig().appearance,
-          liquidGlassEnabled: 'yes',
+          ...config.appearance,
+          liquidGlass: { enabled: true, ...values },
+        },
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
+
+  it('rejects a non-boolean Liquid Glass toggle', () => {
+    const config = createDefaultDashboardConfig();
+
+    expect(() =>
+      migrateDashboardConfig({
+        ...config,
+        appearance: {
+          ...config.appearance,
+          liquidGlass: {
+            ...config.appearance.liquidGlass,
+            enabled: 'yes',
+          },
         },
       }),
     ).toThrow(InvalidDashboardConfigError);

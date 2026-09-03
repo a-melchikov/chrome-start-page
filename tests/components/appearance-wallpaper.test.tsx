@@ -9,7 +9,12 @@ const appearance: AppearanceConfig = {
   theme: 'system',
   backgroundColor: '#f4f4f5',
   wallpaper: { type: 'none' },
-  liquidGlassEnabled: true,
+  liquidGlass: {
+    enabled: true,
+    transparency: 40,
+    blur: 18,
+    shadow: 50,
+  },
 };
 
 function renderDialog(
@@ -83,7 +88,12 @@ describe('AppearanceDialog wallpaper controls', () => {
 
     await user.click(glassSwitch);
     expect(props.onAppearanceChange).toHaveBeenCalledWith({
-      liquidGlassEnabled: false,
+      liquidGlass: {
+        enabled: false,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
+      },
     });
   });
 

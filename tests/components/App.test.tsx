@@ -131,7 +131,12 @@ describe('App', () => {
         theme: 'dark',
         backgroundColor: '#123456',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       });
     });
   });
@@ -161,20 +166,25 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.liquidGlassEnabled).toBe(false);
+      expect(storedConfig?.appearance.liquidGlass.enabled).toBe(false);
     });
   });
 
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 4,
+      version: 5,
       widgets: [],
       appearance: {
         theme: 'light',
         backgroundColor: '#abcdef',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
 
@@ -206,13 +216,18 @@ describe('App', () => {
       url: 'https://example.com/previous.jpg',
     };
     await saveDashboardConfig({
-      version: 4,
+      version: 5,
       widgets: [],
       appearance: {
         theme: 'system',
         backgroundColor: '#f4f4f5',
         wallpaper: previousWallpaper,
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
     render(<App />);

@@ -26,12 +26,17 @@ describe('dashboard storage', () => {
 
   it('saves and loads a config without losing widget data', async () => {
     const config: DashboardConfig = {
-      version: 4,
+      version: 5,
       appearance: {
         theme: 'light',
         backgroundColor: '#f4f4f5',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
       widgets: [
         {
@@ -68,7 +73,7 @@ describe('dashboard storage', () => {
     ).resolves.toEqual(normalizedConfig);
   });
 
-  it('migrates a stored v1 LinksWidget and writes v4 back to storage', async () => {
+  it('migrates a stored v1 LinksWidget and writes v5 back to storage', async () => {
     const legacyConfig = {
       version: 1,
       appearance: { theme: 'system', backgroundColor: '#18181b' },
@@ -88,11 +93,16 @@ describe('dashboard storage', () => {
 
     expect(migrated).toEqual({
       ...legacyConfig,
-      version: 4,
+      version: 5,
       appearance: {
         ...legacyConfig.appearance,
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
       widgets: [{ ...legacyConfig.widgets[0], type: 'markdown' }],
     });

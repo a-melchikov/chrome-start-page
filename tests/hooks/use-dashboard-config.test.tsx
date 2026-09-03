@@ -107,13 +107,18 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 4,
+      version: 5,
       widgets: [widget],
       appearance: {
         theme: 'system',
         backgroundColor: '#18181b',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
 
@@ -217,13 +222,18 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 4,
+      version: 5,
       widgets: [widget],
       appearance: {
         theme: 'system',
         backgroundColor: '#18181b',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
     const dashboard = renderHook(() => useDashboardConfig());
@@ -298,13 +308,18 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 4,
+      version: 5,
       widgets: [widget],
       appearance: {
         theme: 'system',
         backgroundColor: '#18181b',
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
       },
     });
     const dashboard = renderHook(() => useDashboardConfig());

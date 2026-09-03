@@ -1,12 +1,14 @@
 import {
   DASHBOARD_CONFIG_VERSION,
   type DashboardConfig,
+  type LiquidGlassConfig,
   type Theme,
   type WallpaperConfig,
   type WidgetConfig,
   isWallpaperAssetId,
 } from './schema';
 import { isSearchEngine } from '../widgets/search/engines';
+import { DEFAULT_LIQUID_GLASS } from './defaults';
 
 export class InvalidDashboardConfigError extends Error {
   constructor(message = 'Dashboard config has an invalid structure') {
@@ -128,6 +130,10 @@ interface WallpaperAppearanceConfig extends LegacyAppearanceConfig {
   wallpaper: WallpaperConfig;
 }
 
+interface DashboardConfigV4Appearance extends WallpaperAppearanceConfig {
+  liquidGlassEnabled: boolean;
+}
+
 function hasValidLegacyDashboardEnvelope(value: unknown): value is Record<
   string,
   unknown
@@ -183,12 +189,52 @@ function isDashboardConfigV3(value: unknown): value is Record<
   );
 }
 
-function isDashboardConfigV4(value: unknown): value is DashboardConfig {
+function isDashboardConfigV4(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  version: 4;
+  widgets: WidgetConfig[];
+  appearance: DashboardConfigV4Appearance;
+} {
+  return (
+    hasValidLegacyDashboardEnvelope(value) &&
+    value.version === 4 &&
+    isWallpaperConfig(value.appearance.wallpaper) &&
+    typeof value.appearance.liquidGlassEnabled === 'boolean' &&
+    value.widgets.every(isWidgetConfig)
+  );
+}
+
+function isIntegerInRange(
+  value: unknown,
+  min: number,
+  max: number,
+): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= min &&
+    value <= max
+  );
+}
+
+function isLiquidGlassConfig(value: unknown): value is LiquidGlassConfig {
+  return (
+    isRecord(value) &&
+    typeof value.enabled === 'boolean' &&
+    isIntegerInRange(value.transparency, 0, 100) &&
+    isIntegerInRange(value.blur, 0, 40) &&
+    isIntegerInRange(value.shadow, 0, 100)
+  );
+}
+
+function isDashboardConfigV5(value: unknown): value is DashboardConfig {
   return (
     hasValidLegacyDashboardEnvelope(value) &&
     value.version === DASHBOARD_CONFIG_VERSION &&
     isWallpaperConfig(value.appearance.wallpaper) &&
-    typeof value.appearance.liquidGlassEnabled === 'boolean' &&
+    isLiquidGlassConfig(value.appearance.liquidGlass) &&
     value.widgets.every(isWidgetConfig)
   );
 }
@@ -272,7 +318,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       appearance: {
         ...value.appearance,
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
       widgets: value.widgets.map((widget) =>
         widget.type === 'links'
@@ -292,7 +338,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       appearance: {
         ...value.appearance,
         wallpaper: { type: 'none' },
-        liquidGlassEnabled: true,
+        liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
       widgets: value.widgets.filter(isWidgetConfig),
     });
@@ -308,13 +354,33 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       version: DASHBOARD_CONFIG_VERSION,
       appearance: {
         ...value.appearance,
-        liquidGlassEnabled: true,
+        liquidGlass: { ...DEFAULT_LIQUID_GLASS },
+      },
+    });
+  }
+
+  if (version === 4) {
+    if (!isDashboardConfigV4(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    const { liquidGlassEnabled, ...appearance } = value.appearance;
+
+    return normalizeDashboardConfig({
+      ...value,
+      version: DASHBOARD_CONFIG_VERSION,
+      appearance: {
+        ...appearance,
+        liquidGlass: {
+          ...DEFAULT_LIQUID_GLASS,
+          enabled: liquidGlassEnabled,
+        },
       },
     });
   }
 
   if (version === DASHBOARD_CONFIG_VERSION) {
-    if (!isDashboardConfigV4(value)) {
+    if (!isDashboardConfigV5(value)) {
       throw new InvalidDashboardConfigError();
     }
 

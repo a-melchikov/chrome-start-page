@@ -1,7 +1,7 @@
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 
-export const DASHBOARD_CONFIG_VERSION = 4 as const;
+export const DASHBOARD_CONFIG_VERSION = 5 as const;
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -19,11 +19,18 @@ export function isWallpaperAssetId(value: unknown): value is string {
   );
 }
 
+export interface LiquidGlassConfig {
+  enabled: boolean;
+  transparency: number;
+  blur: number;
+  shadow: number;
+}
+
 export interface AppearanceConfig {
   theme: Theme;
   backgroundColor: string;
   wallpaper: WallpaperConfig;
-  liquidGlassEnabled: boolean;
+  liquidGlass: LiquidGlassConfig;
 }
 
 export interface WidgetConfigMap {
