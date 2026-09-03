@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 import { Dashboard } from '../../components/dashboard/Dashboard';
 import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
@@ -7,6 +7,12 @@ import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
 import { DEFAULT_APPEARANCE } from '../../storage/defaults';
+
+type DashboardStyle = CSSProperties & {
+  '--liquid-glass-opacity': number;
+  '--liquid-glass-blur': string;
+  '--liquid-glass-shadow': number;
+};
 
 export function App() {
   const {
@@ -50,6 +56,13 @@ export function App() {
       : null;
   const dialogWallpaperError =
     wallpaperError ?? wallpaperImage.error ?? remoteWallpaperError;
+  const liquidGlass = appearance.liquidGlass;
+  const dashboardStyle: DashboardStyle = {
+    backgroundColor: appearance.backgroundColor,
+    '--liquid-glass-opacity': 1 - liquidGlass.transparency / 100,
+    '--liquid-glass-blur': `${liquidGlass.blur}px`,
+    '--liquid-glass-shadow': liquidGlass.shadow / 100,
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -69,9 +82,9 @@ export function App() {
       aria-busy={isLoading}
       className={classNames(
         'relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50',
-        appearance.liquidGlass.enabled && 'liquid-glass-enabled',
+        liquidGlass.enabled && 'liquid-glass-enabled',
       )}
-      style={{ backgroundColor: appearance.backgroundColor }}
+      style={dashboardStyle}
     >
       <WallpaperLayer
         src={wallpaperImage.src}

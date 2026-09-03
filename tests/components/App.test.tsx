@@ -234,6 +234,64 @@ describe('App', () => {
     expect(document.documentElement).toHaveAttribute('data-theme', 'light');
   });
 
+  it('maps saved Liquid Glass controls to CSS custom properties', async () => {
+    const config: DashboardConfig = {
+      version: 5,
+      widgets: [],
+      appearance: {
+        theme: 'dark',
+        backgroundColor: '#18181b',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 75,
+          blur: 12,
+          shadow: 80,
+        },
+      },
+    };
+    await saveDashboardConfig(config);
+
+    render(<App />);
+
+    const app = screen.getByRole('main');
+    await waitFor(() => {
+      expect(app).toHaveClass('liquid-glass-enabled');
+      expect(app.style.getPropertyValue('--liquid-glass-opacity')).toBe('0.25');
+      expect(app.style.getPropertyValue('--liquid-glass-blur')).toBe('12px');
+      expect(app.style.getPropertyValue('--liquid-glass-shadow')).toBe('0.8');
+    });
+  });
+
+  it('keeps Liquid Glass custom properties when the effect is disabled', async () => {
+    const config: DashboardConfig = {
+      version: 5,
+      widgets: [],
+      appearance: {
+        theme: 'light',
+        backgroundColor: '#f4f4f5',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: false,
+          transparency: 25,
+          blur: 30,
+          shadow: 10,
+        },
+      },
+    };
+    await saveDashboardConfig(config);
+
+    render(<App />);
+
+    const app = screen.getByRole('main');
+    await waitFor(() => {
+      expect(app).not.toHaveClass('liquid-glass-enabled');
+      expect(app.style.getPropertyValue('--liquid-glass-opacity')).toBe('0.75');
+      expect(app.style.getPropertyValue('--liquid-glass-blur')).toBe('30px');
+      expect(app.style.getPropertyValue('--liquid-glass-shadow')).toBe('0.1');
+    });
+  });
+
   it('keeps the previous wallpaper and shows an error for an invalid URL', async () => {
     const user = userEvent.setup();
     const previousWallpaper = {
