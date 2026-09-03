@@ -8,6 +8,7 @@ import {
   DASHBOARD_STORAGE_KEY,
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
+import { createDefaultDashboardConfig } from '../../storage/defaults';
 import {
   loadWallpaperAsset,
   saveWallpaperAsset,
@@ -297,6 +298,91 @@ describe('useDashboardConfig layout persistence', () => {
     await waitFor(() => expect(dashboard.result.current.isLoading).toBe(false));
 
     await expect(loadWallpaperAsset(ORPHAN_ASSET_ID)).resolves.toBeNull();
+  });
+
+  it('previews appearance without saving and persists it on flush', async () => {
+    const initial = createDefaultDashboardConfig();
+    await saveDashboardConfig(initial);
+    const setSpy = vi.spyOn(fakeBrowser.storage.local, 'set');
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    act(() => {
+      dashboard.result.current.previewAppearance({
+        liquidGlass: {
+          ...initial.appearance.liquidGlass,
+          transparency: 72,
+        },
+      });
+    });
+
+    expect(
+      dashboard.result.current.config?.appearance.liquidGlass.transparency,
+    ).toBe(72);
+    await expect(
+      storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
+    ).resolves.toEqual(initial);
+
+    act(() => dashboard.result.current.flushAppearancePreview());
+    await waitFor(async () =>
+      expect(
+        (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
+          ?.appearance.liquidGlass.transparency,
+      ).toBe(72),
+    );
+
+    const writesAfterFlush = setSpy.mock.calls.length;
+    act(() => dashboard.result.current.flushAppearancePreview());
+    await Promise.resolve();
+    expect(setSpy).toHaveBeenCalledTimes(writesAfterFlush);
+  });
+
+  it('flushes an appearance preview before the page is hidden', async () => {
+    const initial = createDefaultDashboardConfig();
+    await saveDashboardConfig(initial);
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    act(() => {
+      dashboard.result.current.previewAppearance({
+        liquidGlass: {
+          ...initial.appearance.liquidGlass,
+          blur: 27,
+        },
+      });
+      window.dispatchEvent(new Event('pagehide'));
+    });
+
+    await waitFor(async () =>
+      expect(
+        (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
+          ?.appearance.liquidGlass.blur,
+      ).toBe(27),
+    );
+  });
+
+  it('flushes an appearance preview on unmount', async () => {
+    const initial = createDefaultDashboardConfig();
+    await saveDashboardConfig(initial);
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    act(() => {
+      dashboard.result.current.previewAppearance({
+        liquidGlass: {
+          ...initial.appearance.liquidGlass,
+          shadow: 84,
+        },
+      });
+    });
+    dashboard.unmount();
+
+    await waitFor(async () =>
+      expect(
+        (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
+          ?.appearance.liquidGlass.shadow,
+      ).toBe(84),
+    );
   });
 
   it('flushes a pending widget change before the page is hidden', async () => {

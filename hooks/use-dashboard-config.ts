@@ -31,7 +31,9 @@ interface UseDashboardConfigResult {
   wallpaperError: string | null;
   addWidget: (widget: WidgetConfig) => void;
   clearWallpaperError: () => void;
+  flushAppearancePreview: () => void;
   flushWidgetUpdates: () => void;
+  previewAppearance: (changes: Partial<AppearanceConfig>) => void;
   removeWallpaper: () => Promise<void>;
   removeWidget: (widgetId: string) => void;
   setLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
@@ -57,6 +59,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const [wallpaperError, setWallpaperError] = useState<string | null>(null);
   const configRef = useRef<DashboardConfig | null>(null);
   const isMountedRef = useRef(false);
+  const pendingAppearanceConfigRef = useRef<DashboardConfig | null>(null);
   const pendingWidgetConfigRef = useRef<DashboardConfig | null>(null);
   const wallpaperOperationRef = useRef(false);
   const widgetSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,15 +102,41 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     pendingWidgetConfigRef.current = null;
 
     if (pendingConfig) {
+      if (pendingAppearanceConfigRef.current === pendingConfig) {
+        pendingAppearanceConfigRef.current = null;
+      }
       enqueueConfigSave(pendingConfig);
     }
   }, [enqueueConfigSave]);
 
-  useEffect(() => {
-    window.addEventListener('pagehide', flushWidgetUpdates);
+  const flushAppearancePreview = useCallback(() => {
+    const pendingConfig = pendingAppearanceConfigRef.current;
+    pendingAppearanceConfigRef.current = null;
 
-    return () => window.removeEventListener('pagehide', flushWidgetUpdates);
-  }, [flushWidgetUpdates]);
+    if (pendingConfig) {
+      if (pendingWidgetConfigRef.current === pendingConfig) {
+        pendingWidgetConfigRef.current = null;
+
+        if (widgetSaveTimerRef.current !== null) {
+          clearTimeout(widgetSaveTimerRef.current);
+          widgetSaveTimerRef.current = null;
+        }
+      }
+
+      enqueueConfigSave(pendingConfig);
+    }
+  }, [enqueueConfigSave]);
+
+  const flushPendingUpdates = useCallback(() => {
+    flushWidgetUpdates();
+    flushAppearancePreview();
+  }, [flushAppearancePreview, flushWidgetUpdates]);
+
+  useEffect(() => {
+    window.addEventListener('pagehide', flushPendingUpdates);
+
+    return () => window.removeEventListener('pagehide', flushPendingUpdates);
+  }, [flushPendingUpdates]);
 
   useEffect(() => {
     let isActive = true;
@@ -149,19 +178,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       isActive = false;
       isMountedRef.current = false;
 
-      if (widgetSaveTimerRef.current !== null) {
-        clearTimeout(widgetSaveTimerRef.current);
-        widgetSaveTimerRef.current = null;
-      }
-
-      const pendingConfig = pendingWidgetConfigRef.current;
-      pendingWidgetConfigRef.current = null;
-
-      if (pendingConfig) {
-        enqueueConfigSave(pendingConfig);
-      }
+      flushPendingUpdates();
     };
-  }, [enqueueConfigSave]);
+  }, [flushPendingUpdates]);
 
   const runWallpaperOperation = useCallback(
     async (
@@ -213,7 +232,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         currentConfig: DashboardConfig,
       ) => Promise<WallpaperTransactionResult>,
     ) => {
-      flushWidgetUpdates();
+      flushPendingUpdates();
 
       return enqueueStorageOperation(() => {
         const currentConfig = configRef.current;
@@ -225,7 +244,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         return transaction(currentConfig);
       });
     },
-    [enqueueStorageOperation, flushWidgetUpdates],
+    [enqueueStorageOperation, flushPendingUpdates],
   );
 
   const setLocalWallpaper = useCallback(
@@ -287,6 +306,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
       if (persistence === 'debounced') {
         pendingWidgetConfigRef.current = nextConfig;
+        if (pendingAppearanceConfigRef.current) {
+          pendingAppearanceConfigRef.current = nextConfig;
+        }
 
         if (widgetSaveTimerRef.current !== null) {
           clearTimeout(widgetSaveTimerRef.current);
@@ -310,6 +332,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       }
 
       pendingWidgetConfigRef.current = null;
+      pendingAppearanceConfigRef.current = null;
       enqueueConfigSave(nextConfig);
     },
     [enqueueConfigSave],
@@ -326,6 +349,33 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       }));
     },
     [commitConfig],
+  );
+
+  const previewAppearance = useCallback(
+    (changes: Partial<AppearanceConfig>) => {
+      const currentConfig = configRef.current;
+
+      if (!currentConfig) {
+        return;
+      }
+
+      const nextConfig = {
+        ...currentConfig,
+        appearance: {
+          ...currentConfig.appearance,
+          ...changes,
+        },
+      };
+
+      configRef.current = nextConfig;
+      pendingAppearanceConfigRef.current = nextConfig;
+      if (pendingWidgetConfigRef.current) {
+        pendingWidgetConfigRef.current = nextConfig;
+      }
+      setConfig(nextConfig);
+      setError(null);
+    },
+    [],
   );
 
   const addWidget = useCallback(
@@ -383,7 +433,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     wallpaperError,
     addWidget,
     clearWallpaperError,
+    flushAppearancePreview,
     flushWidgetUpdates,
+    previewAppearance,
     removeWallpaper,
     removeWidget,
     setLocalWallpaper,
