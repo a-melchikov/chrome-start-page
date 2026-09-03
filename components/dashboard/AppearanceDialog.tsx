@@ -97,7 +97,7 @@ export function AppearanceDialog({
 
   return (
     <Dialog
-      description="Настройте тему, цвет фона и обои новой вкладки."
+      description="Настройте тему, фон, обои и оформление виджетов новой вкладки."
       open={open}
       title="Оформление"
       onOpenChange={(nextOpen) =>
@@ -326,6 +326,35 @@ export function AppearanceDialog({
             >
               Удалить обои
             </Button>
+          </div>
+        </details>
+
+        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+            Виджеты
+            <span
+              aria-hidden="true"
+              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+            >
+              ›
+            </span>
+          </summary>
+          <div className="border-t border-zinc-200 p-4 dark:border-zinc-700">
+            <label className="flex cursor-pointer items-center justify-between gap-4">
+              <span className="text-sm font-medium">Эффект Liquid Glass</span>
+              <input
+                aria-label="Эффект Liquid Glass"
+                checked={appearance.liquidGlassEnabled}
+                className="size-5 accent-zinc-900 dark:accent-zinc-100"
+                role="switch"
+                type="checkbox"
+                onChange={(event) =>
+                  onAppearanceChange({
+                    liquidGlassEnabled: event.target.checked,
+                  })
+                }
+              />
+            </label>
           </div>
         </details>
       </div>

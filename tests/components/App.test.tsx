@@ -136,6 +136,35 @@ describe('App', () => {
     });
   });
 
+  it('applies and persists the Liquid Glass preference immediately', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const app = screen.getByRole('main');
+    expect(app).toHaveClass('liquid-glass-enabled');
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(screen.getByText('Виджеты', { selector: 'summary' }));
+    await user.click(
+      screen.getByRole('switch', { name: 'Эффект Liquid Glass' }),
+    );
+
+    expect(app).not.toHaveClass('liquid-glass-enabled');
+    await waitFor(async () => {
+      const storedConfig = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(storedConfig?.appearance.liquidGlassEnabled).toBe(false);
+    });
+  });
+
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({

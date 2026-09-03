@@ -66,6 +66,27 @@ describe('AppearanceDialog wallpaper controls', () => {
     ).toBe(true);
   });
 
+  it('shows a collapsed widget section and toggles Liquid Glass', async () => {
+    const user = userEvent.setup();
+    const { props } = renderDialog();
+    const widgetsSection = screen.getByText('Виджеты', {
+      selector: 'summary',
+    });
+
+    expect(widgetsSection.closest('details')).not.toHaveAttribute('open');
+
+    await user.click(widgetsSection);
+    const glassSwitch = screen.getByRole('switch', {
+      name: 'Эффект Liquid Glass',
+    });
+    expect(glassSwitch).toBeChecked();
+
+    await user.click(glassSwitch);
+    expect(props.onAppearanceChange).toHaveBeenCalledWith({
+      liquidGlassEnabled: false,
+    });
+  });
+
   it('accepts all supported local image formats and submits the selected file', async () => {
     const user = userEvent.setup();
     const onSetLocalWallpaper = vi.fn().mockResolvedValue(undefined);

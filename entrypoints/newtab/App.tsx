@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { Dashboard } from '../../components/dashboard/Dashboard';
 import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
+import { classNames } from '../../components/ui/class-names';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
@@ -64,7 +65,10 @@ export function App() {
   return (
     <main
       aria-busy={isLoading}
-      className="relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50"
+      className={classNames(
+        'relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50',
+        appearance.liquidGlassEnabled && 'liquid-glass-enabled',
+      )}
       style={{ backgroundColor: appearance.backgroundColor }}
     >
       <WallpaperLayer
