@@ -141,7 +141,7 @@ describe('App', () => {
     });
   });
 
-  it('applies and persists the Liquid Glass preference immediately', async () => {
+  it('previews, persists, resets, and toggles Liquid Glass settings', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -157,16 +157,41 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
     await user.click(screen.getByText('Виджеты', { selector: 'summary' }));
+
+    const transparency = screen.getByRole('slider', {
+      name: 'Прозрачность',
+    });
+    fireEvent.change(transparency, { target: { value: '70' } });
+    expect(screen.getByText('70%')).toBeVisible();
+    fireEvent.pointerUp(transparency);
+
+    await waitFor(async () => {
+      const storedConfig = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(storedConfig?.appearance.liquidGlass.transparency).toBe(70);
+    });
+
     await user.click(
       screen.getByRole('switch', { name: 'Эффект Liquid Glass' }),
     );
 
     expect(app).not.toHaveClass('liquid-glass-enabled');
+    expect(transparency).toBeDisabled();
+    await user.click(
+      screen.getByRole('button', { name: 'Вернуть стандартные параметры' }),
+    );
+
     await waitFor(async () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.liquidGlass.enabled).toBe(false);
+      expect(storedConfig?.appearance.liquidGlass).toEqual({
+        enabled: false,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
+      });
     });
   });
 

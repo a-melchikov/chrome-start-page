@@ -22,7 +22,9 @@ interface DashboardProps {
   wallpaperPreviewSrc: string | null;
   onAddWidget: (widget: WidgetConfig) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
   onClearWallpaperError: () => void;
+  onFlushAppearancePreview: () => void;
   onFlushWidgetUpdates: () => void;
   onRemoveWallpaper: () => Promise<void>;
   onRemoveWidget: (widgetId: string) => void;
@@ -41,7 +43,9 @@ export function Dashboard({
   wallpaperPreviewSrc,
   onAddWidget,
   onAppearanceChange,
+  onAppearancePreview,
   onClearWallpaperError,
+  onFlushAppearancePreview,
   onFlushWidgetUpdates,
   onRemoveWallpaper,
   onRemoveWidget,
@@ -132,8 +136,10 @@ export function Dashboard({
         wallpaperPreviewSrc={wallpaperPreviewSrc}
         onAddWidget={addWidget}
         onAppearanceChange={onAppearanceChange}
+        onAppearancePreview={onAppearancePreview}
         onClearWallpaperError={onClearWallpaperError}
         onEditingChange={changeEditing}
+        onFlushAppearancePreview={onFlushAppearancePreview}
         onRemoveWallpaper={onRemoveWallpaper}
         onSetLocalWallpaper={onSetLocalWallpaper}
         onSetUrlWallpaper={onSetUrlWallpaper}

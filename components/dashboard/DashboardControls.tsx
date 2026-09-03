@@ -15,8 +15,10 @@ interface DashboardControlsProps {
   wallpaperPreviewSrc: string | null;
   onAddWidget: (type: WidgetType) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
   onClearWallpaperError: () => void;
   onEditingChange: (isEditing: boolean) => void;
+  onFlushAppearancePreview: () => void;
   onRemoveWallpaper: () => Promise<void>;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
@@ -31,8 +33,10 @@ export function DashboardControls({
   wallpaperPreviewSrc,
   onAddWidget,
   onAppearanceChange,
+  onAppearancePreview,
   onClearWallpaperError,
   onEditingChange,
+  onFlushAppearancePreview,
   onRemoveWallpaper,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
@@ -125,7 +129,9 @@ export function DashboardControls({
         wallpaperError={wallpaperError}
         wallpaperPreviewSrc={wallpaperPreviewSrc}
         onAppearanceChange={onAppearanceChange}
+        onAppearancePreview={onAppearancePreview}
         onClearWallpaperError={onClearWallpaperError}
+        onFlushAppearancePreview={onFlushAppearancePreview}
         onOpenChange={setIsAppearanceOpen}
         onRemoveWallpaper={onRemoveWallpaper}
         onSetLocalWallpaper={onSetLocalWallpaper}

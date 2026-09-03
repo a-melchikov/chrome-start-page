@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button, Dialog, Input } from '../ui';
 import type { AppearanceConfig, Theme } from '../../storage/schema';
+import { LiquidGlassSettings } from './LiquidGlassSettings';
 
 interface AppearanceDialogProps {
   appearance: AppearanceConfig;
@@ -11,7 +12,9 @@ interface AppearanceDialogProps {
   wallpaperPreviewSrc: string | null;
   onOpenChange: (open: boolean) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
+  onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
   onClearWallpaperError: () => void;
+  onFlushAppearancePreview: () => void;
   onRemoveWallpaper: () => Promise<void>;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
@@ -34,7 +37,9 @@ export function AppearanceDialog({
   wallpaperPreviewSrc,
   onOpenChange,
   onAppearanceChange,
+  onAppearancePreview,
   onClearWallpaperError,
+  onFlushAppearancePreview,
   onRemoveWallpaper,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
@@ -62,6 +67,7 @@ export function AppearanceDialog({
     sectionsRef.current
       ?.querySelectorAll('details')
       .forEach((section) => (section.open = false));
+    onFlushAppearancePreview();
     onOpenChange(false);
   };
 
@@ -339,7 +345,7 @@ export function AppearanceDialog({
               ›
             </span>
           </summary>
-          <div className="border-t border-zinc-200 p-4 dark:border-zinc-700">
+          <div className="space-y-5 border-t border-zinc-200 p-4 dark:border-zinc-700">
             <label className="flex cursor-pointer items-center justify-between gap-4">
               <span className="text-sm font-medium">Эффект Liquid Glass</span>
               <input
@@ -358,6 +364,12 @@ export function AppearanceDialog({
                 }
               />
             </label>
+            <LiquidGlassSettings
+              settings={appearance.liquidGlass}
+              onChange={(liquidGlass) => onAppearancePreview({ liquidGlass })}
+              onCommit={onFlushAppearancePreview}
+              onReset={(liquidGlass) => onAppearanceChange({ liquidGlass })}
+            />
           </div>
         </details>
       </div>

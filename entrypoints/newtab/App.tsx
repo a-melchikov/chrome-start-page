@@ -17,7 +17,9 @@ export function App() {
     wallpaperError,
     addWidget,
     clearWallpaperError,
+    flushAppearancePreview,
     flushWidgetUpdates,
+    previewAppearance,
     removeWallpaper,
     removeWidget,
     setLocalWallpaper,
@@ -100,11 +102,13 @@ export function App() {
           wallpaperPreviewSrc={wallpaperImage.src}
           onAddWidget={addWidget}
           onAppearanceChange={updateAppearance}
+          onAppearancePreview={previewAppearance}
           onClearWallpaperError={() => {
             clearWallpaperError();
             setFailedRemoteWallpaperSrc(null);
           }}
           onFlushWidgetUpdates={flushWidgetUpdates}
+          onFlushAppearancePreview={flushAppearancePreview}
           onRemoveWallpaper={removeWallpaper}
           onRemoveWidget={removeWidget}
           onSetLocalWallpaper={setLocalWallpaper}
