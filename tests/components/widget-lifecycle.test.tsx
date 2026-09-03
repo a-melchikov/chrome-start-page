@@ -134,9 +134,9 @@ describe('widget lifecycle', () => {
       'widget-search-surface',
       'liquid-glass-surface',
     );
-    expect(screen.getByRole('searchbox', { name: 'Поиск в Google' })).toHaveClass(
-      'widget-search-field',
-    );
+    expect(
+      screen.getByRole('searchbox', { name: 'Поиск в Google' }),
+    ).toHaveClass('widget-search-field');
     await waitFor(async () => {
       const config = await getStoredConfig();
       expect(config?.widgets).toHaveLength(1);
