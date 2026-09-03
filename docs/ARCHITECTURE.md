@@ -41,7 +41,7 @@ Renderer-derived state is not persisted.
 
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 3 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 4 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
 adds `engine`.
@@ -69,7 +69,8 @@ migrated/normalized object. Saving validates through the same boundary.
 Current migration behavior:
 
 - v1 `links` becomes `markdown`, preserving ID, title, content, and layout;
-- v1 and v2 appearance data gains `{type: 'none'}` wallpaper state in v3;
+- v1 and v2 appearance data gains `{type: 'none'}` wallpaper state;
+- v1, v2, and v3 gain `liquidGlassEnabled: true` when migrated to v4;
 - retired WIP `google-calendar` widgets are removed from v2 while all supported
   widgets and appearance data are preserved;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
@@ -152,6 +153,20 @@ The icon URL is resolved with `browser.runtime.getURL`. Each local 32×32 CoreUI
 Brands SVG renders at 24×24 inside a white 40×40 button; a black outline
 magnifier is the load-error fallback. Chrome `_favicon` is not used for search
 brands and remains enabled only for user Markdown links.
+
+## Liquid Glass
+
+Статический Liquid Glass применяется только к поверхностям Markdown и Search.
+Состояние хранится в `appearance.liquidGlassEnabled`, включено по умолчанию и
+переключается в закрытом разделе «Виджеты» окна оформления. `App` добавляет
+корневой класс `liquid-glass-enabled`, а виджеты используют семантические классы
+поверхностей без передачи нового свойства через всё дерево Dashboard.
+
+При выключении Markdown возвращается к непрозрачной карточке, а Search — к
+прежнему bare-виду без внешней капсулы. Стили учитывают светлую и тёмную тему;
+при отсутствии `backdrop-filter` полупрозрачный фон, рамка и тень остаются
+доступным fallback. Панели управления и диалоги эффект не используют. Новые
+зависимости и разрешения расширения не требуются.
 
 ## Extension Boundary
 

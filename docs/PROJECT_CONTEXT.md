@@ -23,6 +23,12 @@ validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
 draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
 behavior, and restoration after Chrome restarts.
 
+Поверхности Markdown и Search используют включённый по умолчанию статический
+Liquid Glass: полупрозрачный tint, размытие и насыщенность фона, светлую кромку
+и глубокую тень. Эффект учитывает тему, оставляет обои видимыми и может быть
+выключен в закрытом разделе «Виджеты» окна оформления. Панели управления и
+диалоги остаются непрозрачными.
+
 ## Core Requirements
 
 - Multiple independent widget instances with UUIDs and persisted layouts.
@@ -35,7 +41,8 @@ behavior, and restoration after Chrome restarts.
 - Markdown source is the only content source of truth. Task checkbox clicks
   update the exact source marker rather than a derived model.
 - Existing v1 `links` data migrates to `markdown` without data or layout loss.
-  V1/v2 appearance migrates to schema v3 with no wallpaper. Existing search
+  V1/v2/v3 configurations migrate to schema v4 with Liquid Glass enabled;
+  legacy appearance without wallpaper gains `{type: 'none'}`. Existing search
   height is normalized to one row.
 - Wallpaper accepts PNG, JPEG, WebP, GIF, AVIF, and SVG files or a direct HTTPS
   URL. Every source is decoded before save; failure preserves the old value and
@@ -56,6 +63,9 @@ behavior, and restoration after Chrome restarts.
 - Local wallpaper bytes live under UUID asset keys. Files above 6 MiB are
   losslessly compressed only when that reaches the 6 MiB target; otherwise the
   original remains available through `unlimitedStorage`.
+- Карточки Markdown и компактная поверхность Search используют общий
+  theme-aware Liquid Glass. Реализация статическая, имеет CSS-fallback без
+  `backdrop-filter` и не требует новых зависимостей или разрешений.
 
 Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 

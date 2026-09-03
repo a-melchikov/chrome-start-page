@@ -163,10 +163,11 @@ Status: Accepted
 ### Decision
 
 Allow one full-screen wallpaper from either a validated local image or a direct
-HTTPS URL. Persist only the URL or local asset UUID in schema v3. Store local
-assets separately, attempt gzip only above 6 MiB, and use the compressed form
-only when it reaches 6 MiB or less; otherwise retain the original. Render with
-centered cover cropping.
+HTTPS URL. Wallpaper references were introduced in schema v3 and remain in the
+current schema v4. Persist only the URL or local asset UUID. Store local assets
+separately, attempt gzip only above 6 MiB, and use the compressed form only when
+it reaches 6 MiB or less; otherwise retain the original. Render with centered
+cover cropping.
 
 ### Why
 
@@ -187,3 +188,33 @@ and orphan cleanup. The manifest needs `unlimitedStorage` but no host access.
 - Lossy resize/re-encoding or rejecting every file above 6 MiB.
 - Fetching remote images with broad `host_permissions`.
 - Replacing the saved wallpaper before validation completes.
+
+## ADR-008 — Переключаемый статический Liquid Glass для виджетов
+
+Status: Accepted
+
+### Decision
+
+Применять theme-aware Liquid Glass только к поверхностям Markdown и Search.
+Эффект включён по умолчанию, хранится в
+`appearance.liquidGlassEnabled` схемы v4 и выключается в закрытом разделе
+«Виджеты» окна оформления. Реализация использует статический CSS и корневой
+класс приложения; панели управления и диалоги остаются непрозрачными.
+
+### Why
+
+Обои должны быть видны сквозь виджеты, но текст и элементы управления обязаны
+оставаться читаемыми при любой теме и при отсутствии поддержки blur.
+
+### Consequences
+
+Markdown имеет непрозрачную базовую карточку, а Search — bare-базу без внешней
+капсулы. При включении общая semantic surface получает tint, рамку, тень и
+`backdrop-filter`; без поддержки фильтра остаётся CSS-fallback. Миграции
+v1/v2/v3 включают эффект. Новые зависимости и разрешения не требуются.
+
+### Rejected Alternatives
+
+- Динамический эффект, отслеживающий указатель, и hover-анимация.
+- Применение стекла к диалогам и служебным панелям.
+- Пользовательские sliders интенсивности вместо одного переключателя.
