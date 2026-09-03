@@ -5,10 +5,10 @@ Last updated: 2026-09-03
 ## Implemented
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
-- Version 4 local dashboard schema, defaults, runtime validation, queued saves,
+- Version 5 local dashboard schema, defaults, runtime validation, queued saves,
   v1 LinksWidget → MarkdownWidget migration, v1/v2/v3 appearance migration,
-  and recovery of old v2 profiles by removing retired WIP Google Calendar
-  widgets.
+  v4 Liquid Glass migration, and recovery of old v2 profiles by removing
+  retired WIP Google Calendar widgets.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,
@@ -28,8 +28,10 @@ Last updated: 2026-09-03
   Wallpaper, and Widgets sections; wallpaper sources are nested as Local and
   URL controls.
 - Включённый по умолчанию статический Liquid Glass для Markdown и Search с
-  theme-aware tint, blur/saturation, светлой кромкой и тенью. Переключатель
-  хранится в `appearance.liquidGlassEnabled`; выключенное состояние возвращает
+  theme-aware tint, blur/saturation, светлой кромкой и тенью. Группа
+  `appearance.liquidGlass` хранит переключатель и параметры прозрачности,
+  размытия и тени; ползунки дают live preview, а reset возвращает стандартные
+  `40% / 18 px / 50%`, не меняя переключатель. Выключенное состояние возвращает
   непрозрачную Markdown-карточку и bare Search без внешней капсулы. CSS-fallback
   сохраняет tint, рамку и тень без `backdrop-filter`.
 - Automated tests for storage/migrations, wallpaper codecs/assets/transactions,

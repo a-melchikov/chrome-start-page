@@ -41,7 +41,7 @@ Renderer-derived state is not persisted.
 
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 4 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 5 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
 adds `engine`.
@@ -70,17 +70,21 @@ Current migration behavior:
 
 - v1 `links` becomes `markdown`, preserving ID, title, content, and layout;
 - v1 and v2 appearance data gains `{type: 'none'}` wallpaper state;
-- v1, v2, and v3 gain `liquidGlassEnabled: true` when migrated to v4;
+- v1, v2, and v3 gain the default `liquidGlass` group when migrated to v5;
+- v4 keeps `liquidGlassEnabled` while migrating it into the v5 group and gains
+  standard transparency, blur, and shadow values;
 - retired WIP `google-calendar` widgets are removed from v2 while all supported
   widgets and appearance data are preserved;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
 - malformed and unsupported/future versions throw explicit errors.
 
 `useDashboardConfig` keeps state plus a synchronous ref so rapid updates compose
-against the latest config. Add/remove, appearance, and completed layout changes
-save immediately. Widget/editor changes use a 300 ms debounce. Saves are queued
-to prevent an older slow write from overwriting newer state; pending widget
-changes flush on editor finish, Escape, `pagehide`, and unmount.
+against the latest config. Add/remove, ordinary appearance, and completed layout
+changes save immediately. Liquid Glass sliders update React state for live
+preview and persist after pointer/keyboard completion, blur, dialog close,
+`pagehide`, or unmount. Widget/editor changes use a 300 ms debounce. Saves are
+queued to prevent an older slow write from overwriting newer state; pending
+widget changes flush on editor finish, Escape, `pagehide`, and unmount.
 
 ## Wallpaper Pipeline
 
@@ -157,10 +161,16 @@ brands and remains enabled only for user Markdown links.
 ## Liquid Glass
 
 Статический Liquid Glass применяется только к поверхностям Markdown и Search.
-Состояние хранится в `appearance.liquidGlassEnabled`, включено по умолчанию и
-переключается в закрытом разделе «Виджеты» окна оформления. `App` добавляет
-корневой класс `liquid-glass-enabled`, а виджеты используют семантические классы
-поверхностей без передачи нового свойства через всё дерево Dashboard.
+Состояние и параметры хранятся в `appearance.liquidGlass`: переключатель,
+прозрачность `0–100%`, размытие `0–40 px` и тень `0–100%`. Стандартные значения
+`40% / 18 px / 50%` можно восстановить отдельной кнопкой без изменения
+переключателя. Настройки находятся в закрытом разделе «Виджеты» окна
+оформления.
+
+`App` добавляет корневой класс `liquid-glass-enabled` и преобразует числа в CSS
+custom properties. Theme-aware формулы используют их для tint, blur и внешней
+тени, а виджеты используют семантические классы поверхностей без передачи
+визуальных параметров через всё дерево Dashboard.
 
 При выключении Markdown возвращается к непрозрачной карточке, а Search — к
 прежнему bare-виду без внешней капсулы. Стили учитывают светлую и тёмную тему;

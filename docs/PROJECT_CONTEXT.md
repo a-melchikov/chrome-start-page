@@ -26,8 +26,9 @@ behavior, and restoration after Chrome restarts.
 Поверхности Markdown и Search используют включённый по умолчанию статический
 Liquid Glass: полупрозрачный tint, размытие и насыщенность фона, светлую кромку
 и глубокую тень. Эффект учитывает тему, оставляет обои видимыми и может быть
-выключен в закрытом разделе «Виджеты» окна оформления. Панели управления и
-диалоги остаются непрозрачными.
+выключен или настроен в закрытом разделе «Виджеты» окна оформления. Доступны
+прозрачность `0–100%`, размытие `0–40 px` и тень `0–100%`; defaults —
+`40% / 18 px / 50%`. Панели управления и диалоги остаются непрозрачными.
 
 ## Core Requirements
 
@@ -41,9 +42,10 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Markdown source is the only content source of truth. Task checkbox clicks
   update the exact source marker rather than a derived model.
 - Existing v1 `links` data migrates to `markdown` without data or layout loss.
-  V1/v2/v3 configurations migrate to schema v4 with Liquid Glass enabled;
-  legacy appearance without wallpaper gains `{type: 'none'}`. Existing search
-  height is normalized to one row.
+  V1/v2/v3 configurations migrate to schema v5 with Liquid Glass defaults; v4
+  preserves its enabled state and gains numeric defaults. Legacy appearance
+  without wallpaper gains `{type: 'none'}`. Existing search height is
+  normalized to one row.
 - Wallpaper accepts PNG, JPEG, WebP, GIF, AVIF, and SVG files or a direct HTTPS
   URL. Every source is decoded before save; failure preserves the old value and
   shows a message.
@@ -64,7 +66,9 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
   losslessly compressed only when that reaches the 6 MiB target; otherwise the
   original remains available through `unlimitedStorage`.
 - Карточки Markdown и компактная поверхность Search используют общий
-  theme-aware Liquid Glass. Реализация статическая, имеет CSS-fallback без
+  theme-aware Liquid Glass с общими пользовательскими значениями прозрачности,
+  blur и тени. Ползунки дают live preview и сохраняются после завершения ввода;
+  reset восстанавливает только числа. Реализация имеет CSS-fallback без
   `backdrop-filter` и не требует новых зависимостей или разрешений.
 
 Rationale and rejected alternatives are in `docs/DECISIONS.md`.
@@ -82,8 +86,8 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Known Limitations
 
-- No sync, import/export, reset UI, accounts, sharing, or Chrome Web Store
-  publishing workflow.
+- No sync, import/export, full-dashboard reset/recovery UI, accounts, sharing,
+  or Chrome Web Store publishing workflow.
 - Markdown has no Math, Mermaid, YAML frontmatter, embedded file upload, syntax
   highlighting, or offline image cache.
 - Search has no history, online suggestions, or custom engines.

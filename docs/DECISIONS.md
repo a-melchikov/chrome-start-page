@@ -164,7 +164,7 @@ Status: Accepted
 
 Allow one full-screen wallpaper from either a validated local image or a direct
 HTTPS URL. Wallpaper references were introduced in schema v3 and remain in the
-current schema v4. Persist only the URL or local asset UUID. Store local assets
+current schema v5. Persist only the URL or local asset UUID. Store local assets
 separately, attempt gzip only above 6 MiB, and use the compressed form only when
 it reaches 6 MiB or less; otherwise retain the original. Render with centered
 cover cropping.
@@ -197,9 +197,13 @@ Status: Accepted
 
 Применять theme-aware Liquid Glass только к поверхностям Markdown и Search.
 Эффект включён по умолчанию, хранится в
-`appearance.liquidGlassEnabled` схемы v4 и выключается в закрытом разделе
-«Виджеты» окна оформления. Реализация использует статический CSS и корневой
-класс приложения; панели управления и диалоги остаются непрозрачными.
+`appearance.liquidGlass` схемы v5 и настраивается в закрытом разделе «Виджеты»
+окна оформления. Общие для обеих тем параметры: прозрачность `0–100%`,
+размытие `0–40 px` и тень `0–100%`; defaults — `40% / 18 px / 50%`. Ползунки
+дают live preview и сохраняются после завершения ввода. Reset возвращает только
+числовые параметры и не включает эффект. Реализация использует статический CSS
+и корневые custom properties; панели управления и диалоги остаются
+непрозрачными.
 
 ### Why
 
@@ -211,10 +215,12 @@ Status: Accepted
 Markdown имеет непрозрачную базовую карточку, а Search — bare-базу без внешней
 капсулы. При включении общая semantic surface получает tint, рамку, тень и
 `backdrop-filter`; без поддержки фильтра остаётся CSS-fallback. Миграции
-v1/v2/v3 включают эффект. Новые зависимости и разрешения не требуются.
+v1/v2/v3 создают стандартную группу, а v4 сохраняет состояние переключателя.
+Новые зависимости и разрешения не требуются.
 
 ### Rejected Alternatives
 
 - Динамический эффект, отслеживающий указатель, и hover-анимация.
 - Применение стекла к диалогам и служебным панелям.
-- Пользовательские sliders интенсивности вместо одного переключателя.
+- Раздельные значения параметров для светлой и тёмной темы.
+- Сохранение в storage на каждое промежуточное движение ползунка.

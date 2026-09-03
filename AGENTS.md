@@ -4,7 +4,7 @@
 
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `4`; current widget types:
+Russian-language. Current persisted schema version: `5`; current widget types:
 `markdown` and `search`.
 
 Source code and configuration are the source of truth for implementation state.
@@ -80,8 +80,8 @@ specification.
   `SearchWidget` is bare, has no visible title/card, and remains one grid row
   high with horizontal resizing only.
 - Liquid Glass is enabled by default for Markdown and Search surfaces only. It
-  is static, theme-aware, and can be disabled from the collapsed «Виджеты»
-  appearance section; controls and dialogs remain opaque.
+  is static, theme-aware, and can be configured or disabled from the collapsed
+  «Виджеты» appearance section; controls and dialogs remain opaque.
 - Escape closes the active dialog; with no dialog open, Escape exits global edit
   mode. Preserve focus restoration and accessible names.
 
@@ -90,13 +90,15 @@ specification.
 - Persistent config key: `local:dashboard-config`; local wallpaper assets use
   `local:dashboard-wallpaper:<uuid>`. Use WXT Storage only, never `localStorage`
   or `chrome.storage.sync`.
-- Immediate saves: add/remove, appearance, completed drag/resize. Widget editor
-  changes are debounced and must flush on finish, Escape, `pagehide`, and
-  unmount. Preserve queued write ordering.
-- Schema v4 supports `markdown`, `search`, wallpaper references, and the
-  `appearance.liquidGlassEnabled` preference. V1/v2/v3 migrate to v4 with the
-  effect enabled; v1 `links` widgets migrate to `markdown` without losing ID,
-  title, content, or layout.
+- Immediate saves: add/remove, ordinary appearance changes, completed
+  drag/resize, and Liquid Glass reset/toggle. Liquid Glass sliders preview in
+  memory and flush after input completion, dialog close, `pagehide`, or
+  unmount. Widget editor changes are debounced and must flush on finish,
+  Escape, `pagehide`, and unmount. Preserve queued write ordering.
+- Schema v5 supports `markdown`, `search`, wallpaper references, and grouped
+  `appearance.liquidGlass` settings. V1/v2/v3 gain defaults; v4 preserves its
+  boolean enabled state while gaining numeric defaults. V1 `links` widgets
+  migrate to `markdown` without losing ID, title, content, or layout.
 - Search widget height is normalized to `1` during load/save.
 
 ## Error Handling and Security
