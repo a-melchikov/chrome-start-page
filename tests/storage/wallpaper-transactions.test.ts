@@ -37,12 +37,13 @@ function createConfig(
   wallpaper: DashboardConfig['appearance']['wallpaper'],
 ): DashboardConfig {
   return {
-    version: 3,
+    version: 4,
     widgets: [],
     appearance: {
       theme: 'system',
       backgroundColor: '#18181b',
       wallpaper,
+      liquidGlassEnabled: true,
     },
   };
 }

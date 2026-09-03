@@ -124,6 +124,10 @@ interface LegacyAppearanceConfig {
   backgroundColor: string;
 }
 
+interface WallpaperAppearanceConfig extends LegacyAppearanceConfig {
+  wallpaper: WallpaperConfig;
+}
+
 function hasValidLegacyDashboardEnvelope(value: unknown): value is Record<
   string,
   unknown
@@ -163,11 +167,28 @@ function isDashboardConfigV2(value: unknown): value is Record<
   );
 }
 
-function isDashboardConfigV3(value: unknown): value is DashboardConfig {
+function isDashboardConfigV3(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  version: 3;
+  widgets: WidgetConfig[];
+  appearance: WallpaperAppearanceConfig;
+} {
+  return (
+    hasValidLegacyDashboardEnvelope(value) &&
+    value.version === 3 &&
+    isWallpaperConfig(value.appearance.wallpaper) &&
+    value.widgets.every(isWidgetConfig)
+  );
+}
+
+function isDashboardConfigV4(value: unknown): value is DashboardConfig {
   return (
     hasValidLegacyDashboardEnvelope(value) &&
     value.version === DASHBOARD_CONFIG_VERSION &&
     isWallpaperConfig(value.appearance.wallpaper) &&
+    typeof value.appearance.liquidGlassEnabled === 'boolean' &&
     value.widgets.every(isWidgetConfig)
   );
 }
@@ -251,6 +272,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       appearance: {
         ...value.appearance,
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       },
       widgets: value.widgets.map((widget) =>
         widget.type === 'links'
@@ -270,13 +292,29 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       appearance: {
         ...value.appearance,
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       },
       widgets: value.widgets.filter(isWidgetConfig),
     });
   }
 
-  if (version === DASHBOARD_CONFIG_VERSION) {
+  if (version === 3) {
     if (!isDashboardConfigV3(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return normalizeDashboardConfig({
+      ...value,
+      version: DASHBOARD_CONFIG_VERSION,
+      appearance: {
+        ...value.appearance,
+        liquidGlassEnabled: true,
+      },
+    });
+  }
+
+  if (version === DASHBOARD_CONFIG_VERSION) {
+    if (!isDashboardConfigV4(value)) {
       throw new InvalidDashboardConfigError();
     }
 

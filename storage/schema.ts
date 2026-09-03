@@ -1,7 +1,7 @@
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 
-export const DASHBOARD_CONFIG_VERSION = 3 as const;
+export const DASHBOARD_CONFIG_VERSION = 4 as const;
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -23,6 +23,7 @@ export interface AppearanceConfig {
   theme: Theme;
   backgroundColor: string;
   wallpaper: WallpaperConfig;
+  liquidGlassEnabled: boolean;
 }
 
 export interface WidgetConfigMap {

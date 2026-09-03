@@ -8,6 +8,7 @@ export const DEFAULT_APPEARANCE: Readonly<AppearanceConfig> = {
   theme: 'system',
   backgroundColor: '#18181b',
   wallpaper: { type: 'none' },
+  liquidGlassEnabled: true,
 };
 
 export function createDefaultDashboardConfig(): DashboardConfig {

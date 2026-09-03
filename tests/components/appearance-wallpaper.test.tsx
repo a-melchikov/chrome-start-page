@@ -9,6 +9,7 @@ const appearance: AppearanceConfig = {
   theme: 'system',
   backgroundColor: '#f4f4f5',
   wallpaper: { type: 'none' },
+  liquidGlassEnabled: true,
 };
 
 function renderDialog(

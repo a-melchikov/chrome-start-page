@@ -14,7 +14,7 @@ describe('migrateDashboardConfig', () => {
     expect(migrateDashboardConfig(config)).toBe(config);
   });
 
-  it('migrates mixed v1 widgets to v3 without losing data', () => {
+  it('migrates mixed v1 widgets to the current version without losing data', () => {
     const legacyConfig = {
       version: 1,
       appearance: { theme: 'light', backgroundColor: '#f4f4f5' },
@@ -37,10 +37,11 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 3,
+      version: 4,
       appearance: {
         ...legacyConfig.appearance,
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       },
       widgets: [
         {
@@ -55,7 +56,7 @@ describe('migrateDashboardConfig', () => {
     });
   });
 
-  it('migrates a v2 dashboard to v3 with no wallpaper', () => {
+  it('migrates a v2 dashboard with no wallpaper', () => {
     const legacyConfig = {
       version: 2,
       widgets: [],
@@ -63,12 +64,13 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 3,
+      version: 4,
       widgets: [],
       appearance: {
         theme: 'dark',
         backgroundColor: '#123456',
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       },
     });
   });
@@ -96,11 +98,36 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 3,
+      version: 4,
       widgets: [legacyConfig.widgets[1]],
       appearance: {
         ...legacyConfig.appearance,
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
+      },
+    });
+  });
+
+  it('migrates v3 wallpaper appearance to v4 with Liquid Glass enabled', () => {
+    const v3Config = {
+      version: 3,
+      widgets: [],
+      appearance: {
+        theme: 'dark',
+        backgroundColor: '#123456',
+        wallpaper: {
+          type: 'url',
+          url: 'https://example.com/wallpaper.jpg',
+        },
+      },
+    } as const;
+
+    expect(migrateDashboardConfig(v3Config)).toEqual({
+      ...v3Config,
+      version: 4,
+      appearance: {
+        ...v3Config.appearance,
+        liquidGlassEnabled: true,
       },
     });
   });
@@ -109,7 +136,7 @@ describe('migrateDashboardConfig', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 4,
+        version: 5,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
   });
@@ -136,6 +163,18 @@ describe('migrateDashboardConfig', () => {
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
         appearance: { theme: 'unknown', backgroundColor: '#18181b' },
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
+
+  it('rejects a non-boolean Liquid Glass preference', () => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        appearance: {
+          ...createDefaultDashboardConfig().appearance,
+          liquidGlassEnabled: 'yes',
+        },
       }),
     ).toThrow(InvalidDashboardConfigError);
   });

@@ -131,6 +131,7 @@ describe('App', () => {
         theme: 'dark',
         backgroundColor: '#123456',
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       });
     });
   });
@@ -138,12 +139,13 @@ describe('App', () => {
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 3,
+      version: 4,
       widgets: [],
       appearance: {
         theme: 'light',
         backgroundColor: '#abcdef',
         wallpaper: { type: 'none' },
+        liquidGlassEnabled: true,
       },
     });
 
@@ -175,12 +177,13 @@ describe('App', () => {
       url: 'https://example.com/previous.jpg',
     };
     await saveDashboardConfig({
-      version: 3,
+      version: 4,
       widgets: [],
       appearance: {
         theme: 'system',
         backgroundColor: '#f4f4f5',
         wallpaper: previousWallpaper,
+        liquidGlassEnabled: true,
       },
     });
     render(<App />);
