@@ -83,7 +83,7 @@ export function SearchWidget({ config }: SearchWidgetProps) {
       <form
         aria-label={label}
         action={engine.action}
-        className="flex w-full items-center gap-2"
+        className="widget-search-surface liquid-glass-surface flex w-full items-center gap-2"
         method="get"
         role="search"
         onSubmit={handleSubmit}
@@ -93,6 +93,7 @@ export function SearchWidget({ config }: SearchWidgetProps) {
         </label>
         <Input
           autoComplete="off"
+          className="widget-search-field"
           id={inputId}
           name={engine.queryParameter}
           placeholder={label}

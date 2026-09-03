@@ -48,9 +48,14 @@ describe('widget lifecycle', () => {
 
     await addMarkdownWidget(user);
 
-    expect(
-      await screen.findByRole('article', { name: 'Markdown' }),
-    ).toBeVisible();
+    const markdownArticle = await screen.findByRole('article', {
+      name: 'Markdown',
+    });
+    expect(markdownArticle).toBeVisible();
+    expect(markdownArticle).toHaveClass(
+      'widget-card-surface',
+      'liquid-glass-surface',
+    );
     expect(
       screen
         .getByRole('button', {
@@ -121,9 +126,17 @@ describe('widget lifecycle', () => {
     await addSearchWidget(user);
 
     expect(await screen.findByRole('article', { name: 'Поиск' })).toBeVisible();
-    expect(
-      screen.getByRole('search', { name: 'Поиск в Google' }),
-    ).toBeVisible();
+    const searchForm = screen.getByRole('search', {
+      name: 'Поиск в Google',
+    });
+    expect(searchForm).toBeVisible();
+    expect(searchForm).toHaveClass(
+      'widget-search-surface',
+      'liquid-glass-surface',
+    );
+    expect(screen.getByRole('searchbox', { name: 'Поиск в Google' })).toHaveClass(
+      'widget-search-field',
+    );
     await waitFor(async () => {
       const config = await getStoredConfig();
       expect(config?.widgets).toHaveLength(1);
@@ -183,7 +196,9 @@ describe('widget lifecycle', () => {
     const editButton = screen.getByRole('button', {
       name: 'Редактировать виджет «Поиск»',
     });
-    expect(editButton.closest('[role="toolbar"]')).toHaveClass('bottom-full');
+    const toolbar = editButton.closest('[role="toolbar"]');
+    expect(toolbar).toHaveClass('bottom-full', 'bg-white');
+    expect(toolbar).not.toHaveClass('liquid-glass-surface');
     await user.click(editButton);
     await user.selectOptions(screen.getByLabelText('Поисковик'), 'bing');
     await user.keyboard('{Escape}');

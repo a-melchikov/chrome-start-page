@@ -104,7 +104,7 @@ export function WidgetHost({
           'relative flex h-full min-w-0',
           isBare
             ? 'items-center overflow-visible'
-            : 'min-h-40 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900',
+            : 'widget-card-surface liquid-glass-surface min-h-40 flex-col overflow-hidden rounded-xl p-4',
           isEditing && 'cursor-move',
         )}
       >

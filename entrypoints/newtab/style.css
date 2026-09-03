@@ -44,6 +44,82 @@
 }
 
 @layer components {
+  .widget-card-surface {
+    border: 1px solid var(--color-zinc-200);
+    background: white;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dark .widget-card-surface {
+    border-color: var(--color-zinc-700);
+    background: var(--color-zinc-900);
+  }
+
+  .liquid-glass-enabled .liquid-glass-surface {
+    border: 1px solid rgb(255 255 255 / 0.58);
+    background:
+      radial-gradient(
+        circle at 12% 0%,
+        rgb(255 255 255 / 0.62),
+        transparent 42%
+      ),
+      linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.52),
+        rgb(255 255 255 / 0.22) 48%,
+        rgb(255 255 255 / 0.38)
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.7),
+      inset 0 -1px 0 rgb(255 255 255 / 0.2),
+      0 16px 40px rgb(24 24 27 / 0.2);
+    backdrop-filter: blur(24px) saturate(180%) contrast(105%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%) contrast(105%);
+  }
+
+  .dark .liquid-glass-enabled .liquid-glass-surface {
+    border-color: rgb(255 255 255 / 0.2);
+    background:
+      radial-gradient(
+        circle at 12% 0%,
+        rgb(255 255 255 / 0.18),
+        transparent 42%
+      ),
+      linear-gradient(
+        135deg,
+        rgb(39 39 42 / 0.68),
+        rgb(9 9 11 / 0.42) 48%,
+        rgb(39 39 42 / 0.56)
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.24),
+      inset 0 -1px 0 rgb(255 255 255 / 0.06),
+      0 18px 48px rgb(0 0 0 / 0.38);
+  }
+
+  .liquid-glass-enabled .widget-search-surface {
+    border-radius: var(--radius-xl);
+    padding: 0.25rem;
+  }
+
+  .liquid-glass-enabled .widget-search-field {
+    border-color: rgb(255 255 255 / 0.46) !important;
+    background: rgb(255 255 255 / 0.42) !important;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.52),
+      inset 0 1px 8px rgb(24 24 27 / 0.08);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+
+  .dark .liquid-glass-enabled .widget-search-field {
+    border-color: rgb(255 255 255 / 0.16) !important;
+    background: rgb(9 9 11 / 0.38) !important;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 1px 8px rgb(0 0 0 / 0.18);
+  }
+
   .dashboard-grid--editing > .react-grid-placeholder {
     border: 1px dashed var(--color-zinc-500);
     border-radius: var(--radius-xl);
