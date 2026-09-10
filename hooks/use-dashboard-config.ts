@@ -4,6 +4,15 @@ import {
   loadDashboardConfig,
   saveDashboardConfig,
 } from '../storage/dashboard-storage';
+import {
+  createDashboardBackup,
+  createDashboardBackupFileName,
+  prepareDashboardImport,
+  replaceDashboardFromBackup,
+  serializeDashboardBackup,
+  type DashboardBackupDownload,
+  type DashboardImportResult,
+} from '../storage/dashboard-backup';
 import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
 import { encodeWallpaperAsset } from '../storage/wallpaper-codec';
 import {
@@ -25,14 +34,22 @@ import {
 
 interface UseDashboardConfigResult {
   config: DashboardConfig | null;
+  backupError: string | null;
   error: string | null;
+  isBackupProcessing: boolean;
   isLoading: boolean;
   isWallpaperUpdating: boolean;
   wallpaperError: string | null;
   addWidget: (widget: WidgetConfig) => void;
+  clearBackupError: () => void;
   clearWallpaperError: () => void;
+  exportDashboardBackup: () => Promise<DashboardBackupDownload>;
   flushAppearancePreview: () => void;
   flushWidgetUpdates: () => void;
+  importDashboardBackup: (
+    file: File,
+    signal?: AbortSignal,
+  ) => Promise<DashboardImportResult>;
   previewAppearance: (changes: Partial<AppearanceConfig>) => void;
   removeWallpaper: () => Promise<void>;
   removeWidget: (widgetId: string) => void;
@@ -51,9 +68,19 @@ function getErrorMessage(error: unknown): string {
     : 'Не удалось загрузить настройки';
 }
 
+async function readBackupFile(file: File): Promise<string> {
+  try {
+    return await file.text();
+  } catch {
+    throw new Error('Не удалось прочитать файл резервной копии');
+  }
+}
+
 export function useDashboardConfig(): UseDashboardConfigResult {
   const [config, setConfig] = useState<DashboardConfig | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isBackupProcessing, setIsBackupProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isWallpaperUpdating, setIsWallpaperUpdating] = useState(false);
   const [wallpaperError, setWallpaperError] = useState<string | null>(null);
@@ -61,6 +88,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const isMountedRef = useRef(false);
   const pendingAppearanceConfigRef = useRef<DashboardConfig | null>(null);
   const pendingWidgetConfigRef = useRef<DashboardConfig | null>(null);
+  const backupOperationRef = useRef(false);
   const wallpaperOperationRef = useRef(false);
   const widgetSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -186,6 +214,10 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     async (
       operation: () => Promise<WallpaperTransactionResult>,
     ): Promise<void> => {
+      if (backupOperationRef.current) {
+        throw new Error('Операция с резервной копией уже выполняется');
+      }
+
       if (wallpaperOperationRef.current) {
         throw new Error('Операция с обоями уже выполняется');
       }
@@ -285,6 +317,108 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const clearWallpaperError = useCallback(() => {
     setWallpaperError(null);
+  }, []);
+
+  const runBackupOperation = useCallback(
+    async <T>(operation: () => Promise<T>): Promise<T> => {
+      if (wallpaperOperationRef.current) {
+        throw new Error('Дождитесь завершения операции с обоями');
+      }
+
+      if (backupOperationRef.current) {
+        throw new Error('Операция с резервной копией уже выполняется');
+      }
+
+      backupOperationRef.current = true;
+
+      if (isMountedRef.current) {
+        setIsBackupProcessing(true);
+        setBackupError(null);
+      }
+
+      try {
+        return await operation();
+      } catch (operationError) {
+        if (
+          isMountedRef.current &&
+          !(operationError instanceof WallpaperValidationAbortedError)
+        ) {
+          setBackupError(getErrorMessage(operationError));
+        }
+
+        throw operationError;
+      } finally {
+        backupOperationRef.current = false;
+
+        if (isMountedRef.current) {
+          setIsBackupProcessing(false);
+        }
+      }
+    },
+    [],
+  );
+
+  const exportDashboardBackup = useCallback(
+    () =>
+      runBackupOperation(async () => {
+        flushPendingUpdates();
+
+        return enqueueStorageOperation(async () => {
+          const currentConfig = configRef.current;
+
+          if (!currentConfig) {
+            throw new Error('Настройки дашборда ещё не загружены');
+          }
+
+          const backup = await createDashboardBackup(currentConfig);
+
+          return {
+            fileName: createDashboardBackupFileName(backup.exportedAt),
+            contents: serializeDashboardBackup(backup),
+          };
+        });
+      }),
+    [enqueueStorageOperation, flushPendingUpdates, runBackupOperation],
+  );
+
+  const importDashboardBackup = useCallback(
+    (file: File, signal?: AbortSignal) =>
+      runBackupOperation(async () => {
+        const source = await readBackupFile(file);
+        const preparedImport = await prepareDashboardImport(source, signal);
+
+        if (signal?.aborted) {
+          throw new WallpaperValidationAbortedError();
+        }
+
+        flushPendingUpdates();
+        const result = await enqueueStorageOperation(() => {
+          const currentConfig = configRef.current;
+
+          if (!currentConfig) {
+            throw new Error('Настройки дашборда ещё не загружены');
+          }
+
+          return replaceDashboardFromBackup(currentConfig, preparedImport);
+        });
+
+        configRef.current = result.config;
+        pendingAppearanceConfigRef.current = null;
+        pendingWidgetConfigRef.current = null;
+
+        if (isMountedRef.current) {
+          setConfig(result.config);
+          setError(null);
+          setWallpaperError(null);
+        }
+
+        return result;
+      }),
+    [enqueueStorageOperation, flushPendingUpdates, runBackupOperation],
+  );
+
+  const clearBackupError = useCallback(() => {
+    setBackupError(null);
   }, []);
 
   const commitConfig = useCallback(
@@ -427,14 +561,19 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   return {
     config,
+    backupError,
     error,
+    isBackupProcessing,
     isLoading,
     isWallpaperUpdating,
     wallpaperError,
     addWidget,
+    clearBackupError,
     clearWallpaperError,
+    exportDashboardBackup,
     flushAppearancePreview,
     flushWidgetUpdates,
+    importDashboardBackup,
     previewAppearance,
     removeWallpaper,
     removeWidget,

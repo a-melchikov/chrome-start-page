@@ -17,14 +17,19 @@ type DashboardStyle = CSSProperties & {
 export function App() {
   const {
     config,
+    backupError,
     error,
+    isBackupProcessing,
     isLoading,
     isWallpaperUpdating,
     wallpaperError,
     addWidget,
+    clearBackupError,
     clearWallpaperError,
+    exportDashboardBackup,
     flushAppearancePreview,
     flushWidgetUpdates,
+    importDashboardBackup,
     previewAppearance,
     removeWallpaper,
     removeWidget,
@@ -108,7 +113,9 @@ export function App() {
       <div className="relative z-10">
         <Dashboard
           appearance={appearance}
+          backupError={backupError}
           config={config}
+          isBackupProcessing={isBackupProcessing}
           isLoading={isLoading}
           isWallpaperUpdating={isWallpaperUpdating}
           wallpaperError={dialogWallpaperError}
@@ -116,12 +123,19 @@ export function App() {
           onAddWidget={addWidget}
           onAppearanceChange={updateAppearance}
           onAppearancePreview={previewAppearance}
+          onClearBackupError={clearBackupError}
           onClearWallpaperError={() => {
             clearWallpaperError();
             setFailedRemoteWallpaperSrc(null);
           }}
           onFlushWidgetUpdates={flushWidgetUpdates}
           onFlushAppearancePreview={flushAppearancePreview}
+          onExportDashboard={exportDashboardBackup}
+          onImportDashboard={async (file, signal) => {
+            const result = await importDashboardBackup(file, signal);
+            setFailedRemoteWallpaperSrc(null);
+            return result;
+          }}
           onRemoveWallpaper={removeWallpaper}
           onRemoveWidget={removeWidget}
           onSetLocalWallpaper={setLocalWallpaper}

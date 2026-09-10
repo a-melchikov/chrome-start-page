@@ -1,6 +1,10 @@
 import { useState } from 'react';
 
 import type {
+  DashboardBackupDownload,
+  DashboardImportResult,
+} from '../../storage/dashboard-backup';
+import type {
   AppearanceConfig,
   DashboardConfig,
   WidgetConfig,
@@ -15,7 +19,9 @@ import { WidgetCanvas } from './WidgetCanvas';
 
 interface DashboardProps {
   appearance: AppearanceConfig;
+  backupError: string | null;
   config: DashboardConfig | null;
+  isBackupProcessing: boolean;
   isLoading: boolean;
   isWallpaperUpdating: boolean;
   wallpaperError: string | null;
@@ -23,9 +29,15 @@ interface DashboardProps {
   onAddWidget: (widget: WidgetConfig) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
   onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
+  onClearBackupError: () => void;
   onClearWallpaperError: () => void;
+  onExportDashboard: () => Promise<DashboardBackupDownload>;
   onFlushAppearancePreview: () => void;
   onFlushWidgetUpdates: () => void;
+  onImportDashboard: (
+    file: File,
+    signal?: AbortSignal,
+  ) => Promise<DashboardImportResult>;
   onRemoveWallpaper: () => Promise<void>;
   onRemoveWidget: (widgetId: string) => void;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
@@ -36,7 +48,9 @@ interface DashboardProps {
 
 export function Dashboard({
   appearance,
+  backupError,
   config,
+  isBackupProcessing,
   isLoading,
   isWallpaperUpdating,
   wallpaperError,
@@ -44,9 +58,12 @@ export function Dashboard({
   onAddWidget,
   onAppearanceChange,
   onAppearancePreview,
+  onClearBackupError,
   onClearWallpaperError,
+  onExportDashboard,
   onFlushAppearancePreview,
   onFlushWidgetUpdates,
+  onImportDashboard,
   onRemoveWallpaper,
   onRemoveWidget,
   onSetLocalWallpaper,
@@ -112,12 +129,18 @@ export function Dashboard({
     onRemoveWidget(widgetId);
   };
 
+  const importDashboard = async (file: File, signal?: AbortSignal) => {
+    const result = await onImportDashboard(file, signal);
+    setEditingWidgetId(null);
+    return result;
+  };
+
   return (
     <>
       {config ? (
         <WidgetCanvas
           editingWidgetId={editingWidgetId}
-          isEditing={isEditing}
+          isEditing={isEditing && !isBackupProcessing}
           widgets={config.widgets}
           onFinishWidgetEditing={finishWidgetEditing}
           onRemoveWidget={removeWidget}
@@ -129,7 +152,9 @@ export function Dashboard({
 
       <DashboardControls
         appearance={appearance}
-        canManageWidgets={!isLoading && config !== null}
+        backupError={backupError}
+        canManageWidgets={!isLoading && config !== null && !isBackupProcessing}
+        isBackupProcessing={isBackupProcessing}
         isEditing={isEditing}
         isWallpaperUpdating={isWallpaperUpdating}
         wallpaperError={wallpaperError}
@@ -137,9 +162,12 @@ export function Dashboard({
         onAddWidget={addWidget}
         onAppearanceChange={onAppearanceChange}
         onAppearancePreview={onAppearancePreview}
+        onClearBackupError={onClearBackupError}
         onClearWallpaperError={onClearWallpaperError}
         onEditingChange={changeEditing}
+        onExportDashboard={onExportDashboard}
         onFlushAppearancePreview={onFlushAppearancePreview}
+        onImportDashboard={importDashboard}
         onRemoveWallpaper={onRemoveWallpaper}
         onSetLocalWallpaper={onSetLocalWallpaper}
         onSetUrlWallpaper={onSetUrlWallpaper}

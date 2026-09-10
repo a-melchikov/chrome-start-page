@@ -224,3 +224,38 @@ v1/v2/v3 создают стандартную группу, а v4 сохран�
 - Применение стекла к диалогам и служебным панелям.
 - Раздельные значения параметров для светлой и тёмной темы.
 - Сохранение в storage на каждое промежуточное движение ползунка.
+
+## ADR-009 — Full versioned backup with atomic replacement
+
+Status: Accepted
+
+### Decision
+
+Export the complete dashboard through a dedicated versioned JSON envelope. The
+file contains the validated `DashboardConfig` and the active local wallpaper
+asset when present; HTTPS wallpaper remains a URL. Import requires explicit
+confirmation, validates the complete backup, and replaces rather than merges
+the current dashboard. Restored local wallpaper receives a fresh UUID and uses
+asset-first transactional storage with rollback.
+
+### Why
+
+A self-contained file provides predictable manual recovery and transfer without
+adding accounts, sync, backend infrastructure, or new browser permissions.
+Whole-dashboard replacement has clear appearance and layout semantics, while
+widget merging would require conflict and placement rules that are not part of
+the product.
+
+### Consequences
+
+The backup format has its own version independent of schema v5. Pending edits
+flush before export/import joins the shared save queue. Invalid, foreign, and
+future backup formats leave the active dashboard unchanged. HTTPS wallpaper
+restore depends on the remote resource passing validation at import time.
+
+### Rejected Alternatives
+
+- Exporting only the main config and silently omitting local wallpaper bytes.
+- Merging imported and current widgets or prompting for merge strategy.
+- Reusing an imported wallpaper UUID and risking overwrite before commit.
+- Adding the Chrome `downloads` permission for a Blob download.

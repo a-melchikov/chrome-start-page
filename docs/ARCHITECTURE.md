@@ -9,9 +9,11 @@ flowchart LR
   App --> Hook[useDashboardConfig]
   Hook <--> Repo[dashboard-storage]
   Hook <--> Assets[wallpaper-assets + transactions]
+  Hook <--> Backup[dashboard-backup]
   Repo --> Validate[validation + migrations]
   Repo <--> Local[(chrome.storage.local)]
   Assets <--> Local
+  Backup <--> Local
   App --> Dashboard
   App --> Wallpaper[WallpaperLayer]
   Dashboard --> Grid[WidgetCanvas]
@@ -85,6 +87,34 @@ preview and persist after pointer/keyboard completion, blur, dialog close,
 `pagehide`, or unmount. Widget/editor changes use a 300 ms debounce. Saves are
 queued to prevent an older slow write from overwriting newer state; pending
 widget changes flush on editor finish, Escape, `pagehide`, and unmount.
+
+Backup export and import use the same serialized operation queue. Export first
+flushes pending widget and appearance changes, then snapshots the current
+validated config and referenced local wallpaper. Import validates and prepares
+the complete backup before it joins the queue, so older queued saves always
+finish before the replacement commit.
+
+## Backup Format and Restore
+
+`storage/dashboard-backup.ts` owns the JSON wire format independently of the
+persisted dashboard schema. Format v1 contains the marker
+`chrome-start-page-backup`, `formatVersion`, an ISO export timestamp, a
+`DashboardConfig`, and either the referenced `LocalWallpaperAssetV1` or `null`.
+Only this envelope is accepted; nested dashboard data still passes through the
+normal migration boundary.
+
+Local wallpaper data is decoded, checked against its config asset ID, and
+browser-validated before any write. Import assigns it a fresh UUID, saves the
+new asset before the replacement config, rolls it back if the config write
+fails, and removes the previous asset only after commit. Non-local imports save
+the replacement config before removing any previous local asset. A cleanup
+failure is reported as a warning without rolling back an already valid import.
+HTTPS wallpaper remains a URL and is revalidated before commit.
+
+The dashboard backup dialog performs file selection and Blob download but never
+accesses extension storage directly. Browser-native Blob/object URLs avoid a
+`downloads` permission. Closing the dialog aborts validation; once the queued
+storage transaction begins it is allowed to finish atomically.
 
 ## Wallpaper Pipeline
 

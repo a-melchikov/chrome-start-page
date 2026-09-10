@@ -44,6 +44,14 @@ export function PaletteIcon(props: IconProps) {
   );
 }
 
+export function TransferIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M7 3v15M3.5 6.5 7 3l3.5 3.5M17 21V6M13.5 17.5 17 21l3.5-3.5" />
+    </BaseIcon>
+  );
+}
+
 export function LinkIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

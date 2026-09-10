@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-09-03
+Last updated: 2026-09-10
 
 ## Implemented
 
@@ -34,10 +34,14 @@ Last updated: 2026-09-03
   `40% / 18 px / 50%`, не меняя переключатель. Выключенное состояние возвращает
   непрозрачную Markdown-карточку и bare Search без внешней капсулы. CSS-fallback
   сохраняет tint, рамку и тень без `backdrop-filter`.
+- Separate «Импорт и экспорт» dialog in global edit mode. Export downloads a
+  versioned JSON backup with the complete dashboard and embedded local
+  wallpaper; confirmed import validates the file and atomically replaces the
+  current state with rollback protection and fresh local asset IDs.
 - Automated tests for storage/migrations, wallpaper codecs/assets/transactions,
-  image validation, state persistence, widget lifecycle, layout constraints,
-  Markdown/security/tasks/editor, Search behavior, and App appearance/edit
-  flows.
+  backup format/import transactions, image validation, state persistence,
+  widget lifecycle, layout constraints, Markdown/security/tasks/editor, Search
+  behavior, and App appearance/edit flows.
 
 ## Partially Implemented
 
@@ -45,8 +49,8 @@ Last updated: 2026-09-03
 
 ## Not Implemented / Known Limitations
 
-- No configuration sync, import/export, reset/recovery UI, backend, accounts,
-  sharing, analytics, telemetry, or Chrome Web Store release automation.
+- No configuration sync, reset/recovery UI, backend, accounts, sharing,
+  analytics, telemetry, or Chrome Web Store release automation.
 - Markdown excludes Math, Mermaid, frontmatter, uploads, syntax highlighting,
   and offline image caching.
 - Search excludes history, suggestions, custom engines, and URL templates.
@@ -59,7 +63,7 @@ Last updated: 2026-09-03
 - No confirmed application defect is recorded in source, tests, or current
   requirements.
 - Production build succeeds, but WXT reports the main new-tab chunk at about
-  633 kB, above its 500 kB warning threshold. No bundle budget or code splitting
+  665 kB, above its 500 kB warning threshold. No bundle budget or code splitting
   is configured.
 - Root `PLAN.md` is stale and untracked; it describes the removed LinksWidget and
   completed bootstrap prompts. Do not use it as a backlog or current spec.

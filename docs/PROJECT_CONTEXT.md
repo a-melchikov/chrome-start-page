@@ -21,7 +21,8 @@ Version 0.1.0 implements two repeatable widget types:
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
 draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
-behavior, and restoration after Chrome restarts.
+behavior, restoration after Chrome restarts, and full versioned JSON backup and
+restore with embedded local wallpaper assets.
 
 Поверхности Markdown и Search используют включённый по умолчанию статический
 Liquid Glass: полупрозрачный tint, размытие и насыщенность фона, светлую кромку
@@ -49,6 +50,9 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Wallpaper accepts PNG, JPEG, WebP, GIF, AVIF, and SVG files or a direct HTTPS
   URL. Every source is decoded before save; failure preserves the old value and
   shows a message.
+- Backup export flushes queued edits and includes widgets, appearance, and local
+  wallpaper bytes. Import validates the complete file, requires explicit
+  confirmation, and atomically replaces the current dashboard.
 
 ## Durable Decisions
 
@@ -65,6 +69,9 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Local wallpaper bytes live under UUID asset keys. Files above 6 MiB are
   losslessly compressed only when that reaches the 6 MiB target; otherwise the
   original remains available through `unlimitedStorage`.
+- Backup files use their own versioned envelope. Restored local assets receive a
+  fresh UUID, while widget IDs are preserved; HTTPS wallpaper remains a URL and
+  is revalidated before import commits.
 - Карточки Markdown и компактная поверхность Search используют общий
   theme-aware Liquid Glass с общими пользовательскими значениями прозрачности,
   blur и тени. Ползунки дают live preview и сохраняются после завершения ввода;
@@ -86,8 +93,8 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Known Limitations
 
-- No sync, import/export, full-dashboard reset/recovery UI, accounts, sharing,
-  or Chrome Web Store publishing workflow.
+- No sync, full-dashboard reset/recovery UI, accounts, sharing, or Chrome Web
+  Store publishing workflow.
 - Markdown has no Math, Mermaid, YAML frontmatter, embedded file upload, syntax
   highlighting, or offline image cache.
 - Search has no history, online suggestions, or custom engines.

@@ -12,10 +12,30 @@ import { storage } from 'wxt/utils/storage';
 
 import { App } from '../../entrypoints/newtab/App';
 import {
+  DASHBOARD_BACKUP_FORMAT,
+  DASHBOARD_BACKUP_FORMAT_VERSION,
+} from '../../storage/dashboard-backup';
+import {
   DASHBOARD_STORAGE_KEY,
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
 import type { DashboardConfig } from '../../storage/schema';
+
+function createBackupFile(config: DashboardConfig) {
+  return new File(
+    [
+      JSON.stringify({
+        format: DASHBOARD_BACKUP_FORMAT,
+        formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
+        exportedAt: '2026-09-10T12:34:56.000Z',
+        dashboard: config,
+        localWallpaper: null,
+      }),
+    ],
+    'dashboard-backup.json',
+    { type: 'application/json' },
+  );
+}
 
 describe('App', () => {
   beforeEach(() => {
@@ -40,6 +60,9 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Настройки оформления' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Импорт и экспорт' }),
     ).toBeInTheDocument();
 
     await user.click(
@@ -99,6 +122,76 @@ describe('App', () => {
 
     await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
     expect(addWidgetButton).toHaveFocus();
+  });
+
+  it('replaces the dashboard only after import confirmation', async () => {
+    const user = userEvent.setup();
+    const current: DashboardConfig = {
+      version: 5,
+      widgets: [
+        {
+          id: 'current-widget',
+          type: 'markdown',
+          title: 'Текущий виджет',
+          content: 'До импорта',
+          layout: { x: 0, y: 0, w: 4, h: 3 },
+        },
+      ],
+      appearance: {
+        theme: 'light',
+        backgroundColor: '#f4f4f5',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+    };
+    const imported: DashboardConfig = {
+      version: 5,
+      widgets: [
+        {
+          id: 'imported-widget',
+          type: 'markdown',
+          title: 'Импортированный виджет',
+          content: 'После импорта',
+          layout: { x: 2, y: 1, w: 5, h: 4 },
+        },
+      ],
+      appearance: {
+        ...current.appearance,
+        theme: 'dark',
+        backgroundColor: '#123456',
+      },
+    };
+    await saveDashboardConfig(current);
+    render(<App />);
+
+    expect(await screen.findByText('Текущий виджет')).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Включить режим редактирования' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Импорт и экспорт' }));
+    await user.upload(
+      screen.getByLabelText('Файл резервной копии'),
+      createBackupFile(imported),
+    );
+
+    expect(screen.getByText('Текущий виджет')).toBeVisible();
+    expect(
+      screen.queryByText('Импортированный виджет'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    expect(await screen.findByText('Импортированный виджет')).toBeVisible();
+    expect(screen.queryByText('Текущий виджет')).not.toBeInTheDocument();
+    expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    await expect(
+      storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
+    ).resolves.toEqual(imported);
   });
 
   it('applies and persists theme and background changes immediately', async () => {
