@@ -180,6 +180,27 @@ propose a targeted fix, and resolve after user confirmation.
   git commit -m "<type>(<scope>): <message>"
   ```
 
+## Planning Protocol ("составь план", "спланируй", "/plan")
+
+When the user requests planning (triggers: "составь план", "спланируй", "/plan", or similar):
+
+1. **Autonomous Research Phase**:
+   - Deeply inspect current codebase, `docs/` architecture documents, configurations, and existing patterns.
+   - Never ask questions that can be reliably answered from the repository.
+2. **Thorough Interview Phase (`ask_question`)**:
+   - Ask as many questions via `ask_question` as needed until zero ambiguity remains (typically 10–25 questions for large/architectural features; proportionally fewer for localized tasks).
+   - Cover where applicable: goals/behavior, architecture/patterns, UI/UX, data/APIs/state, security/performance, backward compatibility, edge cases, acceptance criteria.
+   - Clarify trade-offs when multiple viable options exist.
+   - Exception: skip questioning only if the user explicitly specified "без вопросов" or "сразу пиши план".
+3. **Strict No-Modification Rule**:
+   - Do not begin implementation, create code files, or modify the repository during planning.
+4. **Artifact Formulation**:
+   - Once all questions are resolved, generate a comprehensive implementation plan as an interactive markdown Artifact (`RequestFeedback: true`).
+   - Structure must include: understanding & goals, assumptions & risks, step-by-step tasks, affected files/modules, test strategy, and acceptance criteria.
+   - In chat, output only a concise summary pointing to the artifact.
+5. **Awaiting Confirmation**:
+   - Do not start implementation until the user explicitly approves the plan.
+
 ## Change Rules
 
 - Before changes, inspect the relevant implementation, tests, git status, and
