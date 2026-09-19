@@ -141,6 +141,12 @@ end of the task:
 - `chrome-devtools`: console inspection (`console.error`/warnings), inspecting
   `chrome.storage.local` keys, and script profiling. May run against `pnpm dev`.
 
+Environment Readiness Check: before proposing an MCP check, verify that the
+environment is actually ready (e.g. browser binaries installed in
+`~/.cache/ms-playwright` for Playwright, remote debugging port accessible for
+Chrome DevTools, production build present for Lighthouse). Do not propose an MCP
+tool via `ask_question` if its environment prerequisites are not met.
+
 Proposal format: `Я бы проверил это <что именно> через MCP <название>, потому что <причина>.`
 If an MCP check reveals errors or metric regressions, isolate the root cause,
 propose a targeted fix, and resolve after user confirmation.
@@ -172,12 +178,13 @@ propose a targeted fix, and resolve after user confirmation.
 - Zero AI Footprint: never add AI, assistant, or tool attribution tags.
 - Post-change requirement: after completing any changes in the repository,
   the agent must append a ready-to-run commit command at the very end of its
-  response:
+  response, staging only the explicitly changed target files (never use blanket
+  `git add .` to avoid staging untracked or temporary files):
 
   Предлагаю коммит:
 
   ```bash
-  git commit -m "<type>(<scope>): <message>"
+  git add <file1> <file2> && git commit -m "<type>(<scope>): <message>"
   ```
 
 ## Planning Protocol ("составь план", "спланируй", "/plan")
@@ -200,6 +207,16 @@ When the user requests planning (triggers: "составь план", "спла�
    - In chat, output only a concise summary pointing to the artifact.
 5. **Awaiting Confirmation**:
    - Do not start implementation until the user explicitly approves the plan.
+
+## Post-Plan Iterations & Defect Resolution
+
+When user feedback, bug reports, edge cases, or UX refinements arrive after a plan has been implemented:
+
+1. **Lightweight Surgical Cycle**: Do not restart the full `/plan` interview protocol unless the user explicitly requests `/plan` for a major new subsystem or schema migration. Apply a fast, focused cycle instead.
+2. **Root-Cause Isolation**: Analyze code, active tests, or provided screenshots immediately. Do not ask questions that can be diagnosed directly from the workspace state.
+3. **Targeted Implementation**: Make minimal, surgical edits addressing the exact feedback without touching unrelated modules or styles.
+4. **Focused Verification**: Run targeted unit tests (`pnpm test <path>`) followed by the unified pipeline (`pnpm check`).
+5. **Atomic Delivery**: Provide a concise technical summary and the ready-to-run `git add <file1> <file2> && git commit ...` command.
 
 ## Change Rules
 

@@ -12,7 +12,8 @@ Use this runbook when proposing or running Model Context Protocol (MCP) verifica
 1. **No automatic execution**: Never run MCP checks automatically upon modifying code.
 2. **Proactive proposal**: In tasks touching UI, visual layout, animations, Liquid Glass, or performance, ask the user via `ask_question` at the end of the task:
    `Я бы проверил это <что именно> через MCP <название>, потому что <причина>.`
-3. **Failure handling**: If an MCP check reveals regressions or errors, isolate the root cause, propose a targeted fix, and resolve after confirmation.
+3. **Environment readiness**: Before proposing an MCP tool, silently verify its prerequisites (e.g. browser binaries in `~/.cache/ms-playwright` for Playwright, reachable debug port for Chrome DevTools, production build for Lighthouse). Do not propose tools whose environment is absent or unconfigured.
+4. **Failure handling**: If an MCP check reveals regressions or errors, isolate the root cause, propose a targeted fix, and resolve after confirmation.
 
 ---
 
