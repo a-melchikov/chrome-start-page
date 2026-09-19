@@ -32,6 +32,11 @@ async function addSearchWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Поиск' }));
 }
 
+async function addPomodoroWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Помодоро' }));
+}
+
 async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
@@ -112,6 +117,22 @@ describe('widget lifecycle', () => {
       expect(widgets).toHaveLength(2);
       expect(widgets[0]?.id).not.toBe(widgets[1]?.id);
       expect(widgets.map((widget) => widget.layout.y)).toEqual([0, 3]);
+    });
+  });
+
+  it('places sequentially added widgets of different types directly below each other', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+
+    await addPomodoroWidget(user);
+    await addMarkdownWidget(user);
+    await addPomodoroWidget(user);
+
+    await waitFor(async () => {
+      const widgets = (await getStoredConfig())?.widgets ?? [];
+      expect(widgets).toHaveLength(3);
+      expect(widgets.map((widget) => widget.layout.y)).toEqual([0, 5, 8]);
     });
   });
 

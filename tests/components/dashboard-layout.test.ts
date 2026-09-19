@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyGridLayout,
+  calculateNextWidgetPosition,
   createGridLayout,
   DASHBOARD_GRID_COLUMNS,
   getDashboardGridWidth,
@@ -158,5 +159,71 @@ describe('dashboard layout', () => {
     ]);
 
     expect(result[0]?.layout).toEqual({ x: 1, y: 2, w: 8, h: 1 });
+  });
+
+  describe('calculateNextWidgetPosition', () => {
+    it('places the first widget at (0, 0) when the dashboard is empty', () => {
+      expect(calculateNextWidgetPosition([], { w: 4 })).toEqual({
+        x: 0,
+        y: 0,
+      });
+    });
+
+    it('places a new widget directly below an existing widget in the same column', () => {
+      const widgets = [createWidget('first', { x: 0, y: 0, w: 4, h: 6 })];
+
+      expect(calculateNextWidgetPosition(widgets, { w: 4 })).toEqual({
+        x: 0,
+        y: 6,
+      });
+    });
+
+    it('stacks multiple widgets tightly below each other without vertical gaps', () => {
+      const widgets = [
+        createWidget('first', { x: 0, y: 0, w: 4, h: 6 }),
+        createWidget('second', { x: 0, y: 6, w: 3, h: 5 }),
+      ];
+
+      expect(calculateNextWidgetPosition(widgets, { w: 3 })).toEqual({
+        x: 0,
+        y: 11,
+      });
+      expect(calculateNextWidgetPosition(widgets, { w: 4 })).toEqual({
+        x: 0,
+        y: 11,
+      });
+    });
+
+    it('ignores widgets in non-overlapping columns', () => {
+      const widgets = [createWidget('sidebar', { x: 4, y: 0, w: 4, h: 8 })];
+
+      expect(calculateNextWidgetPosition(widgets, { w: 3, x: 0 })).toEqual({
+        x: 0,
+        y: 0,
+      });
+      expect(calculateNextWidgetPosition(widgets, { w: 4, x: 0 })).toEqual({
+        x: 0,
+        y: 0,
+      });
+    });
+
+    it('calculates the maximum bottom among all horizontally overlapping widgets', () => {
+      const widgets = [
+        createWidget('left', { x: 0, y: 0, w: 3, h: 5 }),
+        createWidget('middle', { x: 4, y: 0, w: 4, h: 8 }),
+      ];
+
+      // New wide widget (Search w=6) overlaps both x:0..3 and x:4..8
+      expect(calculateNextWidgetPosition(widgets, { w: 6, x: 0 })).toEqual({
+        x: 0,
+        y: 8,
+      });
+
+      // New narrow widget (Pomodoro w=3) overlaps only x:0..3
+      expect(calculateNextWidgetPosition(widgets, { w: 3, x: 0 })).toEqual({
+        x: 0,
+        y: 5,
+      });
+    });
   });
 });

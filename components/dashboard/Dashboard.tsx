@@ -16,6 +16,7 @@ import {
 } from '../../widgets/registry';
 import { DashboardControls } from './DashboardControls';
 import { WidgetCanvas } from './WidgetCanvas';
+import { calculateNextWidgetPosition } from './dashboard-layout';
 
 interface DashboardProps {
   appearance: AppearanceConfig;
@@ -75,10 +76,20 @@ export function Dashboard({
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
 
   const addWidget = (type: WidgetType) => {
-    const widget = createWidgetConfig(type, config?.widgets.length ?? 0);
+    const baseWidget = createWidgetConfig(type, 0);
 
-    if (widget) {
-      onAddWidget(widget);
+    if (baseWidget) {
+      const position = calculateNextWidgetPosition(
+        config?.widgets ?? [],
+        baseWidget.layout,
+      );
+      onAddWidget({
+        ...baseWidget,
+        layout: {
+          ...baseWidget.layout,
+          ...position,
+        },
+      });
     }
   };
 

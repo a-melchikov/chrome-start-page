@@ -120,3 +120,40 @@ export function applyGridLayout(
 
   return hasChanges ? nextWidgets : widgets;
 }
+
+export interface NewWidgetPositionOptions {
+  w: number;
+  x?: number;
+}
+
+export function calculateNextWidgetPosition(
+  existingWidgets: readonly WidgetConfig[],
+  newWidget: NewWidgetPositionOptions,
+): { x: number; y: number } {
+  const x = Math.max(0, finiteInteger(newWidget.x ?? 0, 0));
+  const w = Math.max(1, finiteInteger(newWidget.w, WIDGET_MIN_WIDTH));
+  const targetRight = x + w;
+
+  const overlappingWidgets = existingWidgets.filter((widget) => {
+    const widgetLeft = finiteInteger(widget.layout.x, 0);
+    const widgetWidth = finiteInteger(widget.layout.w, WIDGET_MIN_WIDTH);
+    const widgetRight = widgetLeft + widgetWidth;
+
+    return widgetLeft < targetRight && widgetRight > x;
+  });
+
+  if (overlappingWidgets.length === 0) {
+    return { x, y: 0 };
+  }
+
+  const maxY = Math.max(
+    0,
+    ...overlappingWidgets.map((widget) => {
+      const top = Math.max(0, finiteInteger(widget.layout.y, 0));
+      const height = Math.max(0, finiteInteger(widget.layout.h, 0));
+      return top + height;
+    }),
+  );
+
+  return { x, y: maxY };
+}
