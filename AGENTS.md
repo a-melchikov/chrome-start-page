@@ -197,10 +197,11 @@ When the user requests planning (triggers: "составь план", "спла�
 1. **Autonomous Research Phase**:
    - Deeply inspect current codebase, `docs/` architecture documents, configurations, and existing patterns.
    - Never ask questions that can be reliably answered from the repository.
-2. **Thorough Interview Phase (`ask_question`)**:
+2. **Iterative Interview Phase (`ask_question`)**:
    - Ask as many questions via `ask_question` as needed until zero ambiguity remains (typically 10–25 questions for large/architectural features; proportionally fewer for localized tasks).
    - Cover where applicable: goals/behavior, architecture/patterns, UI/UX, data/APIs/state, security/performance, backward compatibility, edge cases, acceptance criteria.
    - Clarify trade-offs when multiple viable options exist.
+   - **Multi-round follow-up loop**: after receiving user answers, evaluate whether any ambiguities or follow-up questions remain. If so, ask another round of `ask_question` instead of generating the plan prematurely; repeat until zero ambiguity exists.
    - Exception: skip questioning only if the user explicitly specified "без вопросов" or "сразу пиши план".
 3. **Strict No-Modification Rule**:
    - Do not begin implementation, create code files, or modify the repository during planning.
