@@ -10,8 +10,11 @@
     "package": "wxt zip",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
+    "preview:chrome": "google-chrome --disable-extensions-except=.output/chrome-mv3 --load-extension=.output/chrome-mv3 chrome://newtab",
     "postinstall": "wxt prepare"
   },
   "dependencies": {

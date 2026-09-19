@@ -116,18 +116,16 @@ specification.
 
 ## Testing
 
-Run focused tests while iterating. Before handing off a code/config change, run:
+Run focused tests while iterating. Before handing off a code/config change, run
+the unified verification pipeline:
 
 ```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check
 ```
 
-Also run `pnpm exec prettier --check .` for documentation or broad formatting
-changes. UI/layout changes should receive a Chrome smoke check when browser
-control is available.
+This runs lint, Prettier check, typecheck, unit tests, and production build in a
+single fail-fast step. UI/layout changes should receive a Chrome smoke check when
+browser control is available.
 
 ### MCP Testing and Verification
 
@@ -152,11 +150,14 @@ propose a targeted fix, and resolve after user confirmation.
 - Install: `pnpm install`
 - Develop: `pnpm dev`
 - Format: `pnpm format`
+- Format check: `pnpm format:check`
 - Lint: `pnpm lint`
 - Type check: `pnpm typecheck`
 - Test: `pnpm test`
 - Build: `pnpm build`
+- Check all: `pnpm check`
 - Package: `pnpm package`
+- Preview Chrome: `pnpm preview:chrome`
 
 ## Git and Commits
 
