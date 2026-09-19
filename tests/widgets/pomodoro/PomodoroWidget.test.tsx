@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
@@ -106,15 +106,12 @@ describe('PomodoroWidget', () => {
     );
   });
 
-  it('updates display time immediately and keeps progress at 0% when config duration changes in idle status', () => {
+  it('updates display time immediately when config duration changes in idle status', () => {
     const { rerender } = render(<PomodoroWidget config={config} />);
     expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
       '25:00',
     );
-    expect(screen.getByRole('progressbar')).toHaveAttribute(
-      'aria-valuenow',
-      '0',
-    );
+    expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '1500');
 
     const updatedConfig = { ...config, workDuration: 10 };
     rerender(<PomodoroWidget config={updatedConfig} />);
@@ -122,9 +119,106 @@ describe('PomodoroWidget', () => {
     expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
       '10:00',
     );
-    expect(screen.getByRole('progressbar')).toHaveAttribute(
-      'aria-valuenow',
-      '0',
+    expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '600');
+  });
+
+  it('seeks time using keyboard navigation', async () => {
+    const user = userEvent.setup();
+    render(<PomodoroWidget config={config} />);
+
+    const slider = screen.getByRole('slider');
+    slider.focus();
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+      '24:45',
     );
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+      '25:00',
+    );
+
+    await user.keyboard('{End}');
+    expect(
+      await screen.findByTestId('pomodoro-timer-display'),
+    ).toHaveTextContent('05:00');
+  });
+
+  it('seeks time by dragging/clicking progress bar with pointer events', async () => {
+    render(<PomodoroWidget config={config} />);
+
+    const slider = screen.getByTestId('pomodoro-seek-bar');
+    await waitFor(() => {
+      expect(slider).toHaveAttribute('aria-valuenow', '1500');
+    });
+
+    vi.spyOn(slider, 'getBoundingClientRect').mockReturnValue({
+      left: 100,
+      top: 100,
+      width: 200,
+      height: 20,
+      right: 300,
+      bottom: 120,
+      x: 100,
+      y: 100,
+      toJSON: () => {},
+    });
+
+    fireEvent.pointerDown(slider, { clientX: 200, button: 0 });
+    expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+      '12:30',
+    );
+
+    fireEvent.pointerMove(window, { clientX: 250 });
+    expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+      '06:15',
+    );
+
+    fireEvent.pointerUp(window, { clientX: 250 });
+    await waitFor(() => {
+      expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+        '06:15',
+      );
+    });
+  });
+
+  it('seeks time while timer is running and keeps running state', async () => {
+    const user = userEvent.setup();
+    render(<PomodoroWidget config={config} />);
+
+    const slider = screen.getByTestId('pomodoro-seek-bar');
+    await waitFor(() => {
+      expect(slider).toHaveAttribute('aria-valuenow', '1500');
+    });
+
+    vi.spyOn(slider, 'getBoundingClientRect').mockReturnValue({
+      left: 100,
+      top: 100,
+      width: 200,
+      height: 20,
+      right: 300,
+      bottom: 120,
+      x: 100,
+      y: 100,
+      toJSON: () => {},
+    });
+
+    const startButton = screen.getByRole('button', { name: 'Старт' });
+    await user.click(startButton);
+
+    expect(
+      await screen.findByRole('button', { name: 'Пауза' }),
+    ).toBeInTheDocument();
+
+    fireEvent.pointerDown(slider, { clientX: 200, button: 0 });
+    fireEvent.pointerUp(window, { clientX: 200 });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pomodoro-timer-display')).toHaveTextContent(
+        '12:30',
+      );
+    });
+    expect(screen.getByRole('button', { name: 'Пауза' })).toBeInTheDocument();
   });
 });

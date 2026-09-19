@@ -53,6 +53,7 @@ export interface UsePomodoroResult {
   pause: () => void;
   reset: () => void;
   skip: () => void;
+  seek: (seconds: number) => Promise<void>;
   setPhase: (phase: PomodoroPhase) => void;
   resetTodayCount: () => void;
 }
@@ -272,6 +273,47 @@ export function usePomodoro(config: PomodoroWidgetConfig): UsePomodoroResult {
     await savePomodoroRuntime(currentConfig.id, nextState);
   }, [applyState]);
 
+  const seek = useCallback(
+    async (targetSeconds: number) => {
+      const current = stateRef.current;
+      const currentConfig = configRef.current;
+      const total = getPhaseDurationSeconds(current.phase, currentConfig);
+      const clamped = Math.max(0, Math.min(total, Math.round(targetSeconds)));
+
+      if (clamped <= 0) {
+        await handlePhaseComplete();
+        return;
+      }
+
+      if (current.status === 'running') {
+        const targetEndTime = Date.now() + clamped * 1000;
+        const nextState: PomodoroRuntimeState = {
+          ...current,
+          status: 'running',
+          targetEndTime,
+          remainingSeconds: clamped,
+        };
+
+        applyState(nextState);
+        await setAlarm(currentConfig.id, targetEndTime);
+        await savePomodoroRuntime(currentConfig.id, nextState);
+      } else {
+        const nextStatus = clamped === total ? 'idle' : 'paused';
+        const nextState: PomodoroRuntimeState = {
+          ...current,
+          status: nextStatus,
+          targetEndTime: null,
+          remainingSeconds: clamped,
+        };
+
+        await clearAlarm(currentConfig.id);
+        applyState(nextState);
+        await savePomodoroRuntime(currentConfig.id, nextState);
+      }
+    },
+    [applyState, handlePhaseComplete],
+  );
+
   const setPhase = useCallback(
     async (newPhase: PomodoroPhase) => {
       const current = stateRef.current;
@@ -332,6 +374,7 @@ export function usePomodoro(config: PomodoroWidgetConfig): UsePomodoroResult {
     pause,
     reset,
     skip,
+    seek,
     setPhase,
     resetTodayCount,
   };
