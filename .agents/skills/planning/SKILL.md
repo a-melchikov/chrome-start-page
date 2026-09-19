@@ -14,7 +14,7 @@ Before asking any questions:
 - Inspect relevant source code, components, hooks, storage schemas, and tests.
 - Review architecture documents (`docs/ARCHITECTURE.md`, `docs/PROJECT_CONTEXT.md`, `docs/DECISIONS.md`).
 - Identify existing conventions and potential integration points.
-- **Rule**: Never ask questions that can be reliably answered by exploring the workspace.
+- **Rule**: Never ask questions that can be reliably answered by exploring the workspace. However, if any requirement, design choice, user intent, or edge case remains unclear or ambiguous, proactively ask clarifying questions — never guess or make silent assumptions.
 
 ## 2. Iterative Interview Phase (`ask_question`)
 

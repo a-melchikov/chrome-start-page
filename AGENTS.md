@@ -56,6 +56,7 @@ specification.
 - Add dependencies or Chrome permissions only when necessary and document why.
 - Keep factories deterministic except for the ID supplied by the registry.
 - Add or update focused tests with every behavior change.
+- Never make assumptions or guess when requirements, UX, or implementation details are unclear; always ask the user for clarification before proceeding.
 
 ## Code Style
 
@@ -217,7 +218,7 @@ When the user requests planning (triggers: "составь план", "спла�
 When user feedback, bug reports, edge cases, or UX refinements arrive after a plan has been implemented:
 
 1. **Lightweight Surgical Cycle**: Do not restart the full `/plan` interview protocol unless the user explicitly requests `/plan` for a major new subsystem or schema migration. Apply a fast, focused cycle instead.
-2. **Root-Cause Isolation**: Analyze code, active tests, or provided screenshots immediately. Do not ask questions that can be diagnosed directly from the workspace state.
+2. **Root-Cause Isolation**: Analyze code, active tests, or provided screenshots immediately. Do not ask questions that can be diagnosed directly from the workspace state; however, if user intent, reproduction context, or desired fix behavior is unclear, ask clarifying questions instead of guessing.
 3. **Targeted Implementation**: Make minimal, surgical edits addressing the exact feedback without touching unrelated modules or styles.
 4. **Focused Verification**: Run targeted unit tests (`pnpm test <path>`) followed by the unified pipeline (`pnpm check`).
 5. **Atomic Delivery**: Provide a concise technical summary and the ready-to-run `git add <file1> <file2> && git commit ...` command.
