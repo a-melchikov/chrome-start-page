@@ -129,6 +129,24 @@ Also run `pnpm exec prettier --check .` for documentation or broad formatting
 changes. UI/layout changes should receive a Chrome smoke check when browser
 control is available.
 
+### MCP Testing and Verification
+
+Do not launch MCP servers automatically on file changes. When changes affect UI,
+styles, widget grid, or performance-sensitive features (Liquid Glass, wallpapers,
+rendering pipeline), proactively propose verification via `ask_question` at the
+end of the task:
+
+- `lighthouse`: audit Core Web Vitals (FCP, LCP, TBT, CLS) and loading overhead.
+  Must run against a release build (`pnpm build`) loaded from `.output/chrome-mv3`.
+- `playwright`: interactive E2E user flows (grid drag-and-drop, theme switching,
+  modal dialogs, Escape shortcut navigation). May run against `pnpm dev`.
+- `chrome-devtools`: console inspection (`console.error`/warnings), inspecting
+  `chrome.storage.local` keys, and script profiling. May run against `pnpm dev`.
+
+Proposal format: `Я бы проверил это <что именно> через MCP <название>, потому что <причина>.`
+If an MCP check reveals errors or metric regressions, isolate the root cause,
+propose a targeted fix, and resolve after user confirmation.
+
 ## Commands
 
 - Install: `pnpm install`
@@ -139,6 +157,27 @@ control is available.
 - Test: `pnpm test`
 - Build: `pnpm build`
 - Package: `pnpm package`
+
+## Git and Commits
+
+- Do not commit or push without explicit user instruction.
+- Follow Conventional Commits in English: `<type>(<scope>): <imperative summary>`.
+  - Types and scopes based on repository history:
+    - `feat(<scope>)`: `ui`, `storage`, `state`, `backup`, `wallpaper`
+    - `fix(<scope>)`: `ui`, `storage`, etc.
+    - `docs`: documentation and design specs (scope typically omitted, e.g. `docs: document liquid glass controls`)
+    - `style(<scope>)`, `test(<scope>)`
+  - Imperative lowercase summary with no trailing period (e.g., `feat(backup): add dashboard import and export`).
+- Zero AI Footprint: never add AI, assistant, or tool attribution tags.
+- Post-change requirement: after completing any changes in the repository,
+  the agent must append a ready-to-run commit command at the very end of its
+  response:
+
+  Предлагаю коммит:
+
+  ```bash
+  git commit -m "<type>(<scope>): <message>"
+  ```
 
 ## Change Rules
 
