@@ -130,7 +130,7 @@ export function WidgetHost({
               </h2>
               {controls}
             </header>
-            <div className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain">
+            <div className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain pr-1">
               {(usesDialogEditor ? content : editor) ?? content ?? fallback}
             </div>
           </>
