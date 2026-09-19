@@ -177,9 +177,12 @@ propose a targeted fix, and resolve after user confirmation.
   - Imperative lowercase summary with no trailing period (e.g., `feat(backup): add dashboard import and export`).
 - Zero AI Footprint: never add AI, assistant, or tool attribution tags.
 - Post-change requirement: after completing any changes in the repository,
-  the agent must append a ready-to-run commit command at the very end of its
-  response, staging only the explicitly changed target files (never use blanket
-  `git add .` to avoid staging untracked or temporary files):
+  the agent must inspect `git status` and append a ready-to-run commit command
+  at the very end of its response. The command must stage all relevant modified
+  and untracked target files currently pending in `git status` (reflecting the
+  full accumulated working tree state rather than only the latest message's
+  diff). Do not use blanket `git add .` to avoid staging unrelated temporary
+  files; list all target files explicitly:
 
   Предлагаю коммит:
 
