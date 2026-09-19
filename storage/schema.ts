@@ -1,4 +1,5 @@
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
+import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 
 export const DASHBOARD_CONFIG_VERSION = 5 as const;
@@ -36,6 +37,7 @@ export interface AppearanceConfig {
 export interface WidgetConfigMap {
   markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;
+  pomodoro: PomodoroWidgetConfig;
 }
 
 export type WidgetType = keyof WidgetConfigMap;

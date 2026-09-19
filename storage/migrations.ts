@@ -32,6 +32,19 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
+function isIntegerInRange(
+  value: unknown,
+  min: number,
+  max: number,
+): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= min &&
+    value <= max
+  );
+}
+
 function isTheme(value: unknown): value is Theme {
   return value === 'system' || value === 'light' || value === 'dark';
 }
@@ -91,6 +104,16 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
 
   if (value.type === 'search') {
     return isSearchEngine(value.engine);
+  }
+
+  if (value.type === 'pomodoro') {
+    return (
+      isIntegerInRange(value.workDuration, 1, 120) &&
+      isIntegerInRange(value.shortBreakDuration, 1, 60) &&
+      isIntegerInRange(value.longBreakDuration, 1, 60) &&
+      isIntegerInRange(value.longBreakInterval, 1, 12) &&
+      typeof value.soundEnabled === 'boolean'
+    );
   }
 
   return false;
@@ -203,19 +226,6 @@ function isDashboardConfigV4(value: unknown): value is Record<
     isWallpaperConfig(value.appearance.wallpaper) &&
     typeof value.appearance.liquidGlassEnabled === 'boolean' &&
     value.widgets.every(isWidgetConfig)
-  );
-}
-
-function isIntegerInRange(
-  value: unknown,
-  min: number,
-  max: number,
-): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isInteger(value) &&
-    value >= min &&
-    value <= max
   );
 }
 

@@ -259,3 +259,41 @@ restore depends on the remote resource passing validation at import time.
 - Merging imported and current widgets or prompting for merge strategy.
 - Reusing an imported wallpaper UUID and risking overwrite before commit.
 - Adding the Chrome `downloads` permission for a Blob download.
+
+## ADR-010 — Pomodoro widget with background timer and isolated runtime state
+
+Status: Accepted
+
+### Decision
+
+Implement the Pomodoro timer widget as a `3×5` card with isolated runtime
+state storage. Durations, cycle count, and sound preference are stored in
+`PomodoroWidgetConfig` as part of `DashboardConfig`. All transient runtime
+state (`status`, `phase`, `targetEndTime`, `remainingSeconds`, `cycleCount`,
+`completedToday`, `lastResetDate`) is stored separately in WXT Storage under
+`local:pomodoro-state:<id>`. Background timing uses `chrome.alarms` and a service
+worker (`entrypoints/background.ts`) to deliver `chrome.notifications` and play
+chimes via `chrome.offscreen` even when all start page tabs are closed. Open tabs
+play a local Web Audio chime.
+
+### Why
+
+The Pomodoro timer must continue reliably while the user works in other tabs or
+windows. Storing runtime state separately prevents periodic seconds countdowns
+and alarms from polluting the serialized dashboard config save queue or causing
+cross-tab race conditions.
+
+### Consequences
+
+Manifest permissions now include `alarms`, `notifications`, and `offscreen` in addition to
+`storage`, `unlimitedStorage`, and `favicon`. Adding the widget remains fully
+backward-compatible with schema v5 without requiring a schema version bump.
+Background worker lifecycle is managed by Chrome and synchronized via storage
+events.
+
+### Rejected Alternatives
+
+- Storing active countdown state and target timestamps in `DashboardConfig`,
+  which would trigger constant saves and conflict with dashboard debouncing.
+- A tab-only timer without `chrome.alarms`, which stops when tabs close.
+- External audio files or web notification APIs that fail when backgrounded.

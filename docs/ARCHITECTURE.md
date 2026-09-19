@@ -21,6 +21,8 @@ flowchart LR
   Host --> Registry[Widget Registry]
   Registry --> Markdown[Markdown widget]
   Registry --> Search[Search widget]
+  Registry --> Pomodoro[Pomodoro widget]
+  Pomodoro <--> Background[entrypoints/background + chrome.alarms]
 ```
 
 `entrypoints/newtab/main.tsx` mounts `App` and loads global/Tailwind and grid
@@ -46,7 +48,7 @@ Renderer-derived state is not persisted.
 `storage/schema.ts` defines `DashboardConfig` version 5 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
-adds `engine`.
+adds `engine`, and Pomodoro adds duration and sound settings.
 
 `widgets/registry.tsx` is the only widget integration point. A definition owns:
 
@@ -208,9 +210,26 @@ custom properties. Theme-aware формулы используют их для t
 доступным fallback. Панели управления и диалоги эффект не используют. Новые
 зависимости и разрешения расширения не требуются.
 
+## Pomodoro Widget
+
+Pomodoro is a card widget (`3×5`, min `3×4`) supporting customizable focus and
+break intervals (work, short break, long break) and cycle-based progression.
+While configuration (durations, long break interval, sound toggle) is part of
+`DashboardConfig`, dynamic timer runtime state (`status`, `phase`,
+`targetEndTime`, `remainingSeconds`, `cycleCount`, `completedToday`,
+`lastResetDate`) is isolated in WXT Storage under `local:pomodoro-state:<id>`.
+
+This runtime separation ensures tabs synchronize in real-time via storage
+events without triggering dashboard saves or conflicting with the serialized
+save queue. A background service worker (`entrypoints/background.ts`) listens
+for `chrome.alarms`, fires system notifications (`chrome.notifications`) upon
+interval completion even when start page tabs are closed, advances the
+timer phase, and plays audio via an offscreen document (`entrypoints/offscreen.html`).
+Active tabs additionally play a local Web Audio chime if open.
+
 ## Extension Boundary
 
 `wxt.config.ts` is the manifest source. Permissions are `storage`,
-`unlimitedStorage`, and `favicon`; no host permissions exist. Static assets in
-`public/` are bundled, and generated `.wxt/` and `.output/` directories are
-never source files.
+`unlimitedStorage`, `favicon`, `alarms`, `notifications`, and `offscreen`; no host
+permissions exist. Static assets in `public/` are bundled, and generated
+`.wxt/` and `.output/` directories are never source files.

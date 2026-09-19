@@ -18,7 +18,15 @@ export default defineConfig({
     // favicon services and does not require access to users' linked websites.
     // `unlimitedStorage` lets local wallpapers retain their original bytes
     // when lossless compression cannot bring them below the 6 MiB target.
-    permissions: ['storage', 'unlimitedStorage', 'favicon'],
+    // `alarms`, `notifications`, and `offscreen` enable the background Pomodoro timer and audio.
+    permissions: [
+      'storage',
+      'unlimitedStorage',
+      'favicon',
+      'alarms',
+      'notifications',
+      'offscreen',
+    ],
   },
   vite: () => ({
     plugins: [tailwindcss()],

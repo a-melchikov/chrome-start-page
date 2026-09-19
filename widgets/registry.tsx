@@ -6,6 +6,10 @@ import { createDefaultMarkdownWidget } from './markdown/defaults';
 import { MarkdownWidget } from './markdown/MarkdownWidget';
 import { MarkdownWidgetEditor } from './markdown/MarkdownWidgetEditor';
 import type { MarkdownWidgetConfig } from './markdown/types';
+import { createDefaultPomodoroWidget } from './pomodoro/defaults';
+import { PomodoroWidget } from './pomodoro/PomodoroWidget';
+import { PomodoroWidgetEditor } from './pomodoro/PomodoroWidgetEditor';
+import type { PomodoroWidgetConfig } from './pomodoro/types';
 import { createDefaultSearchWidget } from './search/defaults';
 import { isSearchEngine } from './search/engines';
 import { SearchWidget } from './search/SearchWidget';
@@ -134,6 +138,25 @@ function isSearchWidgetConfig(value: unknown): value is SearchWidgetConfig {
   );
 }
 
+function isPomodoroWidgetConfig(value: unknown): value is PomodoroWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'pomodoro' &&
+    'workDuration' in value &&
+    typeof value.workDuration === 'number' &&
+    'shortBreakDuration' in value &&
+    typeof value.shortBreakDuration === 'number' &&
+    'longBreakDuration' in value &&
+    typeof value.longBreakDuration === 'number' &&
+    'longBreakInterval' in value &&
+    typeof value.longBreakInterval === 'number' &&
+    'soundEnabled' in value &&
+    typeof value.soundEnabled === 'boolean'
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<MarkdownWidgetConfig>({
     type: 'markdown',
@@ -179,6 +202,30 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
         minH: 1,
         maxH: 1,
         resizeHandles: ['e'],
+      },
+    },
+  }),
+  defineWidget<PomodoroWidgetConfig>({
+    type: 'pomodoro',
+    metadata: {
+      name: 'Помодоро',
+      description: 'Таймер фокуса и перерывов по методу Pomodoro.',
+    },
+    create: createDefaultPomodoroWidget,
+    isConfig: isPomodoroWidgetConfig,
+    Renderer: PomodoroWidget,
+    Editor: PomodoroWidgetEditor,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: true,
+      editorTitle: 'Настройки Помодоро',
+      editorDialogSize: 'default',
+      titleStyle: 'default',
+      layout: {
+        minW: 3,
+        minH: 4,
+        resizeHandles: ['se'],
       },
     },
   }),

@@ -85,3 +85,47 @@ export function SearchIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
+    </BaseIcon>
+  );
+}
+
+export function PlayIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polygon points="6 4 20 12 6 20 6 4" />
+    </BaseIcon>
+  );
+}
+
+export function PauseIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <line x1="10" x2="10" y1="5" y2="19" />
+      <line x1="14" x2="14" y1="5" y2="19" />
+    </BaseIcon>
+  );
+}
+
+export function RotateCcwIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </BaseIcon>
+  );
+}
+
+export function ForwardIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polygon points="5 4 15 12 5 20 5 4" />
+      <line x1="19" x2="19" y1="5" y2="19" />
+    </BaseIcon>
+  );
+}

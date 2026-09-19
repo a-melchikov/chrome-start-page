@@ -316,4 +316,63 @@ describe('migrateDashboardConfig', () => {
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
+
+  it('accepts a valid PomodoroWidget config', () => {
+    const validConfig = {
+      ...createDefaultDashboardConfig(),
+      widgets: [
+        {
+          id: 'pomodoro-widget',
+          type: 'pomodoro',
+          title: 'Помодоро',
+          workDuration: 25,
+          shortBreakDuration: 5,
+          longBreakDuration: 15,
+          longBreakInterval: 4,
+          soundEnabled: true,
+          layout: { x: 0, y: 0, w: 4, h: 3 },
+        },
+      ],
+    };
+
+    expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
+  });
+
+  it('rejects a PomodoroWidget with invalid durations or sound flag', () => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'pomodoro-widget',
+            type: 'pomodoro',
+            workDuration: 0,
+            shortBreakDuration: 5,
+            longBreakDuration: 15,
+            longBreakInterval: 4,
+            soundEnabled: true,
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'pomodoro-widget',
+            type: 'pomodoro',
+            workDuration: 25,
+            shortBreakDuration: 5,
+            longBreakDuration: 15,
+            longBreakInterval: 4,
+            soundEnabled: 'yes',
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
 });
