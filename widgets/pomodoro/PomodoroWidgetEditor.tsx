@@ -76,7 +76,7 @@ export function PomodoroWidgetEditor({
   };
 
   return (
-    <div className="space-y-4 text-zinc-900 dark:text-zinc-100">
+    <div className="space-y-4 text-theme-text-primary">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <label className="block text-xs font-medium" htmlFor={workId}>
@@ -202,7 +202,7 @@ export function PomodoroWidgetEditor({
       <div className="flex items-center gap-2 pt-1">
         <input
           checked={config.soundEnabled}
-          className="size-4 rounded-sm border-zinc-300 text-zinc-900 focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-800"
+          className="size-4 rounded-sm border-theme-border bg-theme-surface-elevated text-theme-accent accent-theme-accent focus:ring-2 focus:ring-theme-ring/30"
           id={soundId}
           type="checkbox"
           onChange={(e) => {

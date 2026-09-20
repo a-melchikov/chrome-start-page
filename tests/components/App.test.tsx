@@ -234,6 +234,36 @@ describe('App', () => {
     });
   });
 
+  it('applies preset themes and sets default background color', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    await user.click(screen.getByRole('button', { name: 'Tokyo Night' }));
+
+    expect(document.documentElement).toHaveAttribute(
+      'data-theme',
+      'tokyo-night',
+    );
+    expect(document.documentElement).toHaveClass('dark');
+
+    await waitFor(async () => {
+      const storedConfig = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(storedConfig?.appearance.theme).toBe('tokyo-night');
+      expect(storedConfig?.appearance.backgroundColor).toBe('#1a1b26');
+    });
+  });
+
   it('previews, persists, resets, and toggles Liquid Glass settings', async () => {
     const user = userEvent.setup();
     render(<App />);

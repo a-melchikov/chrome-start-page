@@ -156,7 +156,7 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
       {/* Phase selection tabs */}
       <div
         aria-label="Выбор фазы таймера"
-        className="flex shrink-0 items-center justify-center gap-1 rounded-lg bg-zinc-100/80 p-1 dark:bg-zinc-800/80"
+        className="flex shrink-0 items-center justify-center gap-1 rounded-lg bg-theme-surface-muted p-1"
         role="tablist"
       >
         {PHASES.map((phase) => {
@@ -168,8 +168,8 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
               className={classNames(
                 'flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
                 isSelected
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100'
-                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200',
+                  ? 'bg-theme-surface text-theme-text-primary shadow-xs'
+                  : 'text-theme-text-secondary hover:text-theme-text-primary',
               )}
               role="tab"
               type="button"
@@ -185,7 +185,7 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1">
         <span
           aria-live="polite"
-          className="font-mono text-3xl font-bold tracking-tight tabular-nums text-zinc-900 sm:text-4xl dark:text-zinc-100"
+          className="theme-glow font-mono text-3xl font-bold tracking-tight tabular-nums text-theme-text-primary sm:text-4xl"
           data-testid="pomodoro-timer-display"
         >
           {formattedTime}
@@ -207,11 +207,11 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
           onPointerDown={handlePointerDown}
         >
           {/* Track background */}
-          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 transition-all group-hover:h-2 dark:bg-zinc-700">
+          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-theme-border transition-all group-hover:h-2">
             {/* Filled progress bar */}
             <div
               className={classNames(
-                'h-full bg-zinc-900 dark:bg-zinc-100',
+                'h-full bg-theme-accent',
                 isScrubbing
                   ? 'transition-none'
                   : 'transition-all duration-300 ease-out',
@@ -223,10 +223,10 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
           {/* Thumb handle */}
           <div
             className={classNames(
-              'pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-zinc-900 bg-white shadow-xs transition-opacity dark:border-zinc-100 dark:bg-zinc-800',
+              'pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-theme-accent bg-theme-surface shadow-xs transition-opacity',
               'size-3.5',
               isScrubbing
-                ? 'scale-110 opacity-100 ring-2 ring-zinc-900/20 dark:ring-zinc-100/20'
+                ? 'scale-110 opacity-100 ring-2 ring-theme-ring/30'
                 : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100',
             )}
             style={{ left: `${currentProgressPercent}%` }}
@@ -278,7 +278,7 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
       </div>
 
       {/* Cycle indicator dots & daily count */}
-      <div className="flex shrink-0 items-center justify-between pt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex shrink-0 items-center justify-between pt-1.5 text-xs text-theme-text-secondary">
         <div
           aria-label={`Цикл: ${state.cycleCount} из ${config.longBreakInterval}`}
           className="flex items-center gap-1.5"
@@ -290,15 +290,18 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
               className={classNames(
                 'size-2 rounded-full transition-colors',
                 index < state.cycleCount
-                  ? 'bg-zinc-900 dark:bg-zinc-100'
-                  : 'border border-zinc-400 dark:border-zinc-500',
+                  ? 'bg-theme-accent'
+                  : 'border border-theme-border',
               )}
             />
           ))}
         </div>
 
         <span title="Выполнено помидоров за сегодня">
-          Сегодня: <span className="font-semibold">{state.completedToday}</span>
+          Сегодня:{' '}
+          <span className="font-semibold text-theme-text-primary">
+            {state.completedToday}
+          </span>
         </span>
       </div>
     </div>

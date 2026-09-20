@@ -109,7 +109,7 @@ function CodeBlock({ children }: { children: ReactNode }) {
       >
         {copied ? 'Скопировано' : 'Копировать'}
       </Button>
-      <pre className="overflow-x-auto rounded-lg border border-zinc-200 bg-zinc-100 p-3 pr-24 text-xs leading-5 dark:border-zinc-700 dark:bg-zinc-950">
+      <pre className="overflow-x-auto rounded-lg border border-theme-border bg-theme-surface-muted p-3 pr-24 text-xs leading-5 text-theme-text-primary">
         {children}
       </pre>
     </div>
@@ -123,59 +123,76 @@ function createComponents(
 ): Components {
   return {
     h1: ({ node: _node, ...props }) => (
-      <h1 className="mt-4 mb-2 text-lg font-bold first:mt-0" {...props} />
+      <h1
+        className="mt-4 mb-2 text-lg font-bold text-theme-text-primary first:mt-0"
+        {...props}
+      />
     ),
     h2: ({ node: _node, ...props }) => (
-      <h2 className="mt-4 mb-2 text-base font-bold first:mt-0" {...props} />
+      <h2
+        className="mt-4 mb-2 text-base font-bold text-theme-text-primary first:mt-0"
+        {...props}
+      />
     ),
     h3: ({ node: _node, ...props }) => (
-      <h3 className="mt-3 mb-1.5 text-sm font-bold first:mt-0" {...props} />
+      <h3
+        className="mt-3 mb-1.5 text-sm font-bold text-theme-text-primary first:mt-0"
+        {...props}
+      />
     ),
     h4: ({ node: _node, ...props }) => (
-      <h4 className="mt-3 mb-1 text-sm font-semibold first:mt-0" {...props} />
+      <h4
+        className="mt-3 mb-1 text-sm font-semibold text-theme-text-primary first:mt-0"
+        {...props}
+      />
     ),
     h5: ({ node: _node, ...props }) => (
-      <h5 className="mt-2 mb-1 text-xs font-semibold first:mt-0" {...props} />
+      <h5
+        className="mt-2 mb-1 text-xs font-semibold text-theme-text-primary first:mt-0"
+        {...props}
+      />
     ),
     h6: ({ node: _node, ...props }) => (
       <h6
-        className="mt-2 mb-1 text-xs font-semibold text-zinc-500 first:mt-0 dark:text-zinc-400"
+        className="mt-2 mb-1 text-xs font-semibold text-theme-text-muted first:mt-0"
         {...props}
       />
     ),
     p: ({ node: _node, ...props }) => (
       <p
-        className="my-2 break-words leading-6 first:mt-0 last:mb-0"
+        className="my-2 break-words leading-6 text-theme-text-secondary first:mt-0 last:mb-0"
         {...props}
       />
     ),
     strong: ({ node: _node, ...props }) => (
-      <strong
-        className="font-semibold text-zinc-900 dark:text-zinc-100"
-        {...props}
-      />
+      <strong className="font-semibold text-theme-text-primary" {...props} />
     ),
-    em: ({ node: _node, ...props }) => <em className="italic" {...props} />,
+    em: ({ node: _node, ...props }) => (
+      <em className="italic text-theme-text-secondary" {...props} />
+    ),
     del: ({ node: _node, ...props }) => (
-      <del className="text-zinc-500 dark:text-zinc-400" {...props} />
+      <del className="text-theme-text-muted" {...props} />
     ),
     blockquote: ({ node: _node, ...props }) => (
       <blockquote
-        className="my-3 border-l-4 border-zinc-300 pl-3 text-zinc-600 italic dark:border-zinc-600 dark:text-zinc-300"
+        className="my-3 rounded-r-md border-l-4 border-theme-accent bg-theme-surface-muted/40 py-1 pl-3 text-theme-text-secondary italic"
         {...props}
       />
     ),
     ul: ({ node: _node, className, ...props }) => (
       <ul
         className={classNames(
-          'my-2 list-disc space-y-1 pl-5',
+          'my-2 list-disc space-y-1 pl-5 text-theme-text-secondary',
           className?.includes('contains-task-list') && 'list-none pl-1',
         )}
         {...props}
       />
     ),
     ol: ({ node: _node, ...props }) => (
-      <ol className="my-2 list-decimal space-y-1 pl-5" {...props} />
+      <ol
+        className="my-2 list-decimal space-y-1 pl-5 text-theme-text-secondary"
+        {...props}
+      />
     ),
     li: ({ node, className, children, ...props }) => {
       const sourceOffset = node?.position?.start.offset;
@@ -203,7 +220,7 @@ function createComponents(
       return (
         <li
           className={classNames(
-            'break-words pl-0.5',
+            'break-words pl-0.5 text-theme-text-secondary',
             className?.includes('task-list-item') &&
               'flex items-start gap-2 pl-0',
           )}
@@ -219,7 +236,7 @@ function createComponents(
         <input
           {...props}
           aria-label={props.checked ? 'Выполнено' : 'Не выполнено'}
-          className="mt-1 size-4 shrink-0 cursor-pointer accent-zinc-900 dark:accent-zinc-100"
+          className="mt-1 size-4 shrink-0 cursor-pointer accent-theme-accent"
           disabled={!onContentChange}
           type="checkbox"
           onChange={() => undefined}
@@ -229,7 +246,7 @@ function createComponents(
       if (href.startsWith('#')) {
         return (
           <a
-            className="font-medium text-blue-700 underline decoration-blue-400/60 underline-offset-2 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+            className="font-medium text-theme-accent underline underline-offset-2 hover:opacity-80"
             href={href}
             {...props}
           >
@@ -246,7 +263,7 @@ function createComponents(
 
       return (
         <a
-          className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 align-middle font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500 focus-visible:outline-none dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 align-middle font-medium text-theme-text-primary transition-colors hover:bg-theme-surface-elevated focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none"
           href={normalizedUrl.href}
           title={getTextContent(children)}
           {...props}
@@ -263,7 +280,7 @@ function createComponents(
         <img
           {...props}
           alt={alt}
-          className="my-3 max-h-80 max-w-full rounded-lg border border-zinc-200 object-contain dark:border-zinc-700"
+          className="my-3 max-h-80 max-w-full rounded-lg border border-theme-border object-contain"
           decoding="async"
           loading="lazy"
           referrerPolicy="no-referrer"
@@ -271,13 +288,13 @@ function createComponents(
           title={title}
         />
       ) : (
-        <span className="text-zinc-500 dark:text-zinc-400">{alt}</span>
+        <span className="text-theme-text-muted">{alt}</span>
       );
     },
     code: ({ node: _node, className, ...props }) => (
       <code
         className={classNames(
-          'rounded bg-zinc-100 px-1 py-0.5 font-mono text-[0.85em] dark:bg-zinc-800',
+          'rounded border border-theme-border-subtle bg-theme-surface-muted px-1 py-0.5 font-mono text-[0.85em] text-theme-text-primary',
           className,
         )}
         {...props}
@@ -285,7 +302,7 @@ function createComponents(
     ),
     pre: ({ node: _node, children }) => <CodeBlock>{children}</CodeBlock>,
     table: ({ node: _node, ...props }) => (
-      <div className="my-3 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+      <div className="my-3 overflow-x-auto rounded-lg border border-theme-border">
         <table
           className="w-full border-collapse text-left text-xs"
           {...props}
@@ -294,37 +311,40 @@ function createComponents(
     ),
     th: ({ node: _node, ...props }) => (
       <th
-        className="border-b border-zinc-300 bg-zinc-100 px-3 py-2 font-semibold dark:border-zinc-700 dark:bg-zinc-800"
+        className="border-b border-theme-border bg-theme-surface-muted px-3 py-2 font-semibold text-theme-text-primary"
         {...props}
       />
     ),
     td: ({ node: _node, ...props }) => (
       <td
-        className="border-b border-zinc-200 px-3 py-2 last:border-b-0 dark:border-zinc-800"
+        className="border-b border-theme-border-subtle px-3 py-2 text-theme-text-secondary last:border-b-0"
         {...props}
       />
     ),
     hr: ({ node: _node, ...props }) => (
-      <hr className="my-4 border-zinc-300 dark:border-zinc-700" {...props} />
+      <hr className="my-4 border-theme-border" {...props} />
     ),
     details: ({ node: _node, ...props }) => (
       <details
-        className="my-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
+        className="my-3 rounded-lg border border-theme-border p-3 text-theme-text-primary"
         {...props}
       />
     ),
     summary: ({ node: _node, ...props }) => (
-      <summary className="cursor-pointer font-semibold" {...props} />
+      <summary
+        className="cursor-pointer font-semibold text-theme-text-primary"
+        {...props}
+      />
     ),
     mark: ({ node: _node, ...props }) => (
       <mark
-        className="rounded bg-yellow-200 px-0.5 text-zinc-950 dark:bg-yellow-300"
+        className="rounded bg-theme-accent/20 px-0.5 text-theme-text-primary"
         {...props}
       />
     ),
     kbd: ({ node: _node, ...props }) => (
       <kbd
-        className="rounded border border-zinc-300 bg-zinc-100 px-1.5 py-0.5 font-mono text-xs shadow-sm dark:border-zinc-600 dark:bg-zinc-800"
+        className="rounded border border-theme-border bg-theme-surface-muted px-1.5 py-0.5 font-mono text-xs text-theme-text-primary shadow-xs"
         {...props}
       />
     ),
@@ -343,13 +363,11 @@ export function MarkdownRenderer({
   );
 
   if (!content.trim()) {
-    return (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{emptyMessage}</p>
-    );
+    return <p className="text-sm text-theme-text-muted">{emptyMessage}</p>;
   }
 
   return (
-    <div className="min-w-0 text-sm text-zinc-700 dark:text-zinc-300">
+    <div className="min-w-0 text-sm text-theme-text-secondary">
       <ReactMarkdown
         components={components}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, markdownSanitizeSchema]]}

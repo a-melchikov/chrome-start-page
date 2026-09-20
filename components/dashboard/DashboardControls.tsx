@@ -101,7 +101,7 @@ export function DashboardControls({
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-theme-border bg-theme-surface p-1 shadow-lg">
         {isEditing ? (
           <>
             <Button

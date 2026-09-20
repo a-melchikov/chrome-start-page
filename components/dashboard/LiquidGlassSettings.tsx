@@ -52,7 +52,7 @@ export function LiquidGlassSettings({
                   {control.label}
                 </label>
                 <output
-                  className="min-w-12 text-right font-mono text-xs tabular-nums text-zinc-600 dark:text-zinc-400"
+                  className="min-w-12 text-right font-mono text-xs tabular-nums text-theme-text-secondary"
                   htmlFor={id}
                 >
                   {settings[control.key]}
@@ -61,7 +61,7 @@ export function LiquidGlassSettings({
               </div>
               <input
                 aria-label={control.label}
-                className="block h-5 w-full cursor-pointer accent-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 dark:accent-zinc-100"
+                className="block h-5 w-full cursor-pointer accent-theme-accent disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={!settings.enabled}
                 id={id}
                 max={control.max}

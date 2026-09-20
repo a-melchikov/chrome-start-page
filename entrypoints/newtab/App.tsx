@@ -8,6 +8,8 @@ import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
 import { DEFAULT_APPEARANCE } from '../../storage/defaults';
 
+import { resolveTheme } from '../../themes/registry';
+
 type DashboardStyle = CSSProperties & {
   '--liquid-glass-opacity': number;
   '--liquid-glass-blur': string;
@@ -44,12 +46,8 @@ export function App() {
     string | null
   >(null);
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
-  const resolvedTheme =
-    appearance.theme === 'system'
-      ? systemDarkMode
-        ? 'dark'
-        : 'light'
-      : appearance.theme;
+  const { definition: resolvedThemeDef, mode: resolvedThemeMode } =
+    resolveTheme(appearance.theme, systemDarkMode);
   const wallpaperImage = useWallpaperImage(appearance.wallpaper);
   const visibleError =
     error ??
@@ -71,22 +69,22 @@ export function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle('dark', resolvedTheme === 'dark');
-    root.dataset.theme = resolvedTheme;
-    root.style.colorScheme = resolvedTheme;
+    root.classList.toggle('dark', resolvedThemeMode === 'dark');
+    root.dataset.theme = resolvedThemeDef.id;
+    root.style.colorScheme = resolvedThemeMode;
 
     return () => {
       root.classList.remove('dark');
       delete root.dataset.theme;
       root.style.removeProperty('color-scheme');
     };
-  }, [resolvedTheme]);
+  }, [resolvedThemeDef.id, resolvedThemeMode]);
 
   return (
     <main
       aria-busy={isLoading}
       className={classNames(
-        'relative isolate min-h-screen text-zinc-950 transition-colors dark:text-zinc-50',
+        'relative isolate min-h-screen text-theme-text-primary transition-colors',
         liquidGlass.enabled && 'liquid-glass-enabled',
       )}
       style={dashboardStyle}

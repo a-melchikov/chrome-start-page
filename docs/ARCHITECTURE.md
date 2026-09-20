@@ -227,6 +227,35 @@ interval completion even when start page tabs are closed, advances the
 timer phase, and plays audio via an offscreen document (`entrypoints/offscreen.html`).
 Active tabs additionally play a local Web Audio chime if open.
 
+## Theme System and Design Tokens
+
+The theme architecture lives in `themes/` and decouples color palettes and
+visual tokens from widget logic and components:
+
+- `themes/types.ts` defines `ThemeId` (11 themes: `system`, `light`, `dark`,
+  `tokyo-night`, `rainy-tokyo`, `cozy-lofi-night`, `catppuccin-mocha`,
+  `catppuccin-latte`, `nord`, `synthwave-84`, `solarized-dark`),
+  `ThemeTokens`, `ThemeDefinition`, and `ThemePreviewColors`.
+- `themes/palettes.ts` provides complete, high-contrast token definitions for all
+  10 palettes (background, surface, surface-card, borders, primary/muted text,
+  accents, badges, states, scrollbar colors, and optional glow properties).
+- `themes/registry.ts` exposes `THEMES: readonly ThemeDefinition[]`,
+  `getThemeDefinition(id)`, and `resolveTheme(id, systemDarkMode)`.
+- `entrypoints/newtab/themes.css` declares scoped CSS variables
+  (`--theme-bg`, `--theme-surface`, `--theme-accent`, etc.) via
+  `:root, [data-theme="..."]` selectors.
+- `entrypoints/newtab/style.css` defines the Tailwind CSS 4 `@theme` block
+  mapping semantic utility classes (`bg-theme-surface`, `text-theme-text-primary`,
+  `border-theme-border`, `bg-theme-accent`) to these custom properties. It also
+  defines `.theme-glow` for retro/synthwave effects and scrollbar styling via
+  `color-mix`.
+- `App.tsx` calls `resolveTheme` to synchronously set `data-theme`, `color-scheme`,
+  and the `.dark` class on the root container.
+- `AppearanceDialog.tsx` displays an interactive grid of theme preview cards with
+  swatches for background, card surface, and accent color. Selecting a preset
+  automatically resets `backgroundColor` to the theme's curated default while
+  leaving manual color-picker overrides accessible.
+
 ## Extension Boundary
 
 `wxt.config.ts` is the manifest source. Permissions are `storage`,

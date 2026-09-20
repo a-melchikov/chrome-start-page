@@ -45,8 +45,22 @@ function isIntegerInRange(
   );
 }
 
+const VALID_THEMES: ReadonlySet<string> = new Set<Theme>([
+  'system',
+  'light',
+  'dark',
+  'tokyo-night',
+  'rainy-tokyo',
+  'cozy-lofi-night',
+  'catppuccin-mocha',
+  'catppuccin-latte',
+  'nord',
+  'synthwave-84',
+  'solarized-dark',
+]);
+
 function isTheme(value: unknown): value is Theme {
-  return value === 'system' || value === 'light' || value === 'dark';
+  return typeof value === 'string' && VALID_THEMES.has(value);
 }
 
 function isAbsoluteHttpsUrl(value: unknown): value is string {

@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-09-10
+Last updated: 2026-09-20
 
 ## Implemented
 
@@ -9,6 +9,15 @@ Last updated: 2026-09-10
   v1 LinksWidget → MarkdownWidget migration, v1/v2/v3 appearance migration,
   v4 Liquid Glass migration, and recovery of old v2 profiles by removing
   retired WIP Google Calendar widgets.
+- Global extensible theme system and design tokens (`themes/`, `themes.css`,
+  Tailwind CSS 4 `@theme`) with 11 curated presets: System, Light, Dark,
+  Tokyo Night, Rainy Tokyo, Cozy Lofi Night, Catppuccin Mocha, Catppuccin Latte,
+  Nord, SynthWave '84 (with neon glow), and Solarized Dark. All widgets, controls,
+  dialogs, inputs, Liquid Glass surfaces, and scrollbars adapt dynamically to the
+  active theme tokens.
+- Interactive theme picker in the appearance dialog displaying visual preview
+  cards with background, surface, and accent swatches, with automatic default
+  background color synchronization and optional manual color picker override.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,

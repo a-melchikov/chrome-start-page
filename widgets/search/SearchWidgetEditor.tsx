@@ -41,7 +41,7 @@ export function SearchWidgetEditor({
             </option>
           ))}
         </Select>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-xs text-theme-text-muted">
           Запрос отправляется поисковику только после запуска поиска.
         </p>
       </div>

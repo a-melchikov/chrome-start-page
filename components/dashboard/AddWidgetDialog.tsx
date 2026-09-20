@@ -46,7 +46,7 @@ export function AddWidgetDialog({
               onClick={() => selectWidgetType(definition.type)}
             >
               {Icon ? (
-                <Icon className="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                <Icon className="size-5 shrink-0 text-theme-text-secondary" />
               ) : null}
               <span>{definition.metadata.name}</span>
             </Button>

@@ -2,9 +2,11 @@ import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 
+import type { ThemeId } from '../themes/types';
+
 export const DASHBOARD_CONFIG_VERSION = 5 as const;
 
-export type Theme = 'system' | 'light' | 'dark';
+export type Theme = ThemeId;
 
 export type WallpaperConfig =
   | { type: 'none' }

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { Button, Dialog, Input } from '../ui';
-import type { AppearanceConfig, Theme } from '../../storage/schema';
+import { classNames } from '../ui/class-names';
+import type { AppearanceConfig } from '../../storage/schema';
+import { THEMES } from '../../themes/registry';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
 
 interface AppearanceDialogProps {
@@ -22,12 +24,6 @@ interface AppearanceDialogProps {
 
 const ACCEPTED_WALLPAPER_FILES =
   'image/png,image/jpeg,image/webp,image/gif,image/avif,image/svg+xml,.svg';
-
-const themeOptions: Array<{ value: Theme; label: string }> = [
-  { value: 'system', label: 'Системная' },
-  { value: 'light', label: 'Светлая' },
-  { value: 'dark', label: 'Тёмная' },
-];
 
 export function AppearanceDialog({
   appearance,
@@ -111,44 +107,90 @@ export function AppearanceDialog({
       }
     >
       <div ref={sectionsRef} className="space-y-3">
-        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+        <details className="group rounded-lg border border-theme-border bg-theme-surface">
           <summary
-            className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500"
+            className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring"
             data-dialog-initial-focus
           >
             Тема
             <span
               aria-hidden="true"
-              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+              className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
             >
               ›
             </span>
           </summary>
           <fieldset aria-label="Тема" className="px-4 pb-4 pt-1">
-            <div className="flex flex-wrap gap-2">
-              {themeOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  aria-pressed={appearance.theme === option.value}
-                  size="small"
-                  variant={
-                    appearance.theme === option.value ? 'primary' : 'secondary'
-                  }
-                  onClick={() => onAppearanceChange({ theme: option.value })}
-                >
-                  {option.label}
-                </Button>
-              ))}
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {THEMES.map((theme) => {
+                const isSelected = appearance.theme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    aria-label={theme.name}
+                    aria-pressed={isSelected}
+                    className={classNames(
+                      'group flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-theme-ring',
+                      isSelected
+                        ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
+                        : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',
+                    )}
+                    type="button"
+                    onClick={() =>
+                      onAppearanceChange({
+                        theme: theme.id,
+                        backgroundColor: theme.defaultBackgroundColor,
+                      })
+                    }
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-theme-text-primary">
+                        {theme.name}
+                      </span>
+                      <span className="flex items-center rounded-full border border-theme-border px-1.5 py-0.5 text-[10px] font-medium text-theme-text-secondary">
+                        {theme.mode === 'system'
+                          ? 'Авто'
+                          : theme.mode === 'light'
+                            ? 'Светлая'
+                            : 'Тёмная'}
+                      </span>
+                    </div>
+                    <p className="line-clamp-2 text-xs text-theme-text-muted">
+                      {theme.description}
+                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span
+                        aria-hidden="true"
+                        className="size-4 rounded-full border border-black/20 shadow-xs"
+                        style={{ backgroundColor: theme.previewColors.bg }}
+                        title="Фон"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="size-4 rounded-full border border-black/20 shadow-xs"
+                        style={{ backgroundColor: theme.previewColors.surface }}
+                        title="Карточка"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="size-4 rounded-full border border-black/20 shadow-xs"
+                        style={{ backgroundColor: theme.previewColors.accent }}
+                        title="Акцент"
+                      />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
         </details>
 
-        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Цвет фона
             <span
               aria-hidden="true"
-              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+              className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
             >
               ›
             </span>
@@ -166,29 +208,29 @@ export function AppearanceDialog({
                 onAppearanceChange({ backgroundColor: event.target.value })
               }
             />
-            <code className="text-sm text-zinc-600 dark:text-zinc-400">
+            <code className="text-sm text-theme-text-secondary">
               {appearance.backgroundColor}
             </code>
           </div>
         </details>
 
-        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Обои
             <span
               aria-hidden="true"
-              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+              className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
             >
               ›
             </span>
           </summary>
           <div className="space-y-4 px-4 pb-4 pt-1">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm text-theme-text-secondary">
               Изображение заполнит весь экран; края могут быть обрезаны.
             </p>
 
             {wallpaperPreviewSrc ? (
-              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="overflow-hidden rounded-lg border border-theme-border bg-theme-surface-muted">
                 <img
                   aria-hidden="true"
                   alt=""
@@ -201,19 +243,19 @@ export function AppearanceDialog({
               </div>
             ) : null}
 
-            <details className="group/local rounded-md border border-zinc-200 dark:border-zinc-700">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+            <details className="group/local rounded-md border border-theme-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
                 Локальное изображение
                 <span
                   aria-hidden="true"
-                  className="text-lg leading-none text-zinc-500 transition-transform group-open/local:rotate-90"
+                  className="text-lg leading-none text-theme-text-secondary transition-transform group-open/local:rotate-90"
                 >
                   ›
                 </span>
               </summary>
               <div className="space-y-3 px-3 pb-3 pt-1">
                 {appearance.wallpaper.type === 'local' ? (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-sm text-theme-text-secondary">
                     Локальные обои установлены
                   </p>
                 ) : null}
@@ -246,31 +288,31 @@ export function AppearanceDialog({
                     ? 'Заменить файл'
                     : 'Выбрать файл'}
                 </Button>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-theme-text-muted">
                   PNG, JPEG, WebP, GIF, AVIF или SVG. Файлы больше 6 МБ будут
                   сжаты без потери качества, если это возможно.
                 </p>
               </div>
             </details>
 
-            <details className="group/url rounded-md border border-zinc-200 dark:border-zinc-700">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+            <details className="group/url rounded-md border border-theme-border">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
                 По ссылке
                 <span
                   aria-hidden="true"
-                  className="text-lg leading-none text-zinc-500 transition-transform group-open/url:rotate-90"
+                  className="text-lg leading-none text-theme-text-secondary transition-transform group-open/url:rotate-90"
                 >
                   ›
                 </span>
               </summary>
               <form className="space-y-2 px-3 pb-3 pt-1" onSubmit={submitUrl}>
                 {appearance.wallpaper.type === 'url' ? (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-sm text-theme-text-secondary">
                     Обои установлены по ссылке
                   </p>
                 ) : null}
                 <label
-                  className="block text-sm font-medium"
+                  className="block text-sm font-medium text-theme-text-primary"
                   htmlFor="wallpaper-url"
                 >
                   Ссылка на изображение
@@ -301,17 +343,14 @@ export function AppearanceDialog({
             {isWallpaperUpdating ? (
               <p
                 aria-live="polite"
-                className="text-sm text-zinc-600 dark:text-zinc-400"
+                className="text-sm text-theme-text-secondary"
               >
                 Проверяем изображение…
               </p>
             ) : null}
 
             {wallpaperError ? (
-              <p
-                className="text-sm text-red-600 dark:text-red-400"
-                role="alert"
-              >
+              <p className="text-sm text-theme-danger" role="alert">
                 {wallpaperError}
               </p>
             ) : null}
@@ -329,23 +368,25 @@ export function AppearanceDialog({
           </div>
         </details>
 
-        <details className="group rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500">
+        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Виджеты
             <span
               aria-hidden="true"
-              className="text-lg leading-none text-zinc-500 transition-transform group-open:rotate-90"
+              className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
             >
               ›
             </span>
           </summary>
           <div className="space-y-5 px-4 pb-4 pt-1">
             <label className="flex cursor-pointer items-center justify-between gap-4">
-              <span className="text-sm font-medium">Эффект Liquid Glass</span>
+              <span className="text-sm font-medium text-theme-text-primary">
+                Эффект Liquid Glass
+              </span>
               <input
                 aria-label="Эффект Liquid Glass"
                 checked={appearance.liquidGlass.enabled}
-                className="size-5 accent-zinc-900 dark:accent-zinc-100"
+                className="size-5 accent-theme-accent"
                 role="switch"
                 type="checkbox"
                 onChange={(event) =>

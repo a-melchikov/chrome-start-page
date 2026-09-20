@@ -297,3 +297,44 @@ events.
   which would trigger constant saves and conflict with dashboard debouncing.
 - A tab-only timer without `chrome.alarms`, which stops when tabs close.
 - External audio files or web notification APIs that fail when backgrounded.
+
+## ADR-011 — Extensible global theme system and design tokens
+
+Status: Accepted
+
+### Decision
+
+Implement a global, token-based theme system covering all dashboard surfaces:
+background, widgets, settings, modals, buttons, inputs, scrollbars, and Liquid
+Glass. The architecture introduces `themes/` with a typed registry and 11
+curated presets (`system`, `light`, `dark`, `tokyo-night`, `rainy-tokyo`,
+`cozy-lofi-night`, `catppuccin-mocha`, `catppuccin-latte`, `nord`,
+`synthwave-84`, `solarized-dark`).
+
+CSS variables are defined per theme in `entrypoints/newtab/themes.css` and mapped
+to Tailwind CSS 4 `@theme` classes (`bg-theme-surface`, `text-theme-text-primary`,
+`border-theme-border`, `bg-theme-accent`). Theme selection synchronously updates
+`data-theme` on the root DOM element. Selecting a theme card automatically updates
+`backgroundColor` to the theme's default background color while preserving the
+ability to customize it via the color picker.
+
+### Why
+
+Previously, colors were hardcoded with Tailwind `zinc-*` utility classes and
+limited to basic dark/light mode switches. A centralized token architecture allows
+rich, atmospheric themes (Tokyo Night, SynthWave '84, Catppuccin, Nord, etc.)
+to be cleanly added without touching component templates or duplicating CSS rules.
+Liquid Glass and widget states dynamically adapt to the active theme's palette.
+
+### Consequences
+
+All UI primitives and widgets use semantic `*-theme-*` tokens instead of
+hardcoded `zinc` classes. `Theme` in `storage/schema.ts` is expanded to include all
+11 theme IDs while retaining schema v5 compatibility (no version bump needed as
+all older configs parse cleanly as valid theme IDs).
+
+### Rejected Alternatives
+
+- Hardcoding per-theme utility classes inside each React component.
+- Requiring a schema v6 migration for theme preset expansion.
+- Forcing a fixed background color with no manual color-picker customization.

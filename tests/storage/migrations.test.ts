@@ -210,6 +210,30 @@ describe('migrateDashboardConfig', () => {
     ).toThrow(InvalidDashboardConfigError);
   });
 
+  it.each([
+    'system',
+    'light',
+    'dark',
+    'tokyo-night',
+    'rainy-tokyo',
+    'cozy-lofi-night',
+    'catppuccin-mocha',
+    'catppuccin-latte',
+    'nord',
+    'synthwave-84',
+    'solarized-dark',
+  ] as const)('accepts valid theme %s in schema v5', (theme) => {
+    const config = createDefaultDashboardConfig();
+    const result = migrateDashboardConfig({
+      ...config,
+      appearance: {
+        ...config.appearance,
+        theme,
+      },
+    });
+    expect(result.appearance.theme).toBe(theme);
+  });
+
   it('rejects malformed current-version data', () => {
     expect(() =>
       migrateDashboardConfig({

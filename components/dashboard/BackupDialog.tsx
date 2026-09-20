@@ -162,7 +162,7 @@ export function BackupDialog({
             <h3 id="backup-export-title" className="text-sm font-semibold">
               Экспорт
             </h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-theme-text-secondary">
               В JSON-файл попадут виджеты, оформление и локальные обои. Обои по
               HTTPS сохраняются как ссылка.
             </p>
@@ -185,12 +185,12 @@ export function BackupDialog({
             <h3 id="backup-import-title" className="text-sm font-semibold">
               Импорт
             </h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-theme-text-secondary">
               Выберите JSON-файл, созданный Chrome Start Page.
             </p>
           </div>
 
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          <p className="rounded-md border border-theme-danger-border bg-theme-danger-bg px-3 py-2 text-sm text-theme-danger-text">
             Текущие виджеты и оформление будут полностью заменены. Отменить
             импорт после сохранения нельзя.
           </p>
@@ -230,14 +230,14 @@ export function BackupDialog({
           </div>
 
           {selectedFile ? (
-            <p className="break-all text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="break-all text-sm text-theme-text-secondary">
               Выбран файл: {selectedFile.name}
             </p>
           ) : null}
         </section>
 
         {error ? (
-          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="text-sm text-theme-danger" role="alert">
             {error}
           </p>
         ) : null}

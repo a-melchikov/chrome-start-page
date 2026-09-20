@@ -12,16 +12,15 @@ export type ButtonProps = ComponentPropsWithRef<'button'> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    'bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white',
+  primary: 'bg-theme-accent text-theme-accent-text hover:bg-theme-accent-hover',
   secondary:
-    'border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700',
+    'border border-theme-border bg-theme-surface text-theme-text-primary hover:bg-theme-surface-elevated',
   ghost:
-    'bg-transparent text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800',
+    'bg-transparent text-theme-text-primary hover:bg-theme-surface-elevated',
   danger:
-    'border border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-900/50',
+    'border border-theme-danger-border bg-theme-danger-bg text-theme-danger-text hover:bg-theme-danger-hover',
   'danger-ghost':
-    'bg-transparent text-zinc-500 hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-950/50 dark:hover:text-red-400',
+    'bg-transparent text-theme-text-secondary hover:bg-theme-danger-bg hover:text-theme-danger',
   brand:
     'border border-zinc-200 bg-white text-zinc-950 shadow-sm hover:bg-zinc-100 dark:border-zinc-200 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100',
 };
@@ -42,7 +41,7 @@ export function Button({
   return (
     <button
       className={classNames(
-        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-zinc-400 dark:focus-visible:ring-offset-zinc-950',
+        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-theme-ring focus-visible:ring-offset-2 focus-visible:ring-offset-theme-surface disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         variantClasses[variant],
         sizeClasses[size],
         className,

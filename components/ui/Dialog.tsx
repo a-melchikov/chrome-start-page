@@ -122,12 +122,12 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
-        'overflow-hidden bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-50',
+        'overflow-hidden bg-theme-surface p-0 text-theme-text-primary shadow-2xl backdrop:bg-black/50',
         isFullscreen
           ? 'm-0 h-dvh max-h-dvh w-screen max-w-none rounded-none border-0'
           : isCompact
-            ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700'
-            : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700',
+            ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] rounded-xl border border-theme-border'
+            : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-theme-border',
         className,
       )}
       onCancel={handleCancel}
@@ -159,7 +159,7 @@ export function Dialog({
               {description ? (
                 <p
                   id={descriptionId}
-                  className="mt-1 text-sm text-zinc-600 dark:text-zinc-400"
+                  className="mt-1 text-sm text-theme-text-secondary"
                 >
                   {description}
                 </p>

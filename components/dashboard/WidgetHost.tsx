@@ -57,7 +57,7 @@ export function WidgetHost({
   }, [isWidgetEditing, shouldRestoreEditFocus]);
 
   const fallback = (
-    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <p className="text-sm text-theme-text-muted">
       Неподдерживаемый тип виджета: {widget.type}
     </p>
   );
@@ -71,7 +71,7 @@ export function WidgetHost({
         <IconButton
           ref={editButtonRef}
           aria-label={`Редактировать виджет «${displayName}»`}
-          className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="text-theme-text-secondary hover:text-theme-text-primary"
           size="xs"
           title={`Редактировать виджет «${displayName}»`}
           variant="ghost"
@@ -123,7 +123,7 @@ export function WidgetHost({
             <header className="mb-3 flex min-h-8 shrink-0 items-center justify-between gap-2">
               <h2
                 className={classNames(
-                  'min-w-0 flex-1 truncate font-semibold',
+                  'theme-glow min-w-0 flex-1 truncate font-semibold text-theme-text-primary',
                   definition?.presentation.titleStyle === 'prominent'
                     ? 'text-xl'
                     : 'text-sm',
