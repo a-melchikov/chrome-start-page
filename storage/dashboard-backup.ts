@@ -1,5 +1,6 @@
 import { migrateDashboardConfig } from './migrations';
 import {
+  cleanupOrphanedWallpaperAssets,
   deleteWallpaperAsset,
   loadWallpaperAsset,
   saveWallpaperAsset,
@@ -331,11 +332,17 @@ export async function replaceDashboardFromBackup(
     await saveDashboardConfig(config);
   }
 
+  const activeAssetId = wallpaper.type === 'local' ? wallpaper.assetId : null;
+  const warning = await removePreviousLocalWallpaper(
+    currentConfig,
+    activeAssetId,
+  );
+  if (!warning) {
+    void cleanupOrphanedWallpaperAssets(activeAssetId).catch(() => undefined);
+  }
+
   return {
     config,
-    warning: await removePreviousLocalWallpaper(
-      currentConfig,
-      wallpaper.type === 'local' ? wallpaper.assetId : null,
-    ),
+    warning,
   };
 }

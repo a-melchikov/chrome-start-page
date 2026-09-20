@@ -54,10 +54,7 @@ describe('useWallpaperImage', () => {
     vi.stubGlobal('Image', FakeImage);
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
-      value: vi
-        .fn()
-        .mockReturnValueOnce('blob:validation')
-        .mockReturnValueOnce('blob:display'),
+      value: vi.fn().mockReturnValue('blob:display'),
     });
     Object.defineProperty(URL, 'revokeObjectURL', {
       configurable: true,
@@ -107,7 +104,6 @@ describe('useWallpaperImage', () => {
         sourceType: 'local',
       }),
     );
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:validation');
 
     hook.unmount();
 

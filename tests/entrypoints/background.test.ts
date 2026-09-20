@@ -3,6 +3,7 @@ import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
 
 import {
+  closeOffscreenDocument,
   handlePomodoroAlarm,
   parsePomodoroAlarmWidgetId,
 } from '../../entrypoints/background';
@@ -158,5 +159,17 @@ describe('background service worker Pomodoro handler', () => {
     expect(nextState?.status).toBe('paused');
     expect(nextState?.remainingSeconds).toBe(100);
     expect(mockCreateDocument).not.toHaveBeenCalled();
+  });
+
+  it('closes offscreen document when it exists', async () => {
+    mockHasDocument.mockResolvedValueOnce(true);
+    await closeOffscreenDocument();
+    expect(mockCloseDocument).toHaveBeenCalled();
+  });
+
+  it('does not attempt to close offscreen document when it does not exist', async () => {
+    mockHasDocument.mockResolvedValueOnce(false);
+    await closeOffscreenDocument();
+    expect(mockCloseDocument).not.toHaveBeenCalled();
   });
 });

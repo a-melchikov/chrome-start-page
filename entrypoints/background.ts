@@ -10,6 +10,7 @@ import {
 } from '../widgets/pomodoro/storage';
 import {
   POMODORO_AUDIO_ACTION,
+  POMODORO_AUDIO_FINISHED,
   type PomodoroPhase,
   type PomodoroRuntimeState,
   type PomodoroWidgetConfig,
@@ -42,12 +43,42 @@ export function parsePomodoroAlarmWidgetId(alarmName: string): string | null {
   return null;
 }
 
+export async function closeOffscreenDocument(): Promise<void> {
+  const offscreenApi =
+    typeof chrome !== 'undefined' ? chrome.offscreen : undefined;
+  if (!offscreenApi?.closeDocument) {
+    return;
+  }
+
+  try {
+    let hasDoc = false;
+    if (typeof offscreenApi.hasDocument === 'function') {
+      try {
+        hasDoc = await offscreenApi.hasDocument();
+      } catch {
+        hasDoc = false;
+      }
+    }
+    if (hasDoc) {
+      await offscreenApi.closeDocument();
+    }
+  } catch (err) {
+    console.warn('Failed to close offscreen document:', err);
+  }
+}
+
 export async function playOffscreenChime(): Promise<void> {
   const offscreenApi =
     typeof chrome !== 'undefined' ? chrome.offscreen : undefined;
   if (!offscreenApi?.createDocument) {
     return;
   }
+
+  const scheduleFallbackClose = () => {
+    setTimeout(() => {
+      void closeOffscreenDocument();
+    }, 4000);
+  };
 
   try {
     let hasDoc = false;
@@ -62,6 +93,7 @@ export async function playOffscreenChime(): Promise<void> {
     if (hasDoc) {
       try {
         await browser.runtime.sendMessage({ type: POMODORO_AUDIO_ACTION });
+        scheduleFallbackClose();
       } catch (err) {
         console.warn(
           'Failed to send audio message to offscreen document:',
@@ -77,11 +109,13 @@ export async function playOffscreenChime(): Promise<void> {
         reasons: ['AUDIO_PLAYBACK'],
         justification: 'Play Pomodoro timer chime when interval finishes',
       });
+      scheduleFallbackClose();
     } catch (createError) {
       // If document was created in a concurrent race condition, send message instead
       const errorMsg = String(createError);
       if (errorMsg.includes('Only a single offscreen document')) {
         await browser.runtime.sendMessage({ type: POMODORO_AUDIO_ACTION });
+        scheduleFallbackClose();
       } else {
         console.error('Failed to create offscreen document:', createError);
       }
@@ -175,5 +209,16 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 export default defineBackground(() => {
   browser.alarms.onAlarm.addListener((alarm) => {
     void handlePomodoroAlarm(alarm.name);
+  });
+
+  browser.runtime.onMessage.addListener((message) => {
+    if (
+      message &&
+      typeof message === 'object' &&
+      'type' in message &&
+      message.type === POMODORO_AUDIO_FINISHED
+    ) {
+      void closeOffscreenDocument();
+    }
   });
 });

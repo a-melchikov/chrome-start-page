@@ -13,7 +13,6 @@ import {
   type DashboardBackupDownload,
   type DashboardImportResult,
 } from '../storage/dashboard-backup';
-import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
 import { encodeWallpaperAsset } from '../storage/wallpaper-codec';
 import {
   installLocalWallpaper,
@@ -171,25 +170,13 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     isMountedRef.current = true;
 
     void loadDashboardConfig()
-      .then(async (loadedConfig) => {
+      .then((loadedConfig) => {
         if (!isActive) {
           return;
         }
 
         configRef.current = loadedConfig;
         setConfig(loadedConfig);
-
-        const wallpaper = loadedConfig.appearance.wallpaper;
-        const activeAssetId =
-          wallpaper.type === 'local' ? wallpaper.assetId : null;
-
-        try {
-          await cleanupOrphanedWallpaperAssets(activeAssetId);
-        } catch (cleanupError) {
-          if (isActive) {
-            setWallpaperError(getErrorMessage(cleanupError));
-          }
-        }
       })
       .catch((loadError: unknown) => {
         if (isActive) {

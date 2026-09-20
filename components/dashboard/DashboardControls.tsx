@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 
 import { useDashboardShortcuts } from '../../hooks/use-dashboard-shortcuts';
 import type {
@@ -15,9 +15,18 @@ import {
 } from '../icons';
 import { Button, IconButton } from '../ui';
 import { AddWidgetDialog } from './AddWidgetDialog';
-import { AppearanceDialog } from './AppearanceDialog';
-import { BackupDialog } from './BackupDialog';
 import { ShortcutsHelpDialog } from './ShortcutsHelpDialog';
+
+const AppearanceDialog = lazy(() =>
+  import('./AppearanceDialog').then((module) => ({
+    default: module.AppearanceDialog,
+  })),
+);
+const BackupDialog = lazy(() =>
+  import('./BackupDialog').then((module) => ({
+    default: module.BackupDialog,
+  })),
+);
 
 interface DashboardControlsProps {
   appearance: AppearanceConfig;
@@ -171,30 +180,32 @@ export function DashboardControls({
         </IconButton>
       </div>
 
-      <AppearanceDialog
-        appearance={appearance}
-        isWallpaperUpdating={isWallpaperUpdating}
-        open={isAppearanceOpen}
-        wallpaperError={wallpaperError}
-        wallpaperPreviewSrc={wallpaperPreviewSrc}
-        onAppearanceChange={onAppearanceChange}
-        onAppearancePreview={onAppearancePreview}
-        onClearWallpaperError={onClearWallpaperError}
-        onFlushAppearancePreview={onFlushAppearancePreview}
-        onOpenChange={setIsAppearanceOpen}
-        onRemoveWallpaper={onRemoveWallpaper}
-        onSetLocalWallpaper={onSetLocalWallpaper}
-        onSetUrlWallpaper={onSetUrlWallpaper}
-      />
-      <BackupDialog
-        error={backupError}
-        isProcessing={isBackupProcessing}
-        open={isBackupOpen}
-        onClearError={onClearBackupError}
-        onExport={onExportDashboard}
-        onImport={onImportDashboard}
-        onOpenChange={setIsBackupOpen}
-      />
+      <Suspense fallback={null}>
+        <AppearanceDialog
+          appearance={appearance}
+          isWallpaperUpdating={isWallpaperUpdating}
+          open={isAppearanceOpen}
+          wallpaperError={wallpaperError}
+          wallpaperPreviewSrc={wallpaperPreviewSrc}
+          onAppearanceChange={onAppearanceChange}
+          onAppearancePreview={onAppearancePreview}
+          onClearWallpaperError={onClearWallpaperError}
+          onFlushAppearancePreview={onFlushAppearancePreview}
+          onOpenChange={setIsAppearanceOpen}
+          onRemoveWallpaper={onRemoveWallpaper}
+          onSetLocalWallpaper={onSetLocalWallpaper}
+          onSetUrlWallpaper={onSetUrlWallpaper}
+        />
+        <BackupDialog
+          error={backupError}
+          isProcessing={isBackupProcessing}
+          open={isBackupOpen}
+          onClearError={onClearBackupError}
+          onExport={onExportDashboard}
+          onImport={onImportDashboard}
+          onOpenChange={setIsBackupOpen}
+        />
+      </Suspense>
       <AddWidgetDialog
         open={isAddWidgetOpen}
         onSelectWidgetType={onAddWidget}

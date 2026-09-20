@@ -1,6 +1,10 @@
 import { saveDashboardConfig } from './dashboard-storage';
 import type { DashboardConfig, WallpaperConfig } from './schema';
-import { deleteWallpaperAsset, saveWallpaperAsset } from './wallpaper-assets';
+import {
+  cleanupOrphanedWallpaperAssets,
+  deleteWallpaperAsset,
+  saveWallpaperAsset,
+} from './wallpaper-assets';
 import type { LocalWallpaperAssetV1 } from './wallpaper-codec';
 
 export interface WallpaperTransactionResult {
@@ -63,9 +67,14 @@ export async function installLocalWallpaper(
     throw error;
   }
 
+  const warning = await removePreviousLocalAsset(current, asset.assetId);
+  if (!warning) {
+    void cleanupOrphanedWallpaperAssets(asset.assetId).catch(() => undefined);
+  }
+
   return {
     config: nextConfig,
-    warning: await removePreviousLocalAsset(current, asset.assetId),
+    warning,
   };
 }
 
@@ -76,9 +85,14 @@ export async function installUrlWallpaper(
   const nextConfig = withWallpaper(current, { type: 'url', url });
   await saveDashboardConfig(nextConfig);
 
+  const warning = await removePreviousLocalAsset(current, null);
+  if (!warning) {
+    void cleanupOrphanedWallpaperAssets(null).catch(() => undefined);
+  }
+
   return {
     config: nextConfig,
-    warning: await removePreviousLocalAsset(current, null),
+    warning,
   };
 }
 
@@ -88,8 +102,13 @@ export async function removeWallpaper(
   const nextConfig = withWallpaper(current, { type: 'none' });
   await saveDashboardConfig(nextConfig);
 
+  const warning = await removePreviousLocalAsset(current, null);
+  if (!warning) {
+    void cleanupOrphanedWallpaperAssets(null).catch(() => undefined);
+  }
+
   return {
     config: nextConfig,
-    warning: await removePreviousLocalAsset(current, null),
+    warning,
   };
 }

@@ -313,11 +313,17 @@ describe('useDashboardConfig layout persistence', () => {
     expect(dashboard.result.current.wallpaperError).toBeNull();
   });
 
-  it('cleans orphaned assets during initial load', async () => {
+  it('cleans orphaned assets during wallpaper changes', async () => {
     await saveWallpaperAsset(createWallpaperAsset(ORPHAN_ASSET_ID));
 
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.isLoading).toBe(false));
+
+    await expect(loadWallpaperAsset(ORPHAN_ASSET_ID)).resolves.not.toBeNull();
+
+    await act(async () => {
+      await dashboard.result.current.removeWallpaper();
+    });
 
     await expect(loadWallpaperAsset(ORPHAN_ASSET_ID)).resolves.toBeNull();
   });

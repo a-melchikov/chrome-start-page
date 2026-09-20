@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { loadWallpaperAsset } from '../storage/wallpaper-assets';
 import { decodeWallpaperAsset } from '../storage/wallpaper-codec';
 import type { WallpaperConfig } from '../storage/schema';
-import { validateWallpaperBytes } from '../wallpaper/image-validation';
 
 export interface WallpaperImageState {
   src: string | null;
@@ -31,12 +30,6 @@ function getErrorMessage(error: unknown): string {
     : 'Не удалось загрузить локальные обои';
 }
 
-function copyBytes(bytes: Uint8Array): Uint8Array<ArrayBuffer> {
-  const copy = new Uint8Array(bytes.byteLength);
-  copy.set(bytes);
-  return copy;
-}
-
 export function useWallpaperImage(
   wallpaper: WallpaperConfig,
 ): WallpaperImageState {
@@ -60,9 +53,10 @@ export function useWallpaperImage(
         }
 
         const bytes = await decodeWallpaperAsset(asset);
-        await validateWallpaperBytes(bytes, asset.mimeType);
         displayUrl = URL.createObjectURL(
-          new Blob([copyBytes(bytes)], { type: asset.mimeType }),
+          new Blob([bytes as Uint8Array<ArrayBuffer>], {
+            type: asset.mimeType,
+          }),
         );
 
         if (!isActive) {

@@ -1,6 +1,17 @@
-import { POMODORO_CHIME_DATA_URI } from './chime-data-uri';
+import { browser } from 'wxt/browser';
 
 let sharedAudioContext: AudioContext | null = null;
+
+export function getChimeAudioUrl(): string {
+  if (typeof browser !== 'undefined' && browser.runtime?.getURL) {
+    try {
+      return browser.runtime.getURL('/sounds/pomodoro-chime.wav');
+    } catch {
+      return '/sounds/pomodoro-chime.wav';
+    }
+  }
+  return '/sounds/pomodoro-chime.wav';
+}
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') {
@@ -24,13 +35,38 @@ function getAudioContext(): AudioContext | null {
 }
 
 export async function playPomodoroChime(): Promise<void> {
-  // 1. Primary: HTMLAudioElement with bundled PCM WAV Data URI.
-  // Bypasses Chrome autoplay policy restrictions in offscreen documents with AUDIO_PLAYBACK.
+  // 1. Primary: HTMLAudioElement with bundled PCM WAV file.
   if (typeof Audio !== 'undefined') {
     try {
-      const audio = new Audio(POMODORO_CHIME_DATA_URI);
+      const audioUrl = getChimeAudioUrl();
+      const audio = new Audio(audioUrl);
       audio.volume = 1.0;
-      await audio.play();
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => resolve(), 3000);
+        audio.addEventListener(
+          'ended',
+          () => {
+            clearTimeout(timer);
+            resolve();
+          },
+          { once: true },
+        );
+        audio.addEventListener(
+          'error',
+          (err) => {
+            clearTimeout(timer);
+            reject(err);
+          },
+          { once: true },
+        );
+        const playPromise = audio.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch((err) => {
+            clearTimeout(timer);
+            reject(err);
+          });
+        }
+      });
       return;
     } catch (error) {
       console.warn(

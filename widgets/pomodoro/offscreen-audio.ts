@@ -1,7 +1,15 @@
 import { browser } from 'wxt/browser';
 
 import { playPomodoroChime } from './audio';
-import { POMODORO_AUDIO_ACTION } from './types';
+import { POMODORO_AUDIO_ACTION, POMODORO_AUDIO_FINISHED } from './types';
+
+function notifyAudioFinished(): void {
+  if (typeof browser !== 'undefined' && browser.runtime?.sendMessage) {
+    void browser.runtime
+      .sendMessage({ type: POMODORO_AUDIO_FINISHED })
+      .catch(() => undefined);
+  }
+}
 
 // Listen for playback messages from background service worker
 if (typeof browser !== 'undefined' && browser.runtime?.onMessage) {
@@ -14,6 +22,9 @@ if (typeof browser !== 'undefined' && browser.runtime?.onMessage) {
         .catch((error) => {
           console.warn('Offscreen message chime playback failed:', error);
           sendResponse({ success: false, error: String(error) });
+        })
+        .finally(() => {
+          notifyAudioFinished();
         });
       return true; // Keep message channel open for async response
     }
@@ -27,5 +38,7 @@ if (
   typeof location.hash === 'string' &&
   location.hash.includes('play')
 ) {
-  void playPomodoroChime();
+  void playPomodoroChime().finally(() => {
+    notifyAudioFinished();
+  });
 }
