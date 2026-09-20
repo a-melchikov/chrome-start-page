@@ -526,21 +526,16 @@ describe('App', () => {
     expect(helpButton).toBeInTheDocument();
 
     await user.click(helpButton);
-    expect(
-      screen.getByRole('dialog', { name: 'Горячие клавиши' }),
-    ).toBeInTheDocument();
+    const helpDialog = screen.getByRole('dialog', { name: 'Горячие клавиши' });
+    expect(helpDialog).toHaveAttribute('open');
 
     await user.keyboard('{Escape}');
     await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Горячие клавиши' }),
-      ).not.toBeInTheDocument();
+      expect(helpDialog).not.toHaveAttribute('open');
     });
 
     await user.keyboard('?');
-    expect(
-      screen.getByRole('dialog', { name: 'Горячие клавиши' }),
-    ).toBeInTheDocument();
+    expect(helpDialog).toHaveAttribute('open');
   });
 
   it('opens add widget, appearance, and backup dialogs via A, P, and B in edit mode', async () => {
@@ -563,38 +558,31 @@ describe('App', () => {
 
     // 'a' opens add widget dialog
     await user.keyboard('{a}');
-    expect(
-      screen.getByRole('dialog', { name: 'Добавить виджет' }),
-    ).toBeInTheDocument();
+    const addDialog = screen.getByRole('dialog', { name: 'Добавить виджет' });
+    expect(addDialog).toHaveAttribute('open');
     await user.keyboard('{Escape}');
     await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Добавить виджет' }),
-      ).not.toBeInTheDocument();
+      expect(addDialog).not.toHaveAttribute('open');
     });
 
     // 'p' opens appearance dialog
     await user.keyboard('{p}');
-    expect(
-      screen.getByRole('dialog', { name: 'Оформление' }),
-    ).toBeInTheDocument();
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Оформление' });
+    expect(appearanceDialog).toHaveAttribute('open');
     await user.keyboard('{Escape}');
     await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Оформление' }),
-      ).not.toBeInTheDocument();
+      expect(appearanceDialog).not.toHaveAttribute('open');
     });
 
     // 'b' opens backup dialog
     await user.keyboard('{b}');
-    expect(
-      screen.getByRole('dialog', { name: 'Импорт и экспорт' }),
-    ).toBeInTheDocument();
+    const backupDialog = screen.getByRole('dialog', {
+      name: 'Импорт и экспорт',
+    });
+    expect(backupDialog).toHaveAttribute('open');
     await user.keyboard('{Escape}');
     await waitFor(() => {
-      expect(
-        screen.queryByRole('dialog', { name: 'Импорт и экспорт' }),
-      ).not.toBeInTheDocument();
+      expect(backupDialog).not.toHaveAttribute('open');
     });
   });
 

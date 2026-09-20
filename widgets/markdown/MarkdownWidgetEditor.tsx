@@ -99,7 +99,7 @@ export function MarkdownWidgetEditor({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 items-end gap-3 border-b border-zinc-200 px-5 py-3 dark:border-zinc-800">
+      <div className="flex shrink-0 items-end gap-3 px-5 py-3">
         <div className="min-w-0 flex-1">
           <label className="mb-1.5 block text-xs font-medium" htmlFor={titleId}>
             Заголовок
@@ -114,7 +114,7 @@ export function MarkdownWidgetEditor({
             }
           />
         </div>
-        <Button size="small" variant="secondary" onClick={onRequestFinish}>
+        <Button size="small" variant="primary" onClick={onRequestFinish}>
           Готово
         </Button>
       </div>

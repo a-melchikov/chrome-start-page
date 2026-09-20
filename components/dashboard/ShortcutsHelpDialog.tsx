@@ -1,4 +1,5 @@
-import { Button, Dialog } from '../ui';
+import { classNames } from '../ui/class-names';
+import { Dialog } from '../ui';
 
 interface ShortcutsHelpDialogProps {
   open: boolean;
@@ -72,31 +73,21 @@ export function ShortcutsHelpDialog({
   onOpenChange,
 }: ShortcutsHelpDialogProps) {
   return (
-    <Dialog
-      footer={
-        <Button
-          data-dialog-initial-focus
-          variant="secondary"
-          onClick={() => onOpenChange(false)}
-        >
-          Закрыть
-        </Button>
-      }
-      open={open}
-      title="Горячие клавиши"
-      onOpenChange={onOpenChange}
-    >
-      <div className="space-y-5">
-        {SHORTCUT_GROUPS.map((group) => (
-          <section key={group.title} className="space-y-2">
-            <h3 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+    <Dialog open={open} title="Горячие клавиши" onOpenChange={onOpenChange}>
+      <div className="pb-3">
+        {SHORTCUT_GROUPS.map((group, groupIndex) => (
+          <section
+            key={group.title}
+            className={classNames('space-y-2', groupIndex > 0 && 'mt-6')}
+          >
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {group.title}
             </h3>
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+            <ul className="space-y-1">
               {group.items.map((item) => (
                 <li
                   key={item.description}
-                  className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0"
+                  className="flex items-center justify-between gap-4 py-1.5"
                 >
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">
                     {item.description}

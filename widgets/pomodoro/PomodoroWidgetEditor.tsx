@@ -214,7 +214,7 @@ export function PomodoroWidgetEditor({
         </label>
       </div>
 
-      <div className="border-t border-zinc-200/80 pt-3 dark:border-zinc-700/80">
+      <div className="pt-3">
         <div className="flex items-center justify-between gap-2">
           <Button size="small" variant="secondary" onClick={handleResetToday}>
             {hasResetToday ? 'Счётчик сброшен' : 'Сбросить счётчик за сегодня'}

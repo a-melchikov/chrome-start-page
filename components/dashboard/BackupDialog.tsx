@@ -170,6 +170,7 @@ export function BackupDialog({
           <Button
             data-dialog-initial-focus
             disabled={isProcessing}
+            size="small"
             variant="secondary"
             onClick={() => void exportBackup()}
           >
@@ -179,10 +180,7 @@ export function BackupDialog({
           </Button>
         </section>
 
-        <section
-          aria-labelledby="backup-import-title"
-          className="space-y-3 border-t border-zinc-200 pt-5 dark:border-zinc-700"
-        >
+        <section aria-labelledby="backup-import-title" className="space-y-3">
           <div>
             <h3 id="backup-import-title" className="text-sm font-semibold">
               Импорт

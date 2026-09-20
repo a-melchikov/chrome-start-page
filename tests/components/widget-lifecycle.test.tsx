@@ -143,7 +143,7 @@ describe('widget lifecycle', () => {
 
     await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
     expect(screen.getByRole('button', { name: 'Поиск' })).toBeVisible();
-    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
     await addSearchWidget(user);
 
     expect(await screen.findByRole('article', { name: 'Поиск' })).toBeVisible();

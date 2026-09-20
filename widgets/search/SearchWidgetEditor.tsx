@@ -46,8 +46,8 @@ export function SearchWidgetEditor({
         </p>
       </div>
 
-      <div className="flex justify-end">
-        <Button size="small" variant="secondary" onClick={onRequestFinish}>
+      <div className="flex justify-end pt-1">
+        <Button size="small" variant="primary" onClick={onRequestFinish}>
           Готово
         </Button>
       </div>

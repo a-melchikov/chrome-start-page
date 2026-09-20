@@ -66,9 +66,12 @@ export function Dialog({
       }
 
       dialog.showModal();
-      dialog
-        .querySelector<HTMLElement>('[data-dialog-initial-focus]')
-        ?.focus({ preventScroll: true });
+      const focusTarget =
+        dialog.querySelector<HTMLElement>('[data-dialog-initial-focus]') ??
+        dialog.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+      focusTarget?.focus({ preventScroll: true });
     } else if (!open && dialog.open) {
       dialog.close();
 
@@ -146,9 +149,7 @@ export function Dialog({
           <header
             className={classNames(
               'flex shrink-0 items-start justify-between gap-4 px-5',
-              isCompact
-                ? 'pt-5 pb-1'
-                : 'border-b border-zinc-200 py-4 dark:border-zinc-800',
+              isCompact ? 'pt-5 pb-1' : 'pt-5 pb-2',
             )}
           >
             <div className="min-w-0 flex-1">
@@ -167,12 +168,12 @@ export function Dialog({
             {showCloseButton ? (
               <IconButton
                 aria-label={closeLabel}
-                size={isCompact ? 'xs' : 'small'}
+                size="xs"
                 title={closeLabel}
                 variant="ghost"
                 onClick={close}
               >
-                <CloseIcon className={isCompact ? 'size-5' : 'size-7'} />
+                <CloseIcon className="size-5" />
               </IconButton>
             ) : null}
           </header>
@@ -185,7 +186,7 @@ export function Dialog({
                 ? 'flex-1 overflow-hidden'
                 : isCompact
                   ? 'overflow-y-auto overscroll-contain px-5 py-2'
-                  : 'overflow-y-auto overscroll-contain p-5',
+                  : 'overflow-y-auto overscroll-contain px-5 py-3',
             )}
           >
             {children}
@@ -197,7 +198,7 @@ export function Dialog({
               'shrink-0 px-5 pb-5',
               isCompact
                 ? 'grid grid-cols-2 gap-3 pt-4'
-                : 'flex flex-wrap justify-end gap-2 border-t border-zinc-200 py-4 dark:border-zinc-800',
+                : 'flex flex-wrap justify-end gap-2 pt-3',
             )}
           >
             {footer}

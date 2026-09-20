@@ -124,10 +124,7 @@ export function AppearanceDialog({
               ›
             </span>
           </summary>
-          <fieldset
-            aria-label="Тема"
-            className="border-t border-zinc-200 p-4 dark:border-zinc-700"
-          >
+          <fieldset aria-label="Тема" className="px-4 pb-4 pt-1">
             <div className="flex flex-wrap gap-2">
               {themeOptions.map((option) => (
                 <Button
@@ -156,7 +153,7 @@ export function AppearanceDialog({
               ›
             </span>
           </summary>
-          <div className="flex items-center gap-3 border-t border-zinc-200 p-4 dark:border-zinc-700">
+          <div className="flex items-center gap-3 px-4 pb-4 pt-1">
             <label className="sr-only" htmlFor="background-color">
               Цвет фона
             </label>
@@ -185,7 +182,7 @@ export function AppearanceDialog({
               ›
             </span>
           </summary>
-          <div className="space-y-4 border-t border-zinc-200 p-4 dark:border-zinc-700">
+          <div className="space-y-4 px-4 pb-4 pt-1">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Изображение заполнит весь экран; края могут быть обрезаны.
             </p>
@@ -214,7 +211,7 @@ export function AppearanceDialog({
                   ›
                 </span>
               </summary>
-              <div className="space-y-3 border-t border-zinc-200 p-3 dark:border-zinc-700">
+              <div className="space-y-3 px-3 pb-3 pt-1">
                 {appearance.wallpaper.type === 'local' ? (
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     Локальные обои установлены
@@ -266,10 +263,7 @@ export function AppearanceDialog({
                   ›
                 </span>
               </summary>
-              <form
-                className="space-y-2 border-t border-zinc-200 p-3 dark:border-zinc-700"
-                onSubmit={submitUrl}
-              >
+              <form className="space-y-2 px-3 pb-3 pt-1" onSubmit={submitUrl}>
                 {appearance.wallpaper.type === 'url' ? (
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     Обои установлены по ссылке
@@ -327,7 +321,7 @@ export function AppearanceDialog({
                 isWallpaperUpdating || appearance.wallpaper.type === 'none'
               }
               size="small"
-              variant="danger-ghost"
+              variant="danger"
               onClick={() => void runWallpaperAction(() => onRemoveWallpaper())}
             >
               Удалить обои
@@ -345,7 +339,7 @@ export function AppearanceDialog({
               ›
             </span>
           </summary>
-          <div className="space-y-5 border-t border-zinc-200 p-4 dark:border-zinc-700">
+          <div className="space-y-5 px-4 pb-4 pt-1">
             <label className="flex cursor-pointer items-center justify-between gap-4">
               <span className="text-sm font-medium">Эффект Liquid Glass</span>
               <input

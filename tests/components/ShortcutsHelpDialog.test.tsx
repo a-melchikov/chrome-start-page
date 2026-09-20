@@ -62,13 +62,9 @@ describe('ShortcutsHelpDialog', () => {
 
     render(<ShortcutsHelpDialog open={true} onOpenChange={onOpenChange} />);
 
-    const closeButtons = screen.getAllByRole('button', { name: 'Закрыть' });
-    const closeButton = closeButtons[0];
-    expect(closeButton).toBeDefined();
+    const closeButton = screen.getByRole('button', { name: 'Закрыть' });
+    await user.click(closeButton);
 
-    if (closeButton) {
-      await user.click(closeButton);
-    }
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
