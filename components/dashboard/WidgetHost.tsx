@@ -64,33 +64,30 @@ export function WidgetHost({
   const controls = isEditing ? (
     <div
       aria-label="Управление виджетом"
-      className={classNames(
-        'flex shrink-0 flex-wrap items-center justify-end gap-2',
-        isBare &&
-          'absolute right-0 bottom-full z-20 mb-2 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900',
-      )}
+      className="flex shrink-0 items-center justify-end gap-1"
       role="toolbar"
     >
       {definition?.renderEditor && !isWidgetEditing && onRequestEdit ? (
         <IconButton
           ref={editButtonRef}
           aria-label={`Редактировать виджет «${displayName}»`}
-          size="small"
+          className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          size="xs"
           title={`Редактировать виджет «${displayName}»`}
-          variant="secondary"
+          variant="ghost"
           onClick={startEditing}
         >
-          <PencilIcon className="size-7" />
+          <PencilIcon className="size-[18px]" />
         </IconButton>
       ) : null}
       <IconButton
         aria-label={`Удалить виджет «${displayName}»`}
-        size="small"
+        size="xs"
         title={`Удалить виджет «${displayName}»`}
         variant="danger-ghost"
         onClick={() => onRequestDelete(widget)}
       >
-        <CloseIcon className="size-7" />
+        <CloseIcon className="size-[18px]" />
       </IconButton>
     </div>
   ) : null;
@@ -109,19 +106,27 @@ export function WidgetHost({
         )}
       >
         {isBare ? (
-          <>
+          <div className="flex h-full w-full items-center gap-2">
+            <div
+              className={classNames(
+                'min-w-0 flex-1',
+                isEditing && 'pointer-events-none select-none',
+              )}
+              inert={isEditing ? true : undefined}
+            >
+              {content ?? fallback}
+            </div>
             {controls}
-            <div className="min-w-0 flex-1">{content ?? fallback}</div>
-          </>
+          </div>
         ) : (
           <>
-            <header className="mb-3 flex min-h-8 shrink-0 items-start justify-between gap-3">
+            <header className="mb-3 flex min-h-8 shrink-0 items-center justify-between gap-2">
               <h2
                 className={classNames(
                   'min-w-0 flex-1 truncate font-semibold',
                   definition?.presentation.titleStyle === 'prominent'
                     ? 'text-xl'
-                    : 'pt-1.5 text-sm',
+                    : 'text-sm',
                 )}
                 id={titleId}
                 title={displayName}

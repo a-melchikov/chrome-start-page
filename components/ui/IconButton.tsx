@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Button, type ButtonProps } from './Button';
 import { classNames } from './class-names';
 
-type IconButtonSize = 'small' | 'medium';
+type IconButtonSize = 'xs' | 'small' | 'medium';
 
 export type IconButtonProps = Omit<
   ButtonProps,
@@ -15,6 +15,7 @@ export type IconButtonProps = Omit<
 };
 
 const sizeClasses: Record<IconButtonSize, string> = {
+  xs: 'size-8',
   small: 'size-10',
   medium: 'size-11',
 };

@@ -217,9 +217,12 @@ describe('widget lifecycle', () => {
     const editButton = screen.getByRole('button', {
       name: 'Редактировать виджет «Поиск»',
     });
-    const toolbar = editButton.closest('[role="toolbar"]');
-    expect(toolbar).toHaveClass('bottom-full', 'bg-white');
+    const toolbar = editButton.closest<HTMLElement>('[role="toolbar"]');
+    expect(toolbar).not.toBeNull();
+    expect(toolbar).not.toHaveClass('bottom-full');
     expect(toolbar).not.toHaveClass('liquid-glass-surface');
+    expect(editButton).toHaveClass('size-8');
+    expect(article).toContainElement(toolbar);
     await user.click(editButton);
     await user.selectOptions(screen.getByLabelText('Поисковик'), 'bing');
     await user.keyboard('{Escape}');
@@ -238,6 +241,20 @@ describe('widget lifecycle', () => {
         engine: 'bing',
       });
     });
+
+    const searchForm = screen.getByRole('search', { name: 'Поиск в Bing' });
+    const searchContainer = searchForm.closest('.min-w-0');
+    expect(searchContainer).toHaveClass('pointer-events-none');
+    expect(searchContainer).toHaveAttribute('inert');
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Выключить режим редактирования',
+      }),
+    );
+    expect(searchContainer).not.toHaveClass('pointer-events-none');
+    expect(searchContainer).not.toHaveAttribute('inert');
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
   });
 
   it('deletes a widget only after confirmation', async () => {
