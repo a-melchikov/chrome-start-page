@@ -20,17 +20,20 @@ export function ConfirmWidgetDeleteDialog({
         <>
           <Button
             data-dialog-initial-focus
+            size="small"
             variant="secondary"
             onClick={onCancel}
           >
             Отмена
           </Button>
-          <Button variant="danger" onClick={onConfirm}>
+          <Button size="small" variant="danger" onClick={onConfirm}>
             Удалить
           </Button>
         </>
       }
       open={open}
+      showCloseButton={false}
+      size="compact"
       title="Удалить виджет?"
       onOpenChange={(nextOpen) => {
         if (!nextOpen) {

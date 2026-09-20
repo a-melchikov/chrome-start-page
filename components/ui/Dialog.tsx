@@ -24,9 +24,10 @@ export type DialogProps = Omit<
   footer?: ReactNode;
   closeLabel?: string;
   size?: DialogSize;
+  showCloseButton?: boolean;
 };
 
-export type DialogSize = 'default' | 'fullscreen';
+export type DialogSize = 'compact' | 'default' | 'fullscreen';
 
 export function Dialog({
   open,
@@ -36,6 +37,7 @@ export function Dialog({
   footer,
   closeLabel = 'Закрыть',
   size = 'default',
+  showCloseButton = true,
   className,
   children,
   onKeyDown,
@@ -46,6 +48,7 @@ export function Dialog({
   const titleId = useId();
   const descriptionId = useId();
   const isFullscreen = size === 'fullscreen';
+  const isCompact = size === 'compact';
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -119,7 +122,9 @@ export function Dialog({
         'overflow-hidden bg-white p-0 text-zinc-950 shadow-2xl backdrop:bg-black/50 dark:bg-zinc-900 dark:text-zinc-50',
         isFullscreen
           ? 'm-0 h-dvh max-h-dvh w-screen max-w-none rounded-none border-0'
-          : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700',
+          : isCompact
+            ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700'
+            : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-zinc-200 dark:border-zinc-700',
         className,
       )}
       onCancel={handleCancel}
@@ -138,8 +143,15 @@ export function Dialog({
             {description ? <p id={descriptionId}>{description}</p> : null}
           </div>
         ) : (
-          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
-            <div className="min-w-0">
+          <header
+            className={classNames(
+              'flex shrink-0 items-start justify-between gap-4 px-5',
+              isCompact
+                ? 'pt-5 pb-1'
+                : 'border-b border-zinc-200 py-4 dark:border-zinc-800',
+            )}
+          >
+            <div className="min-w-0 flex-1">
               <h2 id={titleId} className="text-base font-semibold">
                 {title}
               </h2>
@@ -152,29 +164,42 @@ export function Dialog({
                 </p>
               ) : null}
             </div>
-            <IconButton
-              aria-label={closeLabel}
-              size="small"
-              title={closeLabel}
-              variant="ghost"
-              onClick={close}
-            >
-              <CloseIcon className="size-7" />
-            </IconButton>
+            {showCloseButton ? (
+              <IconButton
+                aria-label={closeLabel}
+                size={isCompact ? 'xs' : 'small'}
+                title={closeLabel}
+                variant="ghost"
+                onClick={close}
+              >
+                <CloseIcon className={isCompact ? 'size-5' : 'size-7'} />
+              </IconButton>
+            ) : null}
           </header>
         )}
-        <div
-          className={classNames(
-            'min-h-0',
-            isFullscreen
-              ? 'flex-1 overflow-hidden'
-              : 'overflow-y-auto overscroll-contain p-5',
-          )}
-        >
-          {children}
-        </div>
+        {children ? (
+          <div
+            className={classNames(
+              'min-h-0',
+              isFullscreen
+                ? 'flex-1 overflow-hidden'
+                : isCompact
+                  ? 'overflow-y-auto overscroll-contain px-5 py-2'
+                  : 'overflow-y-auto overscroll-contain p-5',
+            )}
+          >
+            {children}
+          </div>
+        ) : null}
         {footer ? (
-          <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <footer
+            className={classNames(
+              'shrink-0 px-5 pb-5',
+              isCompact
+                ? 'grid grid-cols-2 gap-3 pt-4'
+                : 'flex flex-wrap justify-end gap-2 border-t border-zinc-200 py-4 dark:border-zinc-800',
+            )}
+          >
             {footer}
           </footer>
         ) : null}
