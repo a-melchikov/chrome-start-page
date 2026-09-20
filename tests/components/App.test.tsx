@@ -475,4 +475,162 @@ describe('App', () => {
     expect(document.documentElement).toHaveClass('dark');
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
   });
+
+  it('toggles edit mode using the E keyboard shortcut', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Включить режим редактирования',
+        }),
+      ).toBeEnabled(),
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Добавить виджет' }),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard('{e}');
+
+    expect(
+      screen.getByRole('button', { name: 'Добавить виджет' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'Выключить режим редактирования',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+
+    await user.keyboard('{e}');
+
+    expect(
+      screen.queryByRole('button', { name: 'Добавить виджет' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('opens shortcuts help dialog via button and keyboard shortcut', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Включить режим редактирования',
+        }),
+      ).toBeEnabled(),
+    );
+
+    const helpButton = screen.getByRole('button', { name: 'Горячие клавиши' });
+    expect(helpButton).toBeInTheDocument();
+
+    await user.click(helpButton);
+    expect(
+      screen.getByRole('dialog', { name: 'Горячие клавиши' }),
+    ).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Горячие клавиши' }),
+      ).not.toBeInTheDocument();
+    });
+
+    await user.keyboard('?');
+    expect(
+      screen.getByRole('dialog', { name: 'Горячие клавиши' }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens add widget, appearance, and backup dialogs via A, P, and B in edit mode', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: 'Включить режим редактирования',
+        }),
+      ).toBeEnabled(),
+    );
+
+    // Enable edit mode
+    await user.keyboard('{e}');
+    expect(
+      screen.getByRole('button', { name: 'Добавить виджет' }),
+    ).toBeInTheDocument();
+
+    // 'a' opens add widget dialog
+    await user.keyboard('{a}');
+    expect(
+      screen.getByRole('dialog', { name: 'Добавить виджет' }),
+    ).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Добавить виджет' }),
+      ).not.toBeInTheDocument();
+    });
+
+    // 'p' opens appearance dialog
+    await user.keyboard('{p}');
+    expect(
+      screen.getByRole('dialog', { name: 'Оформление' }),
+    ).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Оформление' }),
+      ).not.toBeInTheDocument();
+    });
+
+    // 'b' opens backup dialog
+    await user.keyboard('{b}');
+    expect(
+      screen.getByRole('dialog', { name: 'Импорт и экспорт' }),
+    ).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Импорт и экспорт' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('focuses search input on slash (/) shortcut', async () => {
+    const user = userEvent.setup();
+    await saveDashboardConfig({
+      version: 5,
+      widgets: [
+        {
+          id: 'search-widget',
+          type: 'search',
+          engine: 'google',
+          layout: { x: 0, y: 0, w: 6, h: 1 },
+        },
+      ],
+      appearance: {
+        theme: 'system',
+        backgroundColor: '#18181b',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+    });
+
+    render(<App />);
+
+    const searchInput = await screen.findByRole('searchbox');
+    expect(searchInput).not.toHaveFocus();
+
+    await user.keyboard('/');
+    expect(searchInput).toHaveFocus();
+    // Slash character shouldn't be typed into the search field
+    expect(searchInput).toHaveValue('');
+  });
 });

@@ -1,15 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
+import { useDashboardShortcuts } from '../../hooks/use-dashboard-shortcuts';
 import type {
   DashboardBackupDownload,
   DashboardImportResult,
 } from '../../storage/dashboard-backup';
 import type { AppearanceConfig, WidgetType } from '../../storage/schema';
-import { PaletteIcon, PencilIcon, PlusIcon, TransferIcon } from '../icons';
+import {
+  HelpCircleIcon,
+  PaletteIcon,
+  PencilIcon,
+  PlusIcon,
+  TransferIcon,
+} from '../icons';
 import { Button, IconButton } from '../ui';
 import { AddWidgetDialog } from './AddWidgetDialog';
 import { AppearanceDialog } from './AppearanceDialog';
 import { BackupDialog } from './BackupDialog';
+import { ShortcutsHelpDialog } from './ShortcutsHelpDialog';
 
 interface DashboardControlsProps {
   appearance: AppearanceConfig;
@@ -62,26 +70,7 @@ export function DashboardControls({
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isEditing) {
-      return;
-    }
-
-    const exitEditingOnEscape = (event: KeyboardEvent) => {
-      if (
-        event.key === 'Escape' &&
-        !event.defaultPrevented &&
-        !document.querySelector('dialog[open]')
-      ) {
-        event.preventDefault();
-        onEditingChange(false);
-      }
-    };
-
-    window.addEventListener('keydown', exitEditingOnEscape);
-    return () => window.removeEventListener('keydown', exitEditingOnEscape);
-  }, [isEditing, onEditingChange]);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const toggleEditing = () => {
     const nextValue = !isEditing;
@@ -91,8 +80,24 @@ export function DashboardControls({
       setIsAppearanceOpen(false);
       setIsAddWidgetOpen(false);
       setIsBackupOpen(false);
+      setIsHelpOpen(false);
     }
   };
+
+  useDashboardShortcuts({
+    canManageWidgets,
+    isEditing,
+    isHelpOpen,
+    onToggleEditing: toggleEditing,
+    onOpenHelp: () => setIsHelpOpen(true),
+    onCloseHelp: () => setIsHelpOpen(false),
+    onOpenAddWidget: () => setIsAddWidgetOpen(true),
+    onOpenAppearance: () => setIsAppearanceOpen(true),
+    onOpenBackup: () => {
+      onClearBackupError();
+      setIsBackupOpen(true);
+    },
+  });
 
   return (
     <>
@@ -102,6 +107,7 @@ export function DashboardControls({
             <Button
               disabled={!canManageWidgets}
               size="small"
+              title="Добавить виджет (A)"
               variant="secondary"
               onClick={() => setIsAddWidgetOpen(true)}
             >
@@ -112,7 +118,7 @@ export function DashboardControls({
               aria-label="Настройки оформления"
               disabled={!canManageWidgets || isBackupProcessing}
               size="small"
-              title="Настройки оформления"
+              title="Настройки оформления (P, O)"
               variant="ghost"
               onClick={() => setIsAppearanceOpen(true)}
             >
@@ -122,7 +128,7 @@ export function DashboardControls({
               aria-label="Импорт и экспорт"
               disabled={!canManageWidgets || isWallpaperUpdating}
               size="small"
-              title="Импорт и экспорт"
+              title="Импорт и экспорт (B)"
               variant="ghost"
               onClick={() => {
                 onClearBackupError();
@@ -135,6 +141,16 @@ export function DashboardControls({
         ) : null}
 
         <IconButton
+          aria-label="Горячие клавиши"
+          size="small"
+          title="Горячие клавиши (?)"
+          variant="ghost"
+          onClick={() => setIsHelpOpen(true)}
+        >
+          <HelpCircleIcon className="size-7" />
+        </IconButton>
+
+        <IconButton
           aria-label={
             isEditing
               ? 'Выключить режим редактирования'
@@ -145,8 +161,8 @@ export function DashboardControls({
           size="small"
           title={
             isEditing
-              ? 'Выключить режим редактирования (Esc)'
-              : 'Включить режим редактирования'
+              ? 'Выключить режим редактирования (Esc или E)'
+              : 'Включить режим редактирования (E)'
           }
           variant="ghost"
           onClick={toggleEditing}
@@ -184,6 +200,7 @@ export function DashboardControls({
         onSelectWidgetType={onAddWidget}
         onOpenChange={setIsAddWidgetOpen}
       />
+      <ShortcutsHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
     </>
   );
 }
