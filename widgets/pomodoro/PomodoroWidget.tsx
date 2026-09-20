@@ -278,7 +278,7 @@ export function PomodoroWidget({ config }: PomodoroWidgetProps) {
       </div>
 
       {/* Cycle indicator dots & daily count */}
-      <div className="flex shrink-0 items-center justify-between border-t border-zinc-200/60 pt-1.5 text-xs text-zinc-500 dark:border-zinc-700/60 dark:text-zinc-400">
+      <div className="flex shrink-0 items-center justify-between pt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
         <div
           aria-label={`Цикл: ${state.cycleCount} из ${config.longBreakInterval}`}
           className="flex items-center gap-1.5"
