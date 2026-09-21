@@ -3,6 +3,7 @@ import { storage } from '#imports';
 import { browser } from 'wxt/browser';
 
 import { playPomodoroChime } from './audio';
+import { showPomodoroNotification } from './notifications';
 import {
   createDefaultRuntimeState,
   getPhaseDurationSeconds,
@@ -156,6 +157,7 @@ export function usePomodoro(config: PomodoroWidgetConfig): UsePomodoroResult {
     await clearAlarm(currentConfig.id);
     applyState(nextState);
     await savePomodoroRuntime(currentConfig.id, nextState);
+    await showPomodoroNotification(currentConfig.id, current.phase, nextPhase);
   }, [applyState]);
 
   // Ticking interval when running

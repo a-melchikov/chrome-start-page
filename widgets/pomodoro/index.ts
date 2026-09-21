@@ -5,6 +5,10 @@ export {
 } from './defaults';
 export { PomodoroWidget } from './PomodoroWidget';
 export { PomodoroWidgetEditor } from './PomodoroWidgetEditor';
+export {
+  getPomodoroNotificationContent,
+  showPomodoroNotification,
+} from './notifications';
 export type {
   PomodoroPhase,
   PomodoroRuntimeState,

@@ -25,6 +25,8 @@ describe('background service worker Pomodoro handler', () => {
     fakeBrowser.reset();
     vi.clearAllMocks();
 
+    vi.spyOn(fakeBrowser.notifications, 'create');
+
     (globalThis as unknown as { chrome: unknown }).chrome = {
       offscreen: {
         createDocument: mockCreateDocument,
@@ -73,6 +75,16 @@ describe('background service worker Pomodoro handler', () => {
     expect(mockCreateDocument).toHaveBeenCalledWith(
       expect.objectContaining({
         reasons: ['AUDIO_PLAYBACK'],
+      }),
+    );
+
+    expect(fakeBrowser.notifications.create).toHaveBeenCalledWith(
+      `pomodoro-notif:${widget.id}`,
+      expect.objectContaining({
+        type: 'basic',
+        title: 'Время отдыхать!',
+        priority: 2,
+        requireInteraction: true,
       }),
     );
   });

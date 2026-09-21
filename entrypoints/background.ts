@@ -8,6 +8,7 @@ import {
   getTodayDateString,
   isPomodoroRuntimeState,
 } from '../widgets/pomodoro/storage';
+import { showPomodoroNotification } from '../widgets/pomodoro/notifications';
 import {
   POMODORO_AUDIO_ACTION,
   POMODORO_AUDIO_FINISHED,
@@ -131,87 +132,89 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
     return;
   }
 
-  const dashboardConfig = await loadDashboardConfig();
-  const widget = dashboardConfig.widgets.find(
-    (w): w is PomodoroWidgetConfig =>
-      w.id === widgetId && w.type === 'pomodoro',
-  );
-
-  if (!widget) {
-    await browser.alarms.clear(alarmName);
-    return;
-  }
-
-  const storageKey = getPomodoroStorageKey(widgetId);
-  const state = await storage.getItem<unknown>(storageKey);
-
-  if (!isPomodoroRuntimeState(state) || state.status !== 'running') {
-    return;
-  }
-
-  const currentTime = Date.now();
-  const today = getTodayDateString(new Date(currentTime));
-  let completedToday = state.completedToday;
-  if (state.lastResetDate !== today) {
-    completedToday = 0;
-  }
-
-  const previousPhase = state.phase;
-  const isWorkPhase = previousPhase === 'work';
-  const nextCycleCount = isWorkPhase
-    ? (state.cycleCount + 1) % widget.longBreakInterval
-    : state.cycleCount;
-  const nextPhase: PomodoroPhase = isWorkPhase
-    ? nextCycleCount === 0
-      ? 'longBreak'
-      : 'shortBreak'
-    : 'work';
-  const nextCompletedToday = isWorkPhase ? completedToday + 1 : completedToday;
-
-  const nextState: PomodoroRuntimeState = {
-    status: 'idle',
-    phase: nextPhase,
-    targetEndTime: null,
-    remainingSeconds: getPhaseDurationSeconds(nextPhase, widget),
-    cycleCount: nextCycleCount,
-    completedToday: nextCompletedToday,
-    lastResetDate: today,
-  };
-
-  await storage.setItem(storageKey, nextState);
-
-  const title = isWorkPhase ? 'Время отдыхать!' : 'Перерыв окончен!';
-  const message = isWorkPhase
-    ? nextPhase === 'longBreak'
-      ? 'Отличная работа! Пора на длинный перерыв.'
-      : 'Помидор завершён! Время сделать короткий перерыв.'
-    : 'Пора вернуться к работе и сфокусироваться.';
-
   try {
-    await browser.notifications.create(
-      `pomodoro-notif:${widgetId}:${currentTime}`,
-      {
-        type: 'basic',
-        iconUrl: browser.runtime.getURL('/icons/icon-128.png'),
-        title,
-        message,
-      },
+    const dashboardConfig = await loadDashboardConfig();
+    const widget = dashboardConfig.widgets.find(
+      (w): w is PomodoroWidgetConfig =>
+        w.id === widgetId && w.type === 'pomodoro',
     );
-  } catch (error) {
-    console.error('Failed to create Pomodoro notification:', error);
-  }
 
-  if (widget.soundEnabled) {
-    void playOffscreenChime();
+    if (!widget) {
+      await browser.alarms.clear(alarmName);
+      return;
+    }
+
+    const storageKey = getPomodoroStorageKey(widgetId);
+    const state = await storage.getItem<unknown>(storageKey);
+
+    if (!isPomodoroRuntimeState(state) || state.status !== 'running') {
+      return;
+    }
+
+    const currentTime = Date.now();
+    const today = getTodayDateString(new Date(currentTime));
+    let completedToday = state.completedToday;
+    if (state.lastResetDate !== today) {
+      completedToday = 0;
+    }
+
+    const previousPhase = state.phase;
+    const isWorkPhase = previousPhase === 'work';
+    const nextCycleCount = isWorkPhase
+      ? (state.cycleCount + 1) % widget.longBreakInterval
+      : state.cycleCount;
+    const nextPhase: PomodoroPhase = isWorkPhase
+      ? nextCycleCount === 0
+        ? 'longBreak'
+        : 'shortBreak'
+      : 'work';
+    const nextCompletedToday = isWorkPhase
+      ? completedToday + 1
+      : completedToday;
+
+    const nextState: PomodoroRuntimeState = {
+      status: 'idle',
+      phase: nextPhase,
+      targetEndTime: null,
+      remainingSeconds: getPhaseDurationSeconds(nextPhase, widget),
+      cycleCount: nextCycleCount,
+      completedToday: nextCompletedToday,
+      lastResetDate: today,
+    };
+
+    await storage.setItem(storageKey, nextState);
+
+    await showPomodoroNotification(widgetId, previousPhase, nextPhase);
+
+    if (widget.soundEnabled) {
+      await playOffscreenChime();
+    }
+  } catch (error) {
+    console.error('Failed to handle Pomodoro alarm:', error);
   }
 }
 
 export default defineBackground(() => {
-  browser.alarms.onAlarm.addListener((alarm) => {
-    void handlePomodoroAlarm(alarm.name);
+  browser.alarms.onAlarm.addListener(async (alarm) => {
+    await handlePomodoroAlarm(alarm.name);
   });
 
-  browser.runtime.onMessage.addListener((message) => {
+  browser.notifications?.onClicked?.addListener((notificationId) => {
+    if (notificationId.startsWith('pomodoro-notif:')) {
+      void browser.notifications.clear(notificationId);
+    }
+  });
+
+  browser.runtime.onMessage.addListener((message, sender) => {
+    const offscreenUrl = browser.runtime.getURL('/offscreen.html');
+    if (
+      !sender.url ||
+      (sender.url !== offscreenUrl &&
+        !sender.url.startsWith(`${offscreenUrl}#`))
+    ) {
+      return;
+    }
+
     if (
       message &&
       typeof message === 'object' &&

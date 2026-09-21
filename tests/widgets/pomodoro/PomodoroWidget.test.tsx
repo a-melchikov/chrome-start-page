@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
@@ -220,5 +226,35 @@ describe('PomodoroWidget', () => {
       );
     });
     expect(screen.getByRole('button', { name: 'Пауза' })).toBeInTheDocument();
+  });
+
+  it('shows desktop notification and plays chime when countdown reaches 0', async () => {
+    vi.useFakeTimers();
+    try {
+      const createSpy = vi.spyOn(fakeBrowser.notifications, 'create');
+
+      render(<PomodoroWidget config={config} />);
+
+      const startButton = screen.getByRole('button', { name: 'Старт' });
+      fireEvent.click(startButton);
+
+      expect(screen.getByRole('button', { name: 'Пауза' })).toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(25 * 60 * 1000 + 1000);
+      });
+
+      expect(createSpy).toHaveBeenCalledWith(
+        `pomodoro-notif:${config.id}`,
+        expect.objectContaining({
+          type: 'basic',
+          title: 'Время отдыхать!',
+          priority: 2,
+          requireInteraction: true,
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

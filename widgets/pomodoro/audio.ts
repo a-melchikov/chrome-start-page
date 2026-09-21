@@ -108,6 +108,7 @@ export async function playPomodoroChime(): Promise<void> {
 
     playTone(587.33, now, 0.4);
     playTone(880, now + 0.18, 0.6);
+    await new Promise<void>((resolve) => setTimeout(resolve, 800));
   } catch (error) {
     console.warn('Pomodoro Web Audio fallback failed:', error);
   }
