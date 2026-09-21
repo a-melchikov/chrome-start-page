@@ -102,10 +102,16 @@ function isWidgetLayout(value: unknown): boolean {
   );
 }
 
+const WIDGET_ID_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
+function isValidWidgetId(value: unknown): value is string {
+  return typeof value === 'string' && WIDGET_ID_PATTERN.test(value);
+}
+
 function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (
     !isRecord(value) ||
-    typeof value.id !== 'string' ||
+    !isValidWidgetId(value.id) ||
     (value.title !== undefined && typeof value.title !== 'string') ||
     !isWidgetLayout(value.layout)
   ) {
@@ -147,7 +153,7 @@ function isRetiredGoogleCalendarWidgetConfig(
   return (
     isRecord(value) &&
     value.type === 'google-calendar' &&
-    typeof value.id === 'string' &&
+    isValidWidgetId(value.id) &&
     (value.title === undefined || typeof value.title === 'string') &&
     isWidgetLayout(value.layout) &&
     (value.selectedCalendarIds === null ||

@@ -13,7 +13,10 @@ function notifyAudioFinished(): void {
 
 // Listen for playback messages from background service worker
 if (typeof browser !== 'undefined' && browser.runtime?.onMessage) {
-  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (sender?.id && sender.id !== browser.runtime.id) {
+      return false;
+    }
     if (message && message.type === POMODORO_AUDIO_ACTION) {
       void playPomodoroChime()
         .then(() => {

@@ -115,6 +115,21 @@ describe('MarkdownWidget', () => {
     expect(screen.queryByRole('link', { name: 'Run' })).not.toBeInTheDocument();
   });
 
+  it('strips picture and source tags to prevent HTTPS and referer bypass', () => {
+    const { container } = render(
+      <MarkdownWidget
+        config={createConfig(
+          '<picture><source srcset="http://evil.com/track.png" /><img src="https://example.com/img.png" alt="Test" /></picture>',
+        )}
+      />,
+    );
+
+    expect(container.querySelector('picture, source')).toBeNull();
+    const img = screen.getByRole('img', { name: 'Test' });
+    expect(img).toHaveAttribute('src', 'https://example.com/img.png');
+    expect(img).toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
+
   it('updates the exact task from an interactive checkbox', async () => {
     const user = userEvent.setup();
     render(

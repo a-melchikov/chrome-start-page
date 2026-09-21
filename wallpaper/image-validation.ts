@@ -17,6 +17,10 @@ export class WallpaperValidationAbortedError extends Error {
   }
 }
 
+export const MAX_WALLPAPER_FILE_BYTES = 32 * 1024 * 1024;
+export const MAX_SVG_FILE_BYTES = 2 * 1024 * 1024;
+export const MAX_SVG_TAG_DEPTH = 32;
+
 const IMAGE_LOAD_TIMEOUT_MS = 10_000;
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 const textDecoder = new TextDecoder('utf-8', { fatal: true });
@@ -70,10 +74,56 @@ function isAvif(bytes: Uint8Array) {
   return false;
 }
 
+export function hasExcessiveSvgNesting(
+  xmlText: string,
+  maxDepth = MAX_SVG_TAG_DEPTH,
+): boolean {
+  const stripped = xmlText
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+  let depth = 0;
+  const tagPattern = /<\/?([a-zA-Z0-9:-]+)[^>]*>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagPattern.exec(stripped)) !== null) {
+    const fullTag = match[0];
+    const isClosing = fullTag.startsWith('</');
+    const isSelfClosing =
+      fullTag.endsWith('/>') ||
+      fullTag.startsWith('<?') ||
+      fullTag.startsWith('<!');
+
+    if (isSelfClosing) {
+      continue;
+    }
+
+    if (isClosing) {
+      depth = Math.max(0, depth - 1);
+    } else {
+      depth += 1;
+      if (depth > maxDepth) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function isSvg(bytes: Uint8Array) {
+  if (bytes.length > MAX_SVG_FILE_BYTES) {
+    return false;
+  }
+
   try {
+    const xmlText = textDecoder.decode(bytes);
+    if (hasExcessiveSvgNesting(xmlText)) {
+      return false;
+    }
+
     const document = new DOMParser().parseFromString(
-      textDecoder.decode(bytes),
+      xmlText,
       'application/xml',
     );
     const root = document.documentElement;
@@ -213,12 +263,79 @@ export async function validateWallpaperBytes(
   }
 }
 
+export function isRestrictedHost(hostname: string): boolean {
+  const host =
+    hostname.startsWith('[') && hostname.endsWith(']')
+      ? hostname.slice(1, -1)
+      : hostname;
+  const lower = host.toLowerCase();
+
+  if (
+    lower === 'localhost' ||
+    lower.endsWith('.localhost') ||
+    lower.endsWith('.local') ||
+    lower.endsWith('.internal') ||
+    lower.endsWith('.lan') ||
+    lower === '0.0.0.0'
+  ) {
+    return true;
+  }
+
+  const ipv4Match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(lower);
+  if (ipv4Match) {
+    const [, o1, o2, o3, o4] = ipv4Match.map(Number);
+    if (
+      o1 !== undefined &&
+      o2 !== undefined &&
+      o3 !== undefined &&
+      o4 !== undefined &&
+      o1 <= 255 &&
+      o2 <= 255 &&
+      o3 <= 255 &&
+      o4 <= 255
+    ) {
+      if (o1 === 127) return true;
+      if (o1 === 10) return true;
+      if (o1 === 172 && o2 >= 16 && o2 <= 31) return true;
+      if (o1 === 192 && o2 === 168) return true;
+      if (o1 === 169 && o2 === 254) return true;
+      if (o1 === 0) return true;
+    }
+  }
+
+  if (lower === '::1' || lower === '::' || /^0*(:0*)*:1$/.test(lower)) {
+    return true;
+  }
+  if (
+    lower.startsWith('fe8') ||
+    lower.startsWith('fe9') ||
+    lower.startsWith('fea') ||
+    lower.startsWith('feb')
+  ) {
+    return true;
+  }
+  if (lower.startsWith('fc') || lower.startsWith('fd')) {
+    return true;
+  }
+  if (lower.startsWith('::ffff:')) {
+    return isRestrictedHost(lower.slice(7));
+  }
+
+  return false;
+}
+
 export async function validateLocalWallpaper(
   file: File,
   signal?: AbortSignal,
 ): Promise<{ bytes: Uint8Array; mimeType: WallpaperMimeType }> {
   if (signal?.aborted) {
     throw new WallpaperValidationAbortedError();
+  }
+
+  if (file.size > MAX_WALLPAPER_FILE_BYTES) {
+    throw new InvalidWallpaperImageError(
+      'Размер файла превышает допустимый лимит (32 МБ)',
+    );
   }
 
   let bytes: Uint8Array;
@@ -253,6 +370,18 @@ export async function validateWallpaperUrl(
 
   if (url.protocol !== 'https:' || !url.hostname) {
     throw new InvalidWallpaperImageError('Разрешены только HTTPS-ссылки');
+  }
+
+  if (url.port && url.port !== '443') {
+    throw new InvalidWallpaperImageError(
+      'Разрешены только стандартные HTTPS-порты',
+    );
+  }
+
+  if (isRestrictedHost(url.hostname)) {
+    throw new InvalidWallpaperImageError(
+      'Обращение к локальным и приватным адресам запрещено',
+    );
   }
 
   await loadImage(url.href, signal);

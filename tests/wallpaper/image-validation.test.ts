@@ -2,8 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   InvalidWallpaperImageError,
+  MAX_SVG_FILE_BYTES,
+  MAX_WALLPAPER_FILE_BYTES,
   WallpaperValidationAbortedError,
   detectWallpaperMimeType,
+  hasExcessiveSvgNesting,
+  isRestrictedHost,
   validateLocalWallpaper,
   validateWallpaperBytes,
   validateWallpaperUrl,
@@ -225,5 +229,75 @@ describe('wallpaper image validation', () => {
       WallpaperValidationAbortedError,
     );
     expect(imageInstances[0]?.src).toBe('');
+  });
+
+  it('rejects a local wallpaper exceeding MAX_WALLPAPER_FILE_BYTES', async () => {
+    const oversizedFile = new File([''], 'huge.png', { type: 'image/png' });
+    Object.defineProperty(oversizedFile, 'size', {
+      value: MAX_WALLPAPER_FILE_BYTES + 1,
+    });
+
+    await expect(validateLocalWallpaper(oversizedFile)).rejects.toThrow(
+      'Размер файла превышает допустимый лимит (32 МБ)',
+    );
+  });
+
+  it('detects excessive SVG tag nesting', () => {
+    let deepSvg = '<svg xmlns="http://www.w3.org/2000/svg">';
+    for (let i = 0; i < 40; i += 1) deepSvg += '<g>';
+    for (let i = 0; i < 40; i += 1) deepSvg += '</g>';
+    deepSvg += '</svg>';
+
+    expect(hasExcessiveSvgNesting(deepSvg)).toBe(true);
+
+    const normalSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg"><g><rect width="10" height="10"/></g></svg>';
+    expect(hasExcessiveSvgNesting(normalSvg)).toBe(false);
+  });
+
+  it('rejects an SVG file exceeding MAX_SVG_FILE_BYTES', () => {
+    const oversizedSvgBytes = new Uint8Array(MAX_SVG_FILE_BYTES + 1);
+    expect(() =>
+      detectWallpaperMimeType(oversizedSvgBytes, 'image/svg+xml'),
+    ).toThrow(InvalidWallpaperImageError);
+  });
+
+  it('correctly identifies restricted hosts and IP ranges for SSRF prevention', () => {
+    expect(isRestrictedHost('localhost')).toBe(true);
+    expect(isRestrictedHost('my.localhost')).toBe(true);
+    expect(isRestrictedHost('router.local')).toBe(true);
+    expect(isRestrictedHost('127.0.0.1')).toBe(true);
+    expect(isRestrictedHost('127.0.0.2')).toBe(true);
+    expect(isRestrictedHost('10.0.0.1')).toBe(true);
+    expect(isRestrictedHost('172.16.0.1')).toBe(true);
+    expect(isRestrictedHost('172.31.255.255')).toBe(true);
+    expect(isRestrictedHost('172.32.0.1')).toBe(false);
+    expect(isRestrictedHost('192.168.1.1')).toBe(true);
+    expect(isRestrictedHost('169.254.1.1')).toBe(true);
+    expect(isRestrictedHost('0.0.0.0')).toBe(true);
+    expect(isRestrictedHost('::1')).toBe(true);
+    expect(isRestrictedHost('[::1]')).toBe(true);
+    expect(isRestrictedHost('::ffff:127.0.0.1')).toBe(true);
+    expect(isRestrictedHost('example.com')).toBe(false);
+  });
+
+  it.each([
+    'https://localhost/wallpaper.jpg',
+    'https://127.0.0.1/wallpaper.jpg',
+    'https://10.0.0.1/wallpaper.jpg',
+    'https://192.168.1.1/wallpaper.jpg',
+    'https://[::1]/wallpaper.jpg',
+    'https://example.com:8443/wallpaper.jpg',
+  ])('rejects SSRF / private host or non-standard port: %s', async (url) => {
+    await expect(validateWallpaperUrl(url)).rejects.toThrow(
+      InvalidWallpaperImageError,
+    );
+    expect(imageInstances).toHaveLength(0);
+  });
+
+  it('accepts a valid public HTTPS URL on standard port', async () => {
+    imageBehavior = 'load';
+    const result = await validateWallpaperUrl('https://example.com/valid.png');
+    expect(result).toBe('https://example.com/valid.png');
   });
 });

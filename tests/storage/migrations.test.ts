@@ -399,4 +399,62 @@ describe('migrateDashboardConfig', () => {
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
+
+  it('rejects widgets with invalid, empty, or oversized widget IDs', () => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: '',
+            type: 'markdown',
+            content: 'text',
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'a'.repeat(65),
+            type: 'markdown',
+            content: 'text',
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: '../path-traversal',
+            type: 'markdown',
+            content: 'text',
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'widget<script>',
+            type: 'markdown',
+            content: 'text',
+            layout: { x: 0, y: 0, w: 4, h: 3 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
 });

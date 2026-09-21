@@ -27,6 +27,9 @@ export default defineConfig({
       'notifications',
       'offscreen',
     ],
+    content_security_policy: {
+      extension_pages: "script-src 'self'; object-src 'none'; base-uri 'none';",
+    },
   },
   vite: () => ({
     plugins: [tailwindcss()],

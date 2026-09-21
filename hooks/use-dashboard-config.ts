@@ -59,6 +59,7 @@ interface UseDashboardConfigResult {
   updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
 }
 
+export const MAX_BACKUP_FILE_BYTES = 32 * 1024 * 1024;
 const WIDGET_SAVE_DEBOUNCE_MS = 300;
 
 function getErrorMessage(error: unknown): string {
@@ -68,6 +69,10 @@ function getErrorMessage(error: unknown): string {
 }
 
 async function readBackupFile(file: File): Promise<string> {
+  if (file.size > MAX_BACKUP_FILE_BYTES) {
+    throw new Error('Файл резервной копии превышает допустимый размер (32 МБ)');
+  }
+
   try {
     return await file.text();
   } catch {

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   InvalidWallpaperAssetError,
+  MAX_WALLPAPER_DECOMPRESSED_BYTES,
   decodeWallpaperAsset,
   encodeWallpaperAsset,
   parseWallpaperAsset,
@@ -95,5 +96,19 @@ describe('wallpaper asset codec', () => {
         originalByteLength: asset.originalByteLength + 1,
       }),
     ).rejects.toThrow(InvalidWallpaperAssetError);
+  });
+
+  it('rejects parseWallpaperAsset when originalByteLength exceeds MAX_WALLPAPER_DECOMPRESSED_BYTES', () => {
+    expect(() =>
+      parseWallpaperAsset({
+        version: 1,
+        assetId: ASSET_ID,
+        mimeType: 'image/png',
+        encoding: 'base64',
+        originalByteLength: MAX_WALLPAPER_DECOMPRESSED_BYTES + 1,
+        storedByteLength: 1,
+        data: 'AQ==',
+      }),
+    ).toThrow(InvalidWallpaperAssetError);
   });
 });

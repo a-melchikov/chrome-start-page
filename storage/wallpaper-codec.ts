@@ -1,6 +1,7 @@
 import { isWallpaperAssetId } from './schema';
 
 export const WALLPAPER_COMPRESSION_THRESHOLD_BYTES = 6 * 1024 * 1024;
+export const MAX_WALLPAPER_DECOMPRESSED_BYTES = 32 * 1024 * 1024;
 
 export const WALLPAPER_MIME_TYPES = [
   'image/png',
@@ -89,6 +90,7 @@ function createByteStream(bytes: Uint8Array): ReadableStream<BufferSource> {
 
 async function collectStream(
   stream: ReadableStream<Uint8Array>,
+  maxBytes = MAX_WALLPAPER_DECOMPRESSED_BYTES,
 ): Promise<Uint8Array> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
@@ -99,6 +101,13 @@ async function collectStream(
 
     if (done) {
       break;
+    }
+
+    if (length + value.byteLength > maxBytes) {
+      await reader.cancel();
+      throw new InvalidWallpaperAssetError(
+        'Decompressed wallpaper exceeds maximum allowed size',
+      );
     }
 
     chunks.push(value);
@@ -151,6 +160,7 @@ export function parseWallpaperAsset(value: unknown): LocalWallpaperAssetV1 {
     (value.encoding !== 'base64' && value.encoding !== 'gzip-base64') ||
     !Number.isInteger(value.originalByteLength) ||
     (value.originalByteLength as number) < 0 ||
+    (value.originalByteLength as number) > MAX_WALLPAPER_DECOMPRESSED_BYTES ||
     !Number.isInteger(value.storedByteLength) ||
     (value.storedByteLength as number) < 0 ||
     typeof value.data !== 'string'

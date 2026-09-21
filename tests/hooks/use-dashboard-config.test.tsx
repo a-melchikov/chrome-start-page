@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
 
-import { useDashboardConfig } from '../../hooks/use-dashboard-config';
+import {
+  MAX_BACKUP_FILE_BYTES,
+  useDashboardConfig,
+} from '../../hooks/use-dashboard-config';
 import {
   DASHBOARD_BACKUP_FORMAT,
   DASHBOARD_BACKUP_FORMAT_VERSION,
@@ -590,5 +593,29 @@ describe('useDashboardConfig layout persistence', () => {
     });
     expect(dashboard.result.current.isBackupProcessing).toBe(false);
     expect(dashboard.result.current.backupError).toBeNull();
+  });
+
+  it('rejects a backup file exceeding MAX_BACKUP_FILE_BYTES', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    const oversizedFile = new File(['{}'], 'backup.json', {
+      type: 'application/json',
+    });
+    Object.defineProperty(oversizedFile, 'size', {
+      value: MAX_BACKUP_FILE_BYTES + 1,
+    });
+
+    await act(async () => {
+      await expect(
+        dashboard.result.current.importDashboardBackup(oversizedFile),
+      ).rejects.toThrow(
+        'Файл резервной копии превышает допустимый размер (32 МБ)',
+      );
+    });
+
+    expect(dashboard.result.current.backupError).toContain(
+      'Файл резервной копии превышает допустимый размер (32 МБ)',
+    );
   });
 });

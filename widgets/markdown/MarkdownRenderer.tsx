@@ -40,10 +40,17 @@ const extendedTags = [
   'summary',
 ] as const;
 
+const disallowedTags = new Set(['picture', 'source']);
+
 const markdownSanitizeSchema: SanitizeSchema = {
   ...defaultSchema,
   tagNames: Array.from(
-    new Set([...(defaultSchema.tagNames ?? []), ...extendedTags]),
+    new Set([
+      ...(defaultSchema.tagNames ?? []).filter(
+        (tag) => !disallowedTags.has(tag),
+      ),
+      ...extendedTags,
+    ]),
   ),
   attributes: {
     ...defaultSchema.attributes,
