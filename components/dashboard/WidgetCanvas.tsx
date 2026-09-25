@@ -28,12 +28,14 @@ import {
 interface WidgetCanvasProps {
   editingWidgetId: string | null;
   isEditing: boolean;
+  newWidgetIds: ReadonlySet<string>;
   widgets: readonly WidgetConfig[];
   onFinishWidgetEditing: () => void;
   onRemoveWidget: (widgetId: string) => void;
   onStartWidgetEditing: (widgetId: string) => void;
   onUpdateWidget: (widget: WidgetConfig) => void;
   onUpdateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
+  onWidgetEnterEnd: (widgetId: string) => void;
 }
 
 const collisionBlockingCompactor: Compactor = {
@@ -44,12 +46,14 @@ const collisionBlockingCompactor: Compactor = {
 export function WidgetCanvas({
   editingWidgetId,
   isEditing,
+  newWidgetIds,
   widgets,
   onFinishWidgetEditing,
   onRemoveWidget,
   onStartWidgetEditing,
   onUpdateWidget,
   onUpdateWidgetLayouts,
+  onWidgetEnterEnd,
 }: WidgetCanvasProps) {
   const [widgetPendingDelete, setWidgetPendingDelete] =
     useState<RenderableWidgetConfig | null>(null);
@@ -120,12 +124,14 @@ export function WidgetCanvas({
                 <div key={widget.id} className="min-w-0">
                   <WidgetHost
                     isEditing={isEditing}
+                    isNew={newWidgetIds.has(widget.id)}
                     isWidgetEditing={editingWidgetId === widget.id}
                     widget={widget}
                     onRequestEdit={() => onStartWidgetEditing(widget.id)}
                     onRequestDelete={setWidgetPendingDelete}
                     onRequestFinishEditing={onFinishWidgetEditing}
                     onWidgetChange={onUpdateWidget}
+                    onWidgetEnterEnd={() => onWidgetEnterEnd(widget.id)}
                   />
                 </div>
               ))}

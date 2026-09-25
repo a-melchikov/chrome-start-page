@@ -20,6 +20,7 @@ import {
   TransferIcon,
 } from '../icons';
 import { Button, IconButton } from '../ui';
+import { MotionNotice } from '../ui/MotionNotice';
 import { AddWidgetDialog } from './AddWidgetDialog';
 import { ShortcutsHelpDialog } from './ShortcutsHelpDialog';
 import { downloadBackup } from './download-backup';
@@ -197,55 +198,55 @@ export function DashboardControls({
 
   return (
     <>
-      {paletteFeedback ? (
-        <p
-          className="fixed bottom-4 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md border border-theme-border bg-theme-surface px-3 py-2 text-sm shadow-lg"
-          role="status"
+      <MotionNotice
+        className="fixed bottom-4 left-1/2 z-30 max-w-[calc(100vw-2rem)] rounded-md border border-theme-border bg-theme-surface px-3 py-2 text-sm shadow-lg"
+        message={paletteFeedback}
+        role="status"
+      />
+      <div className="dashboard-toolbar fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-theme-border bg-theme-surface p-1 shadow-lg">
+        <div
+          aria-hidden={!isEditing}
+          className="edit-controls items-center gap-2"
+          data-visible={isEditing}
+          inert={!isEditing}
         >
-          {paletteFeedback}
-        </p>
-      ) : null}
-      <div className="fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-theme-border bg-theme-surface p-1 shadow-lg">
-        {isEditing ? (
-          <>
-            <Button
-              disabled={!canManageWidgets}
-              size="small"
-              title="Добавить виджет (A)"
-              variant="secondary"
-              onClick={() => setIsAddWidgetOpen(true)}
-            >
-              <PlusIcon className="size-7" />
-              Добавить виджет
-            </Button>
-            <IconButton
-              aria-label="Настройки оформления"
-              disabled={!canManageWidgets || isBackupProcessing}
-              size="small"
-              title="Настройки оформления (P, O)"
-              variant="ghost"
-              onClick={() => {
-                setRequestedSection(null);
-                setIsAppearanceOpen(true);
-              }}
-            >
-              <PaletteIcon className="size-7" />
-            </IconButton>
-            <IconButton
-              aria-label="Импорт и экспорт"
-              disabled={!canManageWidgets || isWallpaperUpdating}
-              size="small"
-              title="Импорт и экспорт (B)"
-              variant="ghost"
-              onClick={() => {
-                onClearBackupError();
-                setIsBackupOpen(true);
-              }}
-            >
-              <TransferIcon className="size-7" />
-            </IconButton>
-          </>
-        ) : null}
+          <Button
+            disabled={!canManageWidgets}
+            size="small"
+            title="Добавить виджет (A)"
+            variant="secondary"
+            onClick={() => setIsAddWidgetOpen(true)}
+          >
+            <PlusIcon className="size-7" />
+            Добавить виджет
+          </Button>
+          <IconButton
+            aria-label="Настройки оформления"
+            disabled={!canManageWidgets || isBackupProcessing}
+            size="small"
+            title="Настройки оформления (P, O)"
+            variant="ghost"
+            onClick={() => {
+              setRequestedSection(null);
+              setIsAppearanceOpen(true);
+            }}
+          >
+            <PaletteIcon className="size-7" />
+          </IconButton>
+          <IconButton
+            aria-label="Импорт и экспорт"
+            disabled={!canManageWidgets || isWallpaperUpdating}
+            size="small"
+            title="Импорт и экспорт (B)"
+            variant="ghost"
+            onClick={() => {
+              onClearBackupError();
+              setIsBackupOpen(true);
+            }}
+          >
+            <TransferIcon className="size-7" />
+          </IconButton>
+        </div>
 
         <IconButton
           aria-label="Поиск команд"

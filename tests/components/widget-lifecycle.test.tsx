@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
@@ -7,7 +13,7 @@ import { storage } from 'wxt/utils/storage';
 import { WidgetHost } from '../../components/dashboard/WidgetHost';
 import { App } from '../../entrypoints/newtab/App';
 import { DASHBOARD_STORAGE_KEY } from '../../storage/dashboard-storage';
-import type { DashboardConfig } from '../../storage/schema';
+import type { DashboardConfig, WidgetConfig } from '../../storage/schema';
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -67,6 +73,17 @@ describe('widget lifecycle', () => {
       name: 'Markdown',
     });
     expect(markdownArticle).toBeVisible();
+    expect(markdownArticle).toHaveClass('new-widget');
+    expect(markdownArticle).toHaveAttribute('data-new-widget', 'true');
+    fireEvent(
+      markdownArticle,
+      new Event('webkitAnimationEnd', { bubbles: true }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('article', { name: 'Markdown' })).not.toHaveClass(
+        'new-widget',
+      ),
+    );
     expect(markdownArticle).toHaveClass(
       'widget-card-surface',
       'liquid-glass-surface',
@@ -241,9 +258,23 @@ describe('widget lifecycle', () => {
       await screen.findByRole('combobox', { name: 'Поисковик' }),
     );
     await user.click(screen.getByRole('option', { name: 'Bing' }));
+    const dialog = screen.getByRole('dialog', { name: 'Настройки поиска' });
+    let finishExit = () => {};
+    const finished = new Promise<void>((resolve) => {
+      finishExit = resolve;
+    });
+    const getAnimations = vi.fn(() => [{ finished }] as unknown as Animation[]);
+    Object.defineProperty(dialog, 'getAnimations', {
+      configurable: true,
+      value: getAnimations,
+    });
     await user.keyboard('{Escape}');
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => expect(getAnimations).toHaveBeenCalledOnce());
+    expect(dialog).toBeInTheDocument();
+    await act(async () => finishExit());
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
     await waitFor(() =>
       expect(
         screen.getByRole('button', {
@@ -384,6 +415,31 @@ describe('widget lifecycle', () => {
     expect(
       screen.getByText('Неподдерживаемый тип виджета: unknown'),
     ).toBeVisible();
+  });
+
+  it('reports completion of a new widget entrance', () => {
+    const onWidgetEnterEnd = vi.fn();
+    const widget: WidgetConfig = {
+      id: 'new-widget',
+      type: 'search',
+      title: '',
+      engine: 'google',
+      layout: { x: 0, y: 0, w: 6, h: 1 },
+    };
+    render(
+      <WidgetHost
+        isEditing={false}
+        isNew
+        widget={widget}
+        onRequestDelete={vi.fn()}
+        onWidgetEnterEnd={onWidgetEnterEnd}
+      />,
+    );
+    fireEvent(
+      screen.getByRole('article', { name: 'Поиск' }),
+      new Event('webkitAnimationEnd', { bubbles: true }),
+    );
+    expect(onWidgetEnterEnd).toHaveBeenCalledOnce();
   });
 
   it('creates, edits and immediately persists a ClockWidget', async () => {

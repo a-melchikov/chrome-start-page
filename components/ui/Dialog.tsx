@@ -25,6 +25,7 @@ export type DialogProps = Omit<
   closeLabel?: string;
   size?: DialogSize;
   showCloseButton?: boolean;
+  onExited?: () => void;
 };
 
 export type DialogSize = 'compact' | 'default' | 'fullscreen' | 'launcher';
@@ -38,6 +39,7 @@ export function Dialog({
   closeLabel = 'Закрыть',
   size = 'default',
   showCloseButton = true,
+  onExited,
   className,
   children,
   onKeyDown,
@@ -53,6 +55,7 @@ export function Dialog({
 
   useEffect(() => {
     const dialog = dialogRef.current;
+    let cancelled = false;
 
     if (!dialog) {
       return;
@@ -81,8 +84,26 @@ export function Dialog({
       }
 
       returnFocusRef.current = null;
+
+      if (onExited) {
+        // Native display/overlay transitions keep the closed dialog painted.
+        // Wait for those transitions before a parent releases lazy editor content.
+        requestAnimationFrame(() => {
+          if (cancelled) return;
+          const animations = dialog.getAnimations?.() ?? [];
+          void Promise.allSettled(
+            animations.map((animation) => animation.finished),
+          ).then(() => {
+            if (!cancelled) onExited();
+          });
+        });
+      }
     }
-  }, [open]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, onExited]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -123,7 +144,7 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
-        'p-0 text-theme-text-primary',
+        'dashboard-dialog p-0 text-theme-text-primary',
         isFullscreen
           ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-hidden rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
           : isLauncher

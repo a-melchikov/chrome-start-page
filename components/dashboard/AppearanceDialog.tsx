@@ -146,7 +146,7 @@ export function AppearanceDialog({
                     aria-label={theme.name}
                     aria-pressed={isSelected}
                     className={classNames(
-                      'group flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-theme-ring',
+                      'group flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left transition-[background-color,border-color] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-theme-ring',
                       isSelected
                         ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
                         : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',

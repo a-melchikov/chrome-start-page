@@ -110,10 +110,17 @@
 }
 
 @layer components {
-  @keyframes command-palette-enter {
+  :where(.dashboard-root[data-theme-motion='true'])
+    :where([class*='bg-theme-'], [class*='border-theme-']) {
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+  }
+
+  @keyframes dashboard-enter {
     from {
       opacity: 0;
-      transform: translateY(-8px);
+      transform: translateY(6px);
     }
 
     to {
@@ -122,28 +129,115 @@
     }
   }
 
-  @keyframes command-palette-backdrop-enter {
+  @keyframes widget-enter {
     from {
       opacity: 0;
+      transform: scale(0.985);
     }
 
     to {
       opacity: 1;
+      transform: scale(1);
     }
   }
 
-  .command-palette-dialog[open] .command-palette-surface {
-    animation: command-palette-enter 160ms ease-out both;
+  .dashboard-workspace {
+    opacity: 0;
   }
 
-  .command-palette-dialog[open]::backdrop {
-    animation: command-palette-backdrop-enter 160ms ease-out both;
+  .dashboard-workspace--ready {
+    opacity: 1;
+    animation: dashboard-enter 200ms ease-out both;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .command-palette-dialog[open] .command-palette-surface,
-    .command-palette-dialog[open]::backdrop {
-      animation: none;
+  .new-widget {
+    animation: widget-enter 200ms ease-out both;
+  }
+
+  .dashboard-notice {
+    display: none;
+    opacity: 0;
+    transform: translate(-50%, 6px);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out,
+      display 200ms allow-discrete;
+  }
+
+  .dashboard-notice[data-visible='true'] {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  @starting-style {
+    .dashboard-notice[data-visible='true'] {
+      opacity: 0;
+      transform: translate(-50%, 6px);
+    }
+  }
+
+  .dashboard-dialog {
+    opacity: 0;
+    transform: scale(0.985);
+    transition:
+      opacity 200ms ease-out,
+      transform 200ms ease-out,
+      display 200ms allow-discrete,
+      overlay 200ms allow-discrete,
+      background-color 200ms ease-out,
+      border-color 200ms ease-out,
+      color 200ms ease-out;
+  }
+
+  .dashboard-dialog[open] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .dashboard-dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 200ms ease-out,
+      display 200ms allow-discrete,
+      overlay 200ms allow-discrete;
+  }
+
+  .dashboard-dialog[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .dashboard-dialog[open] {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+
+    .dashboard-dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .edit-controls {
+    display: none;
+    opacity: 0;
+    transform: translateY(-3px);
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      display 180ms allow-discrete;
+  }
+
+  .edit-controls[data-visible='true'] {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @starting-style {
+    .edit-controls[data-visible='true'] {
+      opacity: 0;
+      transform: translateY(-3px);
     }
   }
 
@@ -162,6 +256,38 @@
     box-shadow:
       0 1px 3px 0 rgba(0, 0, 0, 0.08),
       0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboard-root[data-theme-motion='true'],
+  :where(.dashboard-root[data-theme-motion='true']) .dashboard-toolbar,
+  :where(.dashboard-root[data-theme-motion='true']) .widget-card-surface,
+  :where(.dashboard-root[data-theme-motion='true']) .widget-search-surface {
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+  }
+
+  .react-grid-layout {
+    transition: none;
+  }
+
+  .react-grid-item.cssTransforms {
+    transition-property: transform;
+  }
+
+  .react-grid-item > div > article {
+    transition:
+      transform 150ms ease-out,
+      box-shadow 150ms ease-out,
+      background-color 200ms ease-out,
+      border-color 200ms ease-out,
+      color 200ms ease-out;
+  }
+
+  .react-grid-item.react-draggable-dragging > div > article,
+  .react-grid-item.resizing > div > article {
+    transform: scale(1.01);
+    box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.32);
   }
 
   .liquid-glass-enabled .liquid-glass-surface {
@@ -206,14 +332,20 @@
   }
 
   .dashboard-grid--editing > .react-grid-placeholder {
-    border: 1px dashed var(--theme-accent, var(--color-zinc-500));
+    border: 2px dashed var(--theme-accent, var(--color-zinc-500));
     border-radius: var(--radius-xl);
     background: color-mix(
       in srgb,
-      var(--theme-accent, var(--color-zinc-500)) 20%,
+      var(--theme-accent, var(--color-zinc-500)) 16%,
       transparent
     );
     opacity: 1;
+    box-shadow: inset 0 0 0 4px
+      color-mix(
+        in srgb,
+        var(--theme-accent, var(--color-zinc-500)) 8%,
+        transparent
+      );
   }
 
   .react-grid-layout:not(.dashboard-grid--editing)

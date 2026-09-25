@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Dashboard } from '../../components/dashboard/Dashboard';
 import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
 import { classNames } from '../../components/ui/class-names';
+import { MotionNotice } from '../../components/ui/MotionNotice';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
@@ -42,6 +43,7 @@ export function App() {
     updateWidgetLayouts,
   } = useDashboardConfig();
   const systemDarkMode = useSystemDarkMode();
+  const [themeMotionReady, setThemeMotionReady] = useState(false);
   const [failedRemoteWallpaperSrc, setFailedRemoteWallpaperSrc] = useState<
     string | null
   >(null);
@@ -80,11 +82,18 @@ export function App() {
     };
   }, [resolvedThemeDef.id, resolvedThemeMode]);
 
+  useEffect(() => {
+    if (isLoading) return;
+    const frame = window.requestAnimationFrame(() => setThemeMotionReady(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [isLoading]);
+
   return (
     <main
       aria-busy={isLoading}
+      data-theme-motion={themeMotionReady}
       className={classNames(
-        'relative isolate min-h-screen text-theme-text-primary transition-colors',
+        'dashboard-root relative isolate min-h-screen text-theme-text-primary',
         liquidGlass.enabled && 'liquid-glass-enabled',
       )}
       style={dashboardStyle}
@@ -99,16 +108,18 @@ export function App() {
         }}
       />
 
-      {visibleError ? (
-        <p
-          className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
-          role="alert"
-        >
-          {visibleError}
-        </p>
-      ) : null}
+      <MotionNotice
+        className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
+        message={visibleError}
+        role="alert"
+      />
 
-      <div className="relative z-10">
+      <div
+        className={classNames(
+          'dashboard-workspace relative z-10',
+          !isLoading && 'dashboard-workspace--ready',
+        )}
+      >
         <Dashboard
           appearance={appearance}
           backupError={backupError}

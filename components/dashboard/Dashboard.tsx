@@ -74,6 +74,9 @@ export function Dashboard({
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
+  const [newWidgetIds, setNewWidgetIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   const addWidget = (type: WidgetType) => {
     const baseWidget = createWidgetConfig(type, 0);
@@ -83,6 +86,7 @@ export function Dashboard({
         config?.widgets ?? [],
         baseWidget.layout,
       );
+      setNewWidgetIds((ids) => new Set(ids).add(baseWidget.id));
       onAddWidget({
         ...baseWidget,
         layout: {
@@ -138,6 +142,11 @@ export function Dashboard({
     }
 
     onRemoveWidget(widgetId);
+    setNewWidgetIds((ids) => {
+      const nextIds = new Set(ids);
+      nextIds.delete(widgetId);
+      return nextIds;
+    });
   };
 
   const importDashboard = async (file: File, signal?: AbortSignal) => {
@@ -152,12 +161,20 @@ export function Dashboard({
         <WidgetCanvas
           editingWidgetId={editingWidgetId}
           isEditing={isEditing && !isBackupProcessing}
+          newWidgetIds={newWidgetIds}
           widgets={config.widgets}
           onFinishWidgetEditing={finishWidgetEditing}
           onRemoveWidget={removeWidget}
           onStartWidgetEditing={startWidgetEditing}
           onUpdateWidget={onUpdateWidget}
           onUpdateWidgetLayouts={onUpdateWidgetLayouts}
+          onWidgetEnterEnd={(widgetId) => {
+            setNewWidgetIds((ids) => {
+              const nextIds = new Set(ids);
+              nextIds.delete(widgetId);
+              return nextIds;
+            });
+          }}
         />
       ) : null}
 

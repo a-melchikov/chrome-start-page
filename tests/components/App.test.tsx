@@ -96,6 +96,9 @@ describe('App', () => {
     await saveDashboardConfig(config);
     render(<App />);
     await screen.findByText('Работа');
+    expect(document.querySelector('[data-widget-id="work"]')).not.toHaveClass(
+      'new-widget',
+    );
     await user.click(screen.getByRole('button', { name: 'Поиск команд' }));
     await user.type(await screen.findByRole('combobox'), 'Фокус на Markdown');
     await user.click(
@@ -177,7 +180,7 @@ describe('App', () => {
     expect(
       screen.queryByRole('dialog', { name: 'Импорт и экспорт' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(
+    expect(await screen.findByRole('status')).toHaveTextContent(
       'Резервная копия скачана',
     );
   });
@@ -189,11 +192,19 @@ describe('App', () => {
     const editButton = screen.getByRole('button', {
       name: 'Включить режим редактирования',
     });
+    const editControls = document.querySelector(
+      '.dashboard-toolbar .edit-controls',
+    );
+    expect(editControls).toHaveAttribute('data-visible', 'false');
+    expect(editControls).toHaveAttribute('inert');
     expect(
       screen.queryByRole('button', { name: 'Добавить виджет' }),
     ).not.toBeInTheDocument();
 
     await user.click(editButton);
+
+    expect(editControls).toHaveAttribute('data-visible', 'true');
+    expect(editControls).not.toHaveAttribute('inert');
 
     expect(
       screen.getByRole('button', { name: 'Добавить виджет' }),
@@ -210,6 +221,9 @@ describe('App', () => {
         name: 'Выключить режим редактирования',
       }),
     );
+
+    expect(editControls).toHaveAttribute('data-visible', 'false');
+    expect(editControls).toHaveAttribute('inert');
 
     expect(
       screen.queryByRole('button', { name: 'Добавить виджет' }),

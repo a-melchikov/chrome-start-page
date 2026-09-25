@@ -77,9 +77,9 @@ export function ImageWidget({ config }: ImageWidgetProps) {
 
   if (!src || config.source.type === 'none') {
     return (
-      <div className="widget-card-surface liquid-glass-surface group relative flex h-full w-full cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-xl p-6 text-center transition-all duration-300 hover:border-theme-accent/60 hover:shadow-lg">
-        <div className="flex size-14 items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-accent shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:border-theme-accent group-hover:bg-theme-accent/15 group-hover:shadow-md">
-          <PhotoIcon className="size-7 transition-transform duration-300 group-hover:scale-105" />
+      <div className="widget-card-surface liquid-glass-surface group relative flex h-full w-full cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-xl p-6 text-center transition-[border-color,box-shadow] duration-150 hover:border-theme-accent/60 hover:shadow-lg">
+        <div className="flex size-14 items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-accent shadow-xs transition-[transform,border-color,background-color,box-shadow] duration-150 group-hover:scale-110 group-hover:border-theme-accent group-hover:bg-theme-accent/15 group-hover:shadow-md">
+          <PhotoIcon className="size-7 transition-transform duration-150 group-hover:scale-105" />
         </div>
         <span className="mt-3 text-sm font-semibold text-theme-text-primary transition-colors duration-200 group-hover:text-theme-accent">
           Выберите изображение

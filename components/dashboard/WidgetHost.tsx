@@ -1,4 +1,11 @@
-import { Suspense, useEffect, useId, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 
 import type { WidgetConfig } from '../../storage/schema';
 import { getWidgetDefinition } from '../../widgets/registry';
@@ -12,26 +19,31 @@ import {
 
 interface WidgetHostProps {
   isEditing: boolean;
+  isNew?: boolean;
   isWidgetEditing?: boolean;
   widget: RenderableWidgetConfig;
   onRequestEdit?: () => void;
   onRequestDelete: (widget: RenderableWidgetConfig) => void;
   onRequestFinishEditing?: () => void;
   onWidgetChange?: (widget: WidgetConfig) => void;
+  onWidgetEnterEnd?: () => void;
 }
 
 export function WidgetHost({
   isEditing,
+  isNew = false,
   isWidgetEditing = false,
   widget,
   onRequestEdit,
   onRequestDelete,
   onRequestFinishEditing,
   onWidgetChange,
+  onWidgetEnterEnd,
 }: WidgetHostProps) {
   const titleId = useId();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const [shouldRestoreEditFocus, setShouldRestoreEditFocus] = useState(false);
+  const [isEditorExiting, setIsEditorExiting] = useState(false);
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
   const content = definition?.render(widget, onWidgetChange);
@@ -50,6 +62,7 @@ export function WidgetHost({
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
     setShouldRestoreEditFocus(true);
+    if (usesDialogEditor) setIsEditorExiting(true);
     onRequestFinishEditing?.();
   };
   const startEditing = () => {
@@ -57,9 +70,12 @@ export function WidgetHost({
     onRequestEdit?.();
   };
   const editor =
-    isWidgetEditing && onWidgetChange && onRequestFinishEditing
+    (isWidgetEditing || isEditorExiting) &&
+    onWidgetChange &&
+    onRequestFinishEditing
       ? definition?.renderEditor?.(widget, onWidgetChange, finishEditing)
       : null;
+  const handleEditorExited = useCallback(() => setIsEditorExiting(false), []);
 
   useEffect(() => {
     if (shouldRestoreEditFocus && !isWidgetEditing && editButtonRef.current) {
@@ -72,10 +88,16 @@ export function WidgetHost({
       Неподдерживаемый тип виджета: {widget.type}
     </p>
   );
-  const controls = isEditing ? (
+  const controls = (
     <div
       aria-label="Управление виджетом"
-      className="flex shrink-0 items-center justify-end gap-1"
+      aria-hidden={!isEditing}
+      className={classNames(
+        'shrink-0 items-center justify-end gap-1',
+        isOverlayControls ? 'flex' : 'edit-controls',
+      )}
+      data-visible={isEditing}
+      inert={!isEditing}
       role="toolbar"
     >
       {definition?.renderEditor && !isWidgetEditing && onRequestEdit ? (
@@ -106,17 +128,19 @@ export function WidgetHost({
         <CloseIcon className="size-[18px]" />
       </IconButton>
     </div>
-  ) : null;
+  );
 
   return (
     <>
       <article
         data-widget-id={widget.id}
+        data-new-widget={isNew || undefined}
         tabIndex={-1}
         aria-label={isBare || isTitleHidden ? displayName : undefined}
         aria-labelledby={isBare || isTitleHidden ? undefined : titleId}
         className={classNames(
           'relative flex h-full min-w-0 focus:outline-none focus:ring-2 focus:ring-theme-ring',
+          isNew && 'new-widget',
           isBare
             ? isOverlayControls
               ? 'flex-col overflow-hidden rounded-xl'
@@ -124,6 +148,11 @@ export function WidgetHost({
             : 'widget-card-surface liquid-glass-surface flex-col overflow-hidden rounded-xl p-4',
           isEditing && 'cursor-move',
         )}
+        onAnimationEnd={(event) => {
+          if (event.target === event.currentTarget && isNew) {
+            onWidgetEnterEnd?.();
+          }
+        }}
       >
         {isBare ? (
           isOverlayControls ? (
@@ -143,18 +172,18 @@ export function WidgetHost({
               >
                 {content ?? fallback}
               </div>
-              {controls ? (
-                <div
-                  className={classNames(
-                    'absolute right-2 top-2 z-10 rounded-lg p-0.5 transition-colors',
-                    hasImage
-                      ? 'border border-theme-border/50 bg-theme-surface/85 backdrop-blur-md shadow-xs'
-                      : '',
-                  )}
-                >
-                  {controls}
-                </div>
-              ) : null}
+              <div
+                aria-hidden={!isEditing}
+                className={classNames(
+                  'edit-controls absolute right-2 top-2 z-10 rounded-lg p-0.5 transition-colors',
+                  hasImage &&
+                    'border border-theme-border/50 bg-theme-surface/85 backdrop-blur-md shadow-xs',
+                )}
+                data-visible={isEditing}
+                inert={!isEditing}
+              >
+                {controls}
+              </div>
             </div>
           ) : (
             <div className="flex h-full w-full items-center gap-2">
@@ -172,11 +201,9 @@ export function WidgetHost({
           )
         ) : isTitleHidden ? (
           <>
-            {controls ? (
-              <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
-                {controls}
-              </div>
-            ) : null}
+            <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
+              {controls}
+            </div>
             <div
               className={classNames(
                 'min-h-0 min-w-0 flex-1',
@@ -229,6 +256,7 @@ export function WidgetHost({
         >
           <Dialog
             open={isWidgetEditing}
+            onExited={handleEditorExited}
             size={definition?.presentation.editorDialogSize}
             title={definition?.presentation.editorTitle ?? displayName}
             onOpenChange={(open) => {
