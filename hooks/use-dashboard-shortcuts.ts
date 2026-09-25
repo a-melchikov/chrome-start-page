@@ -10,6 +10,7 @@ export interface DashboardShortcutsOptions {
   onOpenAddWidget: () => void;
   onOpenAppearance: () => void;
   onOpenBackup: () => void;
+  onOpenPalette: () => void;
 }
 
 function isEditableElement(target: EventTarget | null): boolean {
@@ -38,6 +39,7 @@ export function useDashboardShortcuts({
   onOpenAddWidget,
   onOpenAppearance,
   onOpenBackup,
+  onOpenPalette,
 }: DashboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -54,10 +56,23 @@ export function useDashboardShortcuts({
         return;
       }
 
-      // Ignore all other shortcuts when typing in editable elements
-      if (isEditableElement(event.target)) {
+      const hasOpenDialog = Boolean(document.querySelector('dialog[open]'));
+      if (
+        event.code === 'KeyK' &&
+        event.ctrlKey &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.shiftKey
+      ) {
+        if (!hasOpenDialog && canManageWidgets) {
+          event.preventDefault();
+          onOpenPalette();
+        }
         return;
       }
+
+      // Ignore single-key shortcuts when typing in editable elements
+      if (isEditableElement(event.target)) return;
 
       // Modifiers check: standard single-key shortcuts shouldn't fire with Ctrl, Alt, Meta
       const hasModifiers = event.ctrlKey || event.metaKey || event.altKey;
@@ -70,8 +85,6 @@ export function useDashboardShortcuts({
           (event.code === 'Slash' && event.shiftKey));
 
       if (isHelpKey) {
-        const hasOpenDialog = Boolean(document.querySelector('dialog[open]'));
-
         if (isHelpOpen) {
           event.preventDefault();
           onCloseHelp();
@@ -86,7 +99,7 @@ export function useDashboardShortcuts({
       }
 
       // For all other shortcuts, block if any dialog is currently open
-      if (document.querySelector('dialog[open]')) {
+      if (hasOpenDialog) {
         return;
       }
 
@@ -94,16 +107,11 @@ export function useDashboardShortcuts({
         return;
       }
 
-      // Focus search widget: '/' (without Shift/Ctrl/Alt/Meta)
+      // Open command palette: '/' (without Shift/Ctrl/Alt/Meta)
       if ((event.code === 'Slash' || event.key === '/') && !event.shiftKey) {
-        const searchInput = document.querySelector<HTMLInputElement>(
-          'form[role="search"] input[type="search"], .widget-search-field',
-        );
-
-        if (searchInput) {
+        if (canManageWidgets) {
           event.preventDefault();
-          searchInput.focus();
-          searchInput.select();
+          onOpenPalette();
         }
         return;
       }
@@ -153,5 +161,6 @@ export function useDashboardShortcuts({
     onOpenAddWidget,
     onOpenAppearance,
     onOpenBackup,
+    onOpenPalette,
   ]);
 }

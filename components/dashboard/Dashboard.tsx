@@ -163,6 +163,7 @@ export function Dashboard({
 
       <DashboardControls
         appearance={appearance}
+        config={config}
         backupError={backupError}
         canManageWidgets={!isLoading && config !== null && !isBackupProcessing}
         isBackupProcessing={isBackupProcessing}

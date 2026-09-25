@@ -73,6 +73,23 @@ for unknown types. Adding a widget type requires updating the config map,
 storage validation, registry definition, factory, renderer/editor, and tests.
 Increase the schema version only when persisted compatibility requires it.
 
+## Command Palette
+
+`components/dashboard/command-catalog.ts` derives typed commands from the
+current in-memory config, widget registry, and theme registry. Search performs
+case-insensitive substring matching; neither the catalog nor query is stored.
+`CommandPalette` owns only dialog, query, selection, and theme-list state. It
+uses the shared `Dialog` launcher variant: top-centered 480 px search field,
+results below it, subtle backdrop, screen-reader-only title, and a narrow-
+viewport offset below the toolbar. Closed search remains visually absent.
+`DashboardControls` executes commands through existing Dashboard callbacks.
+Widget focus uses the rendered card's `data-widget-id` and temporary focus.
+`widgets/markdown/extract-links.ts` parses saved Markdown with `remark-parse`
+and `remark-gfm`, then validates candidate URLs with the same `normalizeLinkUrl`
+rule as the renderer. No Chrome bookmarks access or permission is used.
+`download-backup.ts` shares the Blob download between the backup dialog and
+direct export command; both call the same queued backup export hook.
+
 ## State and Persistence
 
 `storage/dashboard-storage.ts` owns the WXT item `local:dashboard-config`.

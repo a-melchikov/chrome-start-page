@@ -31,9 +31,7 @@ describe('ShortcutsHelpDialog', () => {
     expect(
       screen.getByText('Включить или выключить режим редактирования'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Переместить фокус в поле поиска'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Открыть поиск команд')).toBeInTheDocument();
     expect(screen.getByText('Справка по горячим клавишам')).toBeInTheDocument();
     expect(
       screen.getByText('Закрыть окно или выйти из редактирования'),
@@ -47,6 +45,7 @@ describe('ShortcutsHelpDialog', () => {
 
     expect(screen.getByText('E')).toBeInTheDocument();
     expect(screen.getByText('/')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl+K')).toBeInTheDocument();
     expect(screen.getByText('?')).toBeInTheDocument();
     expect(screen.getByText('F1')).toBeInTheDocument();
     expect(screen.getByText('Esc')).toBeInTheDocument();

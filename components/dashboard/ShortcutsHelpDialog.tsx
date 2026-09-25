@@ -26,8 +26,9 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
         description: 'Включить или выключить режим редактирования',
       },
       {
-        keys: ['/'],
-        description: 'Переместить фокус в поле поиска',
+        keys: ['Ctrl+K', '/'],
+        separator: 'или',
+        description: 'Открыть поиск команд',
       },
       {
         keys: ['?', 'F1'],

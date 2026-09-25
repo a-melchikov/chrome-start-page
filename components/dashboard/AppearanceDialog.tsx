@@ -5,9 +5,11 @@ import { classNames } from '../ui/class-names';
 import type { AppearanceConfig } from '../../storage/schema';
 import { THEMES } from '../../themes/registry';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
+import type { AppearanceSection } from './command-catalog';
 
 interface AppearanceDialogProps {
   appearance: AppearanceConfig;
+  requestedSection?: { section: AppearanceSection; token: number } | null;
   isWallpaperUpdating: boolean;
   open: boolean;
   wallpaperError: string | null;
@@ -27,6 +29,7 @@ const ACCEPTED_WALLPAPER_FILES =
 
 export function AppearanceDialog({
   appearance,
+  requestedSection,
   isWallpaperUpdating,
   open,
   wallpaperError,
@@ -44,6 +47,16 @@ export function AppearanceDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const operationControllerRef = useRef<AbortController | null>(null);
   const sectionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || !requestedSection) return;
+    const section = sectionsRef.current?.querySelector<HTMLDetailsElement>(
+      `details[data-appearance-section="${requestedSection.section}"]`,
+    );
+    if (!section) return;
+    section.open = true;
+    section.querySelector('summary')?.focus();
+  }, [open, requestedSection]);
 
   useEffect(() => {
     if (!open) {
@@ -107,7 +120,10 @@ export function AppearanceDialog({
       }
     >
       <div ref={sectionsRef} className="space-y-3">
-        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+        <details
+          data-appearance-section="theme"
+          className="group rounded-lg border border-theme-border bg-theme-surface"
+        >
           <summary
             className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring"
             data-dialog-initial-focus
@@ -185,7 +201,10 @@ export function AppearanceDialog({
           </fieldset>
         </details>
 
-        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+        <details
+          data-appearance-section="background"
+          className="group rounded-lg border border-theme-border bg-theme-surface"
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Цвет фона
             <span
@@ -214,7 +233,10 @@ export function AppearanceDialog({
           </div>
         </details>
 
-        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+        <details
+          data-appearance-section="wallpaper"
+          className="group rounded-lg border border-theme-border bg-theme-surface"
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Обои
             <span
@@ -368,7 +390,10 @@ export function AppearanceDialog({
           </div>
         </details>
 
-        <details className="group rounded-lg border border-theme-border bg-theme-surface">
+        <details
+          data-appearance-section="widgets"
+          className="group rounded-lg border border-theme-border bg-theme-surface"
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
             Виджеты
             <span

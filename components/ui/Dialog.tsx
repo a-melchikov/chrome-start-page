@@ -27,7 +27,7 @@ export type DialogProps = Omit<
   showCloseButton?: boolean;
 };
 
-export type DialogSize = 'compact' | 'default' | 'fullscreen';
+export type DialogSize = 'compact' | 'default' | 'fullscreen' | 'launcher';
 
 export function Dialog({
   open,
@@ -49,6 +49,7 @@ export function Dialog({
   const descriptionId = useId();
   const isFullscreen = size === 'fullscreen';
   const isCompact = size === 'compact';
+  const isLauncher = size === 'launcher';
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -122,12 +123,14 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
-        'overflow-hidden bg-theme-surface p-0 text-theme-text-primary shadow-2xl backdrop:bg-black/50',
+        'p-0 text-theme-text-primary',
         isFullscreen
-          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none rounded-none border-0'
-          : isCompact
-            ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] rounded-xl border border-theme-border'
-            : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] rounded-xl border border-theme-border',
+          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-hidden rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
+          : isLauncher
+            ? 'fixed top-[4.5rem] left-1/2 m-0 max-h-[calc(100dvh-5rem)] w-[min(30rem,calc(100vw-2rem))] max-w-none -translate-x-1/2 overflow-visible border-0 bg-transparent shadow-none backdrop:bg-black/20 min-[36rem]:top-4 min-[36rem]:max-h-[calc(100dvh-2rem)] min-[36rem]:w-[min(30rem,calc(100vw-22.25rem))]'
+            : isCompact
+              ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50'
+              : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50',
         className,
       )}
       onCancel={handleCancel}
@@ -137,10 +140,14 @@ export function Dialog({
       <div
         className={classNames(
           'flex flex-col',
-          isFullscreen ? 'h-full max-h-dvh' : 'max-h-[calc(100dvh-2rem)]',
+          isFullscreen
+            ? 'h-full max-h-dvh'
+            : isLauncher
+              ? 'max-h-[calc(100dvh-5rem)] min-[36rem]:max-h-[calc(100dvh-2rem)]'
+              : 'max-h-[calc(100dvh-2rem)]',
         )}
       >
-        {isFullscreen ? (
+        {isFullscreen || isLauncher ? (
           <div className="sr-only">
             <h2 id={titleId}>{title}</h2>
             {description ? <p id={descriptionId}>{description}</p> : null}
@@ -184,9 +191,11 @@ export function Dialog({
               'min-h-0',
               isFullscreen
                 ? 'flex-1 overflow-hidden'
-                : isCompact
-                  ? 'overflow-y-auto overscroll-contain px-5 py-2'
-                  : 'overflow-y-auto overscroll-contain px-5 py-3',
+                : isLauncher
+                  ? 'overflow-hidden'
+                  : isCompact
+                    ? 'overflow-y-auto overscroll-contain px-5 py-2'
+                    : 'overflow-y-auto overscroll-contain px-5 py-3',
             )}
           >
             {children}

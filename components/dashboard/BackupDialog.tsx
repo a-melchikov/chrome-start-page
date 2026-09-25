@@ -5,6 +5,7 @@ import type {
   DashboardImportResult,
 } from '../../storage/dashboard-backup';
 import { Button, Dialog } from '../ui';
+import { downloadBackup } from './download-backup';
 
 interface BackupDialogProps {
   error: string | null;
@@ -24,20 +25,6 @@ type ActiveAction = 'export' | 'import' | null;
 interface Feedback {
   kind: 'success' | 'warning';
   message: string;
-}
-
-function downloadBackup({ fileName, contents }: DashboardBackupDownload) {
-  const objectUrl = URL.createObjectURL(
-    new Blob([contents], { type: 'application/json' }),
-  );
-  const link = document.createElement('a');
-
-  link.download = fileName;
-  link.href = objectUrl;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(objectUrl);
 }
 
 export function BackupDialog({

@@ -6,7 +6,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
 
@@ -19,6 +19,7 @@ import {
   DASHBOARD_STORAGE_KEY,
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
+import { createDefaultDashboardConfig } from '../../storage/defaults';
 import type { DashboardConfig } from '../../storage/schema';
 
 function createBackupFile(config: DashboardConfig) {
@@ -40,6 +41,145 @@ function createBackupFile(config: DashboardConfig) {
 describe('App', () => {
   beforeEach(() => {
     fakeBrowser.reset();
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('adds Pomodoro from the palette and enters edit mode', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Поиск команд' }),
+    );
+    await user.type(
+      await screen.findByRole('combobox', { name: 'Поиск команд' }),
+      'Добавить Помодоро',
+    );
+    await user.click(screen.getByRole('option', { name: /Добавить Помодоро/ }));
+    expect(
+      await screen.findByRole('button', {
+        name: 'Выключить режим редактирования',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Помодоро' }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens theme settings and selects a theme from the palette', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Поиск команд' }),
+    );
+    await user.type(await screen.findByRole('combobox'), 'Переключить тему');
+    await user.click(screen.getByRole('option', { name: /Переключить тему/ }));
+    expect(screen.getAllByRole('option')).toHaveLength(11);
+    await user.click(screen.getByRole('option', { name: /Nord/ }));
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute('data-theme', 'nord'),
+    );
+  });
+
+  it('focuses an existing Markdown card from the palette', async () => {
+    const user = userEvent.setup();
+    const config = createDefaultDashboardConfig();
+    config.widgets = [
+      {
+        id: 'work',
+        type: 'markdown',
+        title: 'Работа',
+        content: '[Почта](https://example.com)',
+        layout: { x: 0, y: 0, w: 4, h: 3 },
+      },
+    ];
+    await saveDashboardConfig(config);
+    render(<App />);
+    await screen.findByText('Работа');
+    await user.click(screen.getByRole('button', { name: 'Поиск команд' }));
+    await user.type(await screen.findByRole('combobox'), 'Фокус на Markdown');
+    await user.click(
+      screen.getByRole('option', { name: /Фокус на Markdown «Работа»/ }),
+    );
+    await waitFor(() =>
+      expect(document.querySelector('[data-widget-id="work"]')).toHaveFocus(),
+    );
+  });
+
+  it('opens a requested appearance section from the palette', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Поиск команд' }),
+    );
+    await user.type(await screen.findByRole('combobox'), 'Настройки: Обои');
+    await user.click(
+      screen.getByRole('option', { name: /Открыть настройки: Обои/ }),
+    );
+    const summary = await screen.findByText('Обои', { selector: 'summary' });
+    await waitFor(() =>
+      expect(summary.closest('details')).toHaveAttribute('open'),
+    );
+    expect(screen.getByRole('dialog', { name: 'Оформление' })).toHaveAttribute(
+      'open',
+    );
+  });
+
+  it('restores focus to the palette button after Escape', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const button = await screen.findByRole('button', {
+      name: 'Поиск команд',
+    });
+    await user.click(button);
+    const input = await screen.findByRole('combobox', { name: 'Поиск команд' });
+    expect(input).toHaveFocus();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(button).toHaveFocus());
+  });
+
+  it('closes top search on backdrop click and restores focus', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const button = await screen.findByRole('button', { name: 'Поиск команд' });
+    await user.click(button);
+    const dialog = await screen.findByRole('dialog', { name: 'Поиск команд' });
+    fireEvent.click(dialog);
+    await waitFor(() => expect(dialog).not.toHaveAttribute('open'));
+    expect(button).toHaveFocus();
+  });
+
+  it('exports backup directly from the palette', async () => {
+    const user = userEvent.setup();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:backup'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Поиск команд' }),
+    );
+    await user.type(
+      await screen.findByRole('combobox'),
+      'Экспортировать dashboard',
+    );
+    await user.click(
+      screen.getByRole('option', { name: /Экспортировать dashboard/ }),
+    );
+    await waitFor(() => expect(click).toHaveBeenCalledOnce());
+    expect(
+      screen.queryByRole('dialog', { name: 'Импорт и экспорт' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Резервная копия скачана',
+    );
   });
 
   it('shows editor controls only while edit mode is enabled', async () => {
@@ -616,7 +756,7 @@ describe('App', () => {
     });
   });
 
-  it('focuses search input on slash (/) shortcut', async () => {
+  it('opens command palette on slash (/) shortcut', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
       version: 5,
@@ -647,8 +787,10 @@ describe('App', () => {
     expect(searchInput).not.toHaveFocus();
 
     await user.keyboard('/');
-    expect(searchInput).toHaveFocus();
-    // Slash character shouldn't be typed into the search field
+    expect(
+      await screen.findByRole('combobox', { name: 'Поиск команд' }),
+    ).toHaveFocus();
+    expect(searchInput).not.toHaveFocus();
     expect(searchInput).toHaveValue('');
   });
 });

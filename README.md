@@ -7,6 +7,8 @@ Chrome Start Page — расширение Manifest V3 для Google Chrome, к�
 ## Возможности
 
 - включение режима редактирования кнопкой с карандашом;
+- поиск команд по `Ctrl+K`, `/` или кнопке с лупой: компактное поле сверху с
+  выпадающим списком действий, виджетов, тем, настроек и ссылок из Markdown;
 - добавление нескольких универсальных Markdown-виджетов;
 - добавление нескольких компактных поисковых строк с выбором Google, Яндекса,
   Bing или DuckDuckGo и встроенной фирменной иконкой выбранного сервиса;
@@ -22,7 +24,8 @@ Chrome Start Page — расширение Manifest V3 для Google Chrome, к�
 - интерактивные task-list checkbox, которые обновляют исходный Markdown;
 - локальные favicon сайтов без внешнего favicon API;
 - перемещение и изменение размера виджетов в 12-колоночной сетке;
-- темы `system`, `light` и `dark`, а также произвольный цвет фона;
+- 11 тем, включая системную, светлую, тёмную и цветовые пресеты, а также
+  произвольный цвет фона;
 - обои из локального PNG, JPEG, WebP, GIF, AVIF или SVG-файла либо по
   HTTPS-ссылке, с заполнением экрана и обрезкой краёв;
 - включённый по умолчанию статический Liquid Glass для Markdown и Search:
@@ -52,7 +55,8 @@ URL без протокола нормализуется в `https://`, если
 - Vite через WXT;
 - Tailwind CSS 4;
 - `react-grid-layout`;
-- `react-markdown`, `remark-gfm`, `rehype-raw` и `rehype-sanitize`;
+- `react-markdown`, `remark-parse`, `unified`, `remark-gfm`, `rehype-raw` и
+  `rehype-sanitize`;
 - WXT Storage поверх `chrome.storage.local`;
 - Vitest и React Testing Library;
 - ESLint и Prettier;

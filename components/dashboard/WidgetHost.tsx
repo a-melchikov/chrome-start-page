@@ -111,10 +111,12 @@ export function WidgetHost({
   return (
     <>
       <article
+        data-widget-id={widget.id}
+        tabIndex={-1}
         aria-label={isBare || isTitleHidden ? displayName : undefined}
         aria-labelledby={isBare || isTitleHidden ? undefined : titleId}
         className={classNames(
-          'relative flex h-full min-w-0',
+          'relative flex h-full min-w-0 focus:outline-none focus:ring-2 focus:ring-theme-ring',
           isBare
             ? isOverlayControls
               ? 'flex-col overflow-hidden rounded-xl'

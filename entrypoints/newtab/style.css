@@ -110,6 +110,14 @@
 }
 
 @layer components {
+  .command-palette-results {
+    scrollbar-width: none;
+  }
+
+  .command-palette-results::-webkit-scrollbar {
+    display: none;
+  }
+
   .widget-card-surface {
     border: 1px solid var(--theme-border, var(--color-zinc-200));
     background-color: var(--theme-surface-bg, white);

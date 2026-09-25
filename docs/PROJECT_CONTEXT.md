@@ -36,6 +36,17 @@ draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
 behavior, restoration after Chrome restarts, and full versioned JSON backup and
 restore (format v2) with embedded local wallpaper and image assets.
 
+Поиск команд появляется по центру сверху только после `Ctrl+K`, `/` вне полей
+ввода или нажатия на лупу. Под полем сразу раскрывается список на слегка
+затемнённом фоне; клик вне поиска или Escape его закрывает. Поиск охватывает
+действия, все типы и существующие экземпляры виджетов,
+11 тем, разделы оформления и безопасные HTTP/HTTPS ссылки из сохранённого
+Markdown. Поле остаётся на одной линии с блоком кнопок и сужается при
+увеличении масштаба; на совсем узком экране оно переносится ниже. Полоса прокрутки
+результатов скрыта, но прокрутка и навигация стрелками доступны. Выбранное
+действие выделяется мягким акцентным фоном и рамкой. Команды запускаются
+локально; экспорт скачивает backup сразу.
+
 Поверхности Markdown и Search используют включённый по умолчанию статический
 Liquid Glass: полупрозрачный tint, размытие и насыщенность фона, светлую кромку
 и глубокую тень. Эффект учитывает тему, оставляет обои видимыми и может быть
@@ -65,6 +76,8 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Backup export flushes queued edits and includes widgets, appearance, and local
   wallpaper bytes. Import validates the complete file, requires explicit
   confirmation, and atomically replaces the current dashboard.
+- Command palette searches only in-memory dashboard data and does not persist
+  queries or require browser bookmark permissions.
 
 ## Durable Decisions
 

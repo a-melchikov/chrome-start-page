@@ -22,6 +22,7 @@ describe('useDashboardShortcuts', () => {
   let onOpenAddWidget: Mock<() => void>;
   let onOpenAppearance: Mock<() => void>;
   let onOpenBackup: Mock<() => void>;
+  let onOpenPalette: Mock<() => void>;
 
   beforeEach(() => {
     onToggleEditing = vi.fn<() => void>();
@@ -30,6 +31,7 @@ describe('useDashboardShortcuts', () => {
     onOpenAddWidget = vi.fn<() => void>();
     onOpenAppearance = vi.fn<() => void>();
     onOpenBackup = vi.fn<() => void>();
+    onOpenPalette = vi.fn<() => void>();
 
     defaultOptions = {
       canManageWidgets: true,
@@ -41,6 +43,7 @@ describe('useDashboardShortcuts', () => {
       onOpenAddWidget: () => onOpenAddWidget(),
       onOpenAppearance: () => onOpenAppearance(),
       onOpenBackup: () => onOpenBackup(),
+      onOpenPalette: () => onOpenPalette(),
     };
     document.body.innerHTML = '';
   });
@@ -232,38 +235,40 @@ describe('useDashboardShortcuts', () => {
     });
   });
 
-  describe('search widget focus (/)', () => {
-    it('focuses and selects search input on Slash key', () => {
-      const form = document.createElement('form');
-      form.setAttribute('role', 'search');
-      const input = document.createElement('input');
-      input.type = 'search';
-      input.value = 'query';
-      const focusSpy = vi.spyOn(input, 'focus');
-      const selectSpy = vi.spyOn(input, 'select');
-      form.appendChild(input);
-      document.body.appendChild(form);
-
+  describe('command palette shortcuts', () => {
+    it('opens palette on Slash key without focusing search', () => {
       renderHook(() => useDashboardShortcuts(defaultOptions));
-
       const event = fireKey('Slash', { key: '/' });
       expect(event.defaultPrevented).toBe(true);
-      expect(focusSpy).toHaveBeenCalled();
-      expect(selectSpy).toHaveBeenCalled();
+      expect(onOpenPalette).toHaveBeenCalledOnce();
     });
 
-    it('does nothing gracefully if search input does not exist', () => {
+    it('opens palette on Ctrl+K even in an input', () => {
+      const input = document.createElement('input');
+      document.body.appendChild(input);
       renderHook(() => useDashboardShortcuts(defaultOptions));
-
-      expect(() => fireKey('Slash', { key: '/' })).not.toThrow();
+      const event = fireKey('KeyK', { key: 'k', ctrlKey: true, target: input });
+      expect(event.defaultPrevented).toBe(true);
+      expect(onOpenPalette).toHaveBeenCalledOnce();
     });
 
-    it('does not trigger search focus when shiftKey is pressed', () => {
+    it('ignores Slash in an input and does not open over a dialog', () => {
+      const input = document.createElement('input');
+      document.body.appendChild(input);
       renderHook(() => useDashboardShortcuts(defaultOptions));
+      fireKey('Slash', { key: '/', target: input });
+      const dialog = document.createElement('dialog');
+      dialog.open = true;
+      document.body.appendChild(dialog);
+      fireKey('KeyK', { key: 'k', ctrlKey: true });
+      expect(onOpenPalette).not.toHaveBeenCalled();
+    });
 
+    it('keeps question mark for help', () => {
+      renderHook(() => useDashboardShortcuts(defaultOptions));
       fireKey('Slash', { key: '?', shiftKey: true });
-      // Handled by help shortcut, not search
       expect(onOpenHelp).toHaveBeenCalledTimes(1);
+      expect(onOpenPalette).not.toHaveBeenCalled();
     });
   });
 

@@ -20,6 +20,12 @@ Last updated: 2026-09-25
   background color synchronization and optional manual color picker override.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
+- Top-centered command search opened with `Ctrl+K`, `/` outside text fields, or
+  the toolbar magnifier. It shows results below the field over a subtly dimmed
+  dashboard, closes on Escape or outside click, and searches add/focus actions,
+  theme presets,
+  appearance sections, and safe saved Markdown links. Direct backup export
+  reuses the existing export path; the old `/` search-focus shortcut is removed.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,
   interactive source-backed tasks, current-tab favicon links, HTTPS images,
   copyable code blocks, and fullscreen live split editing.
