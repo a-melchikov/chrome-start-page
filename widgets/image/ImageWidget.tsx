@@ -56,26 +56,37 @@ export function ImageWidget({ config }: ImageWidgetProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full animate-pulse items-center justify-center rounded-xl bg-theme-surface/50">
-        <PhotoIcon className="size-8 text-theme-text-muted/40" />
+      <div className="flex h-full w-full flex-col items-center justify-center rounded-xl border border-theme-border/40 bg-theme-surface/30 backdrop-blur-md">
+        <div className="flex size-12 animate-pulse items-center justify-center rounded-full border border-theme-border/50 bg-theme-surface/60 text-theme-text-muted/50">
+          <PhotoIcon className="size-6" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-center text-xs text-red-400">
-        <PhotoIcon className="size-6 text-red-400/60" />
-        <span className="line-clamp-2">{error}</span>
+      <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-center text-xs text-red-400 backdrop-blur-md">
+        <div className="flex size-9 items-center justify-center rounded-full border border-red-500/30 bg-red-500/20 text-red-400">
+          <PhotoIcon className="size-5" />
+        </div>
+        <span className="line-clamp-2 max-w-xs">{error}</span>
       </div>
     );
   }
 
   if (!src || config.source.type === 'none') {
     return (
-      <div className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-theme-border bg-theme-surface/30 p-4 text-center text-theme-text-muted transition-colors hover:bg-theme-surface/50">
-        <PhotoIcon className="size-8 text-theme-text-muted/60" />
-        <span className="text-xs font-medium">Выберите изображение</span>
+      <div className="group relative flex h-full w-full cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-xl border border-theme-border/70 bg-theme-surface/40 p-4 text-center shadow-xs backdrop-blur-md transition-all duration-200 hover:border-theme-accent/50 hover:bg-theme-surface/60 hover:shadow-md">
+        <div className="flex size-12 items-center justify-center rounded-full border border-theme-border/60 bg-theme-surface/80 text-theme-text-secondary shadow-xs transition-all duration-200 group-hover:scale-105 group-hover:border-theme-accent/40 group-hover:text-theme-accent">
+          <PhotoIcon className="size-6 transition-transform duration-200 group-hover:scale-105" />
+        </div>
+        <span className="mt-2.5 text-xs font-medium text-theme-text-primary transition-colors duration-200 group-hover:text-theme-accent">
+          Выберите изображение
+        </span>
+        <span className="mt-0.5 text-2xs text-theme-text-muted">
+          Нажмите, чтобы настроить
+        </span>
       </div>
     );
   }
