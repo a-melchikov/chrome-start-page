@@ -95,9 +95,13 @@ describe('MarkdownWidget editing', () => {
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Работа');
 
-    const dialog = screen.getByRole('dialog', { name: 'Редактор Markdown' });
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Редактор Markdown',
+    });
     expect(dialog).toHaveClass('h-dvh', 'w-screen');
-    expect(screen.getByRole('textbox', { name: 'Заголовок' })).toHaveFocus();
+    expect(
+      await screen.findByRole('textbox', { name: 'Заголовок' }),
+    ).toHaveFocus();
     expect(
       dialog.querySelector('section[aria-label="Редактор Markdown"]'),
     ).toBeVisible();

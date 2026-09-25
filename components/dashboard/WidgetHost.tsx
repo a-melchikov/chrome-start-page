@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { Suspense, useEffect, useId, useRef, useState } from 'react';
 
 import type { WidgetConfig } from '../../storage/schema';
 import { getWidgetDefinition } from '../../widgets/registry';
@@ -218,18 +218,26 @@ export function WidgetHost({
       </article>
 
       {usesDialogEditor && editor ? (
-        <Dialog
-          open={isWidgetEditing}
-          size={definition?.presentation.editorDialogSize}
-          title={definition?.presentation.editorTitle ?? displayName}
-          onOpenChange={(open) => {
-            if (!open) {
-              finishEditing();
-            }
-          }}
+        <Suspense
+          fallback={
+            <p className="sr-only" role="status">
+              Загрузка редактора…
+            </p>
+          }
         >
-          {editor}
-        </Dialog>
+          <Dialog
+            open={isWidgetEditing}
+            size={definition?.presentation.editorDialogSize}
+            title={definition?.presentation.editorTitle ?? displayName}
+            onOpenChange={(open) => {
+              if (!open) {
+                finishEditing();
+              }
+            }}
+          >
+            {editor}
+          </Dialog>
+        </Suspense>
       ) : null}
     </>
   );

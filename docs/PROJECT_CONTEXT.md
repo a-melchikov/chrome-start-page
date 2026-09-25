@@ -9,7 +9,7 @@ have the complete dashboard restored from local Chrome storage.
 
 ## Current Product
 
-Version 0.1.0 implements two repeatable widget types:
+Version 0.1.0 implements five repeatable widget types:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   sanitized CommonMark/GFM rendering, interactive task lists, safe links and
@@ -27,6 +27,8 @@ Version 0.1.0 implements two repeatable widget types:
   time, date, and day of week with full customizability: 12h/24h formats, 4 date
   presets, optional seconds, system local or IANA timezones, centered display
   without card title, timezone abbreviation, and container-query responsive text scaling.
+- **Pomodoro** — a configurable focus/break timer with cycle progression,
+  persistent runtime state, background alarms, notifications, and audio.
 
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
@@ -76,9 +78,9 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
   and work offline. External favicon APIs are forbidden.
 - Narrow screens keep a 960 px desktop canvas and horizontal scrolling so saved
   coordinates are never silently rearranged.
-- Local wallpaper bytes live under UUID asset keys. Files above 6 MiB are
-  losslessly compressed only when that reaches the 6 MiB target; otherwise the
-  original remains available through `unlimitedStorage`.
+- Local wallpaper and image bytes live under UUID asset keys. Files above 6 MiB
+  are losslessly compressed only when that reaches the 6 MiB target; otherwise
+  the original remains available through `unlimitedStorage`.
 - Backup files use their own versioned envelope. Restored local assets receive a
   fresh UUID, while widget IDs are preserved; HTTPS wallpaper remains a URL and
   is revalidated before import commits.
@@ -92,8 +94,8 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Platform and Privacy Constraints
 
-- Manifest V3 permissions are limited to `storage`, `unlimitedStorage`, and
-  `favicon`; there are no `host_permissions`.
+- Manifest V3 permissions are `storage`, `unlimitedStorage`, `favicon`, `alarms`,
+  `notifications`, and `offscreen`; there are no `host_permissions`.
 - Links allow HTTP/HTTPS. Images require absolute HTTPS and use `no-referrer`.
 - Search endpoints are fixed in code; custom templates, suggestions, and search
   history are outside current scope.
@@ -113,6 +115,6 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Current Priorities
 
-No unfinished product requirement is recorded. README lists Clock and Google
-Calendar widgets as roadmap ideas; confirm scope with the user before starting
-either. See `docs/CURRENT_STATE.md` for the latest handoff status.
+No unfinished product requirement is recorded. README lists Google Calendar as
+a roadmap idea; confirm scope with the user before starting it. See
+`docs/CURRENT_STATE.md` for the latest handoff status.

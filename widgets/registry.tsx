@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import { Suspense, type ComponentType, type ReactNode } from 'react';
 
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
@@ -6,29 +6,31 @@ import {
   createDefaultClockWidget,
   DEFAULT_CLOCK_WIDGET_LAYOUT,
 } from './clock/defaults';
-import { ClockWidget } from './clock/ClockWidget';
-import { ClockWidgetEditor } from './clock/ClockWidgetEditor';
 import type { ClockWidgetConfig } from './clock/types';
 import {
   createDefaultImageWidget,
   DEFAULT_IMAGE_WIDGET_LAYOUT,
 } from './image/defaults';
-import { ImageWidget } from './image/ImageWidget';
-import { ImageWidgetEditor } from './image/ImageWidgetEditor';
 import type { ImageWidgetConfig } from './image/types';
 import { createDefaultMarkdownWidget } from './markdown/defaults';
-import { MarkdownWidget } from './markdown/MarkdownWidget';
-import { MarkdownWidgetEditor } from './markdown/MarkdownWidgetEditor';
 import type { MarkdownWidgetConfig } from './markdown/types';
 import { createDefaultPomodoroWidget } from './pomodoro/defaults';
-import { PomodoroWidget } from './pomodoro/PomodoroWidget';
-import { PomodoroWidgetEditor } from './pomodoro/PomodoroWidgetEditor';
 import type { PomodoroWidgetConfig } from './pomodoro/types';
 import { createDefaultSearchWidget } from './search/defaults';
 import { isSearchEngine } from './search/engines';
-import { SearchWidget } from './search/SearchWidget';
-import { SearchWidgetEditor } from './search/SearchWidgetEditor';
 import type { SearchWidgetConfig } from './search/types';
+import {
+  ClockWidget,
+  ClockWidgetEditor,
+  ImageWidget,
+  ImageWidgetEditor,
+  MarkdownWidget,
+  MarkdownWidgetEditor,
+  PomodoroWidget,
+  PomodoroWidgetEditor,
+  SearchWidget,
+  SearchWidgetEditor,
+} from './lazy-components';
 
 export interface WidgetMetadata {
   name: string;
@@ -107,10 +109,20 @@ function defineWidget<TConfig extends WidgetConfig>(
     create: definition.create,
     render: (config, onChange) =>
       definition.isConfig(config) ? (
-        <Renderer
-          config={config}
-          onChange={onChange ? (nextConfig) => onChange(nextConfig) : undefined}
-        />
+        <Suspense
+          fallback={
+            <p className="text-sm text-theme-text-muted" role="status">
+              Загрузка…
+            </p>
+          }
+        >
+          <Renderer
+            config={config}
+            onChange={
+              onChange ? (nextConfig) => onChange(nextConfig) : undefined
+            }
+          />
+        </Suspense>
       ) : null,
     renderEditor: Editor
       ? (config, onChange, onRequestFinish) =>

@@ -67,6 +67,9 @@ Both paths are generated and ignored by Git.
   changes in the loaded extension when browser control is available.
 - The manifest is generated from `wxt.config.ts`; do not add a standalone
   `manifest.json`.
+- The new-tab JavaScript chunk size warning is capped at 500 kB. Widget
+  renderers load when their widget is mounted, and their editors load only when
+  opened; keep production builds below this initial-chunk budget.
 - Static runtime assets belong in `public/`; extension source icons live in
   `assets/`. Do not edit generated `.wxt/` or `.output/` files.
 - `PLAN.md` is an obsolete, untracked bootstrap plan and is intentionally

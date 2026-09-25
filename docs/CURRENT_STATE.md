@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-09-20
+Last updated: 2026-09-25
 
 ## Implemented
 
@@ -23,6 +23,7 @@ Last updated: 2026-09-20
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,
   interactive source-backed tasks, current-tab favicon links, HTTPS images,
   copyable code blocks, and fullscreen live split editing.
+- Widget renderers load on demand by widget type; editors load only when opened.
 - Multiple compact Search widgets with Google/Yandex/Bing/DuckDuckGo, fixed GET
   endpoints, local brand SVGs, icon fallback, one-row layout, and dialog settings.
 - Bare Image widgets with offline local asset storage (compressed over 6 MiB, max
@@ -80,15 +81,15 @@ Last updated: 2026-09-20
 
 - No confirmed application defect is recorded in source, tests, or current
   requirements.
-- Production build succeeds, but WXT reports the main new-tab chunk at about
-  665 kB, above its 500 kB warning threshold. No bundle budget or code splitting
-  is configured.
+- Production build has a 500 kB main new-tab chunk budget. Widgets and editors
+  are split into on-demand chunks so unused widget code is not part of the
+  initial new-tab chunk.
 - Root `PLAN.md` is stale and untracked; it describes the removed LinksWidget and
   completed bootstrap prompts. Do not use it as a backlog or current spec.
 
 ## Next Logical Steps
 
-- README names Clock and Google Calendar widgets as roadmap ideas. Their product
-  behavior is not specified, so ask the user before planning or implementing.
+- README names Google Calendar as a roadmap idea. Its product behavior is not
+  specified, so ask the user before planning or implementing.
 - If storage recovery becomes a priority, define UX and data-loss expectations
   before adding reset/repair behavior.

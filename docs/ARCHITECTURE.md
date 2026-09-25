@@ -57,7 +57,9 @@ adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
 `showTimezoneName`, and `showTimezoneAbbr`.
 
-`widgets/registry.tsx` is the only widget integration point. A definition owns:
+`widgets/registry.tsx` is the only widget integration point. It dynamically
+loads each widget renderer when that widget is mounted and loads its editor only
+when editing begins. A definition owns:
 
 - metadata and factory;
 - runtime type guard;

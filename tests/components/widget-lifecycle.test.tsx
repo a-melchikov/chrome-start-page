@@ -157,7 +157,7 @@ describe('widget lifecycle', () => {
     await addSearchWidget(user);
 
     expect(await screen.findByRole('article', { name: 'Поиск' })).toBeVisible();
-    const searchForm = screen.getByRole('search', {
+    const searchForm = await screen.findByRole('search', {
       name: 'Поиск в Google',
     });
     expect(searchForm).toBeVisible();
@@ -192,10 +192,12 @@ describe('widget lifecycle', () => {
       }),
     );
     expect(
-      screen.getByRole('dialog', { name: 'Настройки поиска' }),
+      await screen.findByRole('dialog', { name: 'Настройки поиска' }),
     ).toBeVisible();
     expect(screen.queryByLabelText('Заголовок')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('combobox', { name: 'Поисковик' }));
+    await user.click(
+      await screen.findByRole('combobox', { name: 'Поисковик' }),
+    );
     await user.click(screen.getByRole('option', { name: 'Яндекс' }));
     await user.click(screen.getByRole('button', { name: 'Готово' }));
 
@@ -235,7 +237,9 @@ describe('widget lifecycle', () => {
     expect(editButton).toHaveClass('size-8');
     expect(article).toContainElement(toolbar);
     await user.click(editButton);
-    await user.click(screen.getByRole('combobox', { name: 'Поисковик' }));
+    await user.click(
+      await screen.findByRole('combobox', { name: 'Поисковик' }),
+    );
     await user.click(screen.getByRole('option', { name: 'Bing' }));
     await user.keyboard('{Escape}');
 
@@ -254,7 +258,9 @@ describe('widget lifecycle', () => {
       });
     });
 
-    const searchForm = screen.getByRole('search', { name: 'Поиск в Bing' });
+    const searchForm = await screen.findByRole('search', {
+      name: 'Поиск в Bing',
+    });
     const searchContainer = searchForm.closest('.min-w-0');
     expect(searchContainer).toHaveClass('pointer-events-none');
     expect(searchContainer).toHaveAttribute('inert');
@@ -328,7 +334,7 @@ describe('widget lifecycle', () => {
     });
     expect(imageArticle).toBeVisible();
 
-    const placeholder = screen.getByText('Выберите изображение');
+    const placeholder = await screen.findByText('Выберите изображение');
     expect(placeholder).toBeInTheDocument();
 
     const placeholderContainer = placeholder.closest('.min-w-0');
@@ -416,7 +422,7 @@ describe('widget lifecycle', () => {
       await screen.findByRole('dialog', { name: 'Настройки часов' }),
     ).toBeVisible();
 
-    const timeFormatSelect = screen.getByRole('combobox', {
+    const timeFormatSelect = await screen.findByRole('combobox', {
       name: 'Формат времени',
     });
     await user.click(timeFormatSelect);
