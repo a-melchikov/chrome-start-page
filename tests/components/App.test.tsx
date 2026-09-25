@@ -183,6 +183,13 @@ describe('App', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Резервная копия скачана',
     );
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByText('Резервная копия скачана'),
+        ).not.toBeInTheDocument(),
+      { timeout: 5000 },
+    );
   });
 
   it('shows editor controls only while edit mode is enabled', async () => {

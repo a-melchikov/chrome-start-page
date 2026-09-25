@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { useDashboardShortcuts } from '../../hooks/use-dashboard-shortcuts';
 import type {
@@ -103,6 +103,14 @@ export function DashboardControls({
     token: number;
   } | null>(null);
   const [paletteFeedback, setPaletteFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!paletteFeedback) return;
+
+    const timeout = window.setTimeout(() => setPaletteFeedback(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [paletteFeedback]);
+
   const openPalette = () => {
     setHasOpenedPalette(true);
     setIsPaletteOpen(true);
