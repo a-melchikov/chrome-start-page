@@ -110,6 +110,43 @@
 }
 
 @layer components {
+  @keyframes command-palette-enter {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes command-palette-backdrop-enter {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  .command-palette-dialog[open] .command-palette-surface {
+    animation: command-palette-enter 160ms ease-out both;
+  }
+
+  .command-palette-dialog[open]::backdrop {
+    animation: command-palette-backdrop-enter 160ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .command-palette-dialog[open] .command-palette-surface,
+    .command-palette-dialog[open]::backdrop {
+      animation: none;
+    }
+  }
+
   .command-palette-results {
     scrollbar-width: none;
   }

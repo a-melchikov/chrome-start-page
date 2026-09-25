@@ -21,6 +21,7 @@ describe('CommandPalette', () => {
     rerender(<CommandPalette {...props} open />);
     const dialog = screen.getByRole('dialog', { name: 'Поиск команд' });
     expect(dialog).toHaveClass(
+      'command-palette-dialog',
       'fixed',
       'top-[4.5rem]',
       'min-[36rem]:top-4',
@@ -31,16 +32,21 @@ describe('CommandPalette', () => {
     ).toHaveClass('sr-only');
     const input = screen.getByRole('combobox', { name: 'Поиск команд' });
     expect(input).toHaveFocus();
-    expect(input).toHaveClass(
-      'h-[50px]',
+    expect(input.parentElement).toHaveClass(
+      'command-palette-surface',
       'rounded-xl',
       'border-theme-border',
-      'bg-theme-surface',
+    );
+    expect(input).toHaveClass(
+      'h-[49px]',
+      'border-b',
+      'border-theme-border-subtle',
       'outline-none',
     );
     expect(input.className).not.toContain('focus-visible:ring');
     expect(screen.getByRole('listbox')).toHaveClass(
       'command-palette-results',
+      'max-h-[min(22rem,50dvh)]',
       'overflow-y-auto',
     );
     expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
@@ -109,17 +115,11 @@ describe('CommandPalette', () => {
     if (!firstOption || !nextOption) throw new Error('Expected two commands');
     const scrollIntoView = vi.fn();
     nextOption.scrollIntoView = scrollIntoView;
-    expect(firstOption).toHaveClass(
-      'border-theme-accent/50',
-      'bg-theme-accent/10',
-    );
+    expect(firstOption).toHaveClass('bg-theme-surface-elevated');
     await user.keyboard('{ArrowDown}');
     expect(nextOption).toHaveAttribute('aria-selected', 'true');
-    expect(nextOption).toHaveClass(
-      'border-theme-accent/50',
-      'bg-theme-accent/10',
-    );
-    expect(firstOption).toHaveClass('border-transparent');
+    expect(nextOption).toHaveClass('bg-theme-surface-elevated');
+    expect(firstOption).not.toHaveClass('bg-theme-surface-elevated');
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
     await user.keyboard('{Enter}');
     await vi.waitFor(() =>

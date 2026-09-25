@@ -192,7 +192,7 @@ export function Dialog({
               isFullscreen
                 ? 'flex-1 overflow-hidden'
                 : isLauncher
-                  ? 'overflow-hidden'
+                  ? 'overflow-visible'
                   : isCompact
                     ? 'overflow-y-auto overscroll-contain px-5 py-2'
                     : 'overflow-y-auto overscroll-contain px-5 py-3',

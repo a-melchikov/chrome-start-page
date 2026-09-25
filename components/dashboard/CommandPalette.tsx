@@ -93,15 +93,16 @@ export function CommandPalette({
 
   return (
     <Dialog
+      className="command-palette-dialog"
       open={open}
       size="launcher"
       title="Поиск команд"
       onOpenChange={changeOpen}
     >
-      <div className="flex max-h-[calc(100dvh-5rem)] min-h-0 flex-col min-[36rem]:max-h-[calc(100dvh-2rem)]">
+      <div className="command-palette-surface flex max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl min-[36rem]:max-h-[calc(100dvh-2rem)]">
         <input
           data-dialog-initial-focus
-          className="h-[50px] w-full shrink-0 rounded-xl border border-theme-border bg-theme-surface px-3 text-sm text-theme-text-primary shadow-lg outline-none placeholder:text-theme-text-muted"
+          className="h-[49px] w-full shrink-0 border-b border-theme-border-subtle bg-transparent px-3 text-sm text-theme-text-primary outline-none placeholder:text-theme-text-muted"
           aria-activedescendant={
             results[selectedIndex]
               ? `palette-${results[selectedIndex].id}`
@@ -124,51 +125,49 @@ export function CommandPalette({
           }}
           onKeyDown={onKeyDown}
         />
-        <div className="mt-2 flex min-h-0 flex-col overflow-hidden rounded-lg border border-theme-border bg-theme-surface shadow-2xl">
-          {showThemes ? (
-            <button
-              className="shrink-0 px-3 py-2 text-left text-sm text-theme-accent"
-              type="button"
-              onClick={() => setShowThemes(false)}
-            >
-              ← Все команды
-            </button>
-          ) : null}
-          <div
-            id="palette-results"
-            aria-label="Результаты"
-            className="command-palette-results min-h-0 max-h-[min(24rem,50dvh)] space-y-1 overflow-y-auto p-2"
-            role="listbox"
+        {showThemes ? (
+          <button
+            className="shrink-0 border-b border-theme-border-subtle px-3 py-2 text-left text-sm text-theme-accent"
+            type="button"
+            onClick={() => setShowThemes(false)}
           >
-            {results.length ? (
-              results.map((command, index) => (
-                <button
-                  key={command.id}
-                  id={`palette-${command.id}`}
-                  aria-selected={index === selectedIndex}
-                  disabled={isCommandDisabled(command)}
-                  className={`flex w-full flex-col rounded-md border px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-theme-ring disabled:cursor-not-allowed disabled:opacity-50 ${index === selectedIndex ? 'border-theme-accent/50 bg-theme-accent/10 text-theme-text-primary' : 'border-transparent text-theme-text-secondary hover:bg-theme-surface-muted'}`}
-                  role="option"
-                  type="button"
-                  onClick={() => select(command)}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                >
-                  <span className="text-sm font-medium">{command.label}</span>
-                  <span className="text-xs text-theme-text-muted">
-                    {command.category}
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="px-3 py-5 text-center text-sm text-theme-text-muted">
-                Ничего не найдено
-              </p>
-            )}
-          </div>
-          <p className="shrink-0 border-t border-theme-border-subtle px-3 py-2 text-xs text-theme-text-muted">
-            ↑ ↓ — выбор · Enter — выполнить · Esc — закрыть
-          </p>
+            ← Все команды
+          </button>
+        ) : null}
+        <div
+          id="palette-results"
+          aria-label="Результаты"
+          className="command-palette-results min-h-0 max-h-[min(22rem,50dvh)] space-y-1 overflow-y-auto p-2"
+          role="listbox"
+        >
+          {results.length ? (
+            results.map((command, index) => (
+              <button
+                key={command.id}
+                id={`palette-${command.id}`}
+                aria-selected={index === selectedIndex}
+                disabled={isCommandDisabled(command)}
+                className={`flex w-full flex-col rounded-md px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-theme-ring disabled:cursor-not-allowed disabled:opacity-50 ${index === selectedIndex ? 'bg-theme-surface-elevated text-theme-text-primary' : 'text-theme-text-secondary hover:bg-theme-surface-muted'}`}
+                role="option"
+                type="button"
+                onClick={() => select(command)}
+                onMouseEnter={() => setSelectedIndex(index)}
+              >
+                <span className="text-sm font-medium">{command.label}</span>
+                <span className="text-xs text-theme-text-muted">
+                  {command.category}
+                </span>
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-5 text-center text-sm text-theme-text-muted">
+              Ничего не найдено
+            </p>
+          )}
         </div>
+        <p className="shrink-0 border-t border-theme-border-subtle px-3 py-2 text-xs text-theme-text-muted">
+          ↑ ↓ — выбор · Enter — выполнить · Esc — закрыть
+        </p>
       </div>
     </Dialog>
   );
