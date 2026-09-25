@@ -95,6 +95,16 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+export function TimerIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <line x1="10" x2="14" y1="2" y2="2" />
+      <line x1="12" x2="12" y1="14" y2="10" />
+      <circle cx="12" cy="14" r="8" />
+    </BaseIcon>
+  );
+}
+
 export function PlayIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>
@@ -158,6 +168,22 @@ export function PhotoIcon(props: IconProps) {
       <rect height="18" rx="3" width="18" x="3" y="3" />
       <circle cx="9" cy="9" r="2" />
       <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+    </BaseIcon>
+  );
+}
+
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </BaseIcon>
+  );
+}
+
+export function CheckIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polyline points="20 6 9 17 4 12" />
     </BaseIcon>
   );
 }

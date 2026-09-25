@@ -23,6 +23,10 @@ Version 0.1.0 implements two repeatable widget types:
   `16:9`, original), 3×3 object positioning, grid width/height adjustment in settings,
   high-contrast resize handle in edit mode, GIF pause/play toggle on click, and floating
   overlay controls in edit mode.
+- **Clock** — a card widget (default `4×2`, minimum `2×2`) displaying digital
+  time, date, and day of week with full customizability: 12h/24h formats, 4 date
+  presets, optional seconds, system local or IANA timezones, centered display
+  without card title, timezone abbreviation, and container-query responsive text scaling.
 
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column

@@ -15,5 +15,9 @@ export function getWidgetDisplayName(widget: RenderableWidgetConfig): string {
     return definition.metadata.name;
   }
 
-  return widget.title?.trim() || definition?.metadata.name || widget.type;
+  if (widget.title?.trim()) {
+    return widget.title.trim();
+  }
+
+  return definition?.metadata.name || widget.type;
 }

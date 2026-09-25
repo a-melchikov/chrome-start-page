@@ -29,6 +29,10 @@ Last updated: 2026-09-20
   32 MiB) and HTTPS URL support, 3×3 interactive object-positioning, canvas-based
   GIF pause/play toggle on click, recommended aspect-ratio grid sizing, optional
   alt text, and floating overlay controls in edit mode.
+- Clock widgets with customizable digital time, date, and day of week, 12h/24h
+  formats, 4 date presets, optional seconds, system local or IANA timezones with
+  searchable selection, centered display without card title, timezone abbreviation, and
+  container-query responsive typography.
 - Light/dark/system themes, arbitrary persisted background, and local or HTTPS
   wallpaper rendered full-screen with cover cropping.
 - Local PNG/JPEG/WebP/GIF/AVIF/SVG validation, conditional lossless compression

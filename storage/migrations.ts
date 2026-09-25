@@ -8,6 +8,7 @@ import {
   isImageAssetId,
   isWallpaperAssetId,
 } from './schema';
+import type { ClockDateFormat, ClockTimeFormat } from '../widgets/clock/types';
 import {
   IMAGE_OBJECT_POSITIONS,
   type ImageFitMode,
@@ -147,6 +148,41 @@ function isImageFitMode(value: unknown): value is ImageFitMode {
   return value === 'cover' || value === 'contain';
 }
 
+const CLOCK_TIME_FORMATS: ReadonlySet<string> = new Set<ClockTimeFormat>([
+  '12h',
+  '24h',
+]);
+
+const CLOCK_DATE_FORMATS: ReadonlySet<string> = new Set<ClockDateFormat>([
+  'full',
+  'numeric',
+  'shortWithYear',
+  'short',
+]);
+
+function isClockTimeFormat(value: unknown): value is ClockTimeFormat {
+  return typeof value === 'string' && CLOCK_TIME_FORMATS.has(value);
+}
+
+function isClockDateFormat(value: unknown): value is ClockDateFormat {
+  return typeof value === 'string' && CLOCK_DATE_FORMATS.has(value);
+}
+
+function isValidTimezone(value: unknown): value is string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    return false;
+  }
+  if (value === 'local') {
+    return true;
+  }
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (
     !isRecord(value) ||
@@ -186,6 +222,20 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
           value.zoom >= 1 &&
           value.zoom <= 3)) &&
       (value.altText === undefined || typeof value.altText === 'string')
+    );
+  }
+
+  if (value.type === 'clock') {
+    return (
+      isClockTimeFormat(value.timeFormat) &&
+      typeof value.showTime === 'boolean' &&
+      typeof value.showSeconds === 'boolean' &&
+      typeof value.showDate === 'boolean' &&
+      isClockDateFormat(value.dateFormat) &&
+      typeof value.showDayOfWeek === 'boolean' &&
+      isValidTimezone(value.timezone) &&
+      typeof value.showTimezoneName === 'boolean' &&
+      typeof value.showTimezoneAbbr === 'boolean'
     );
   }
 

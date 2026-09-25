@@ -2,7 +2,13 @@ import type { ComponentType } from 'react';
 
 import type { WidgetType } from '../../storage/schema';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
-import { ClockIcon, DocumentTextIcon, PhotoIcon, SearchIcon } from '../icons';
+import {
+  ClockIcon,
+  DocumentTextIcon,
+  PhotoIcon,
+  SearchIcon,
+  TimerIcon,
+} from '../icons';
 import { Button, Dialog } from '../ui';
 
 interface AddWidgetDialogProps {
@@ -17,8 +23,9 @@ const WIDGET_ICONS: Record<
 > = {
   markdown: DocumentTextIcon,
   search: SearchIcon,
-  pomodoro: ClockIcon,
+  pomodoro: TimerIcon,
   image: PhotoIcon,
+  clock: ClockIcon,
 };
 
 export function AddWidgetDialog({

@@ -18,13 +18,14 @@ export function SearchWidgetEditor({
   const engineId = useId();
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 pb-1">
       <div className="space-y-1.5">
         <label className="block text-xs font-medium" htmlFor={engineId}>
           Поисковик
         </label>
         <Select
           data-dialog-initial-focus
+          dropdownPosition="static"
           id={engineId}
           value={config.engine}
           onChange={(event) => {
@@ -46,7 +47,7 @@ export function SearchWidgetEditor({
         </p>
       </div>
 
-      <div className="flex justify-end pt-1">
+      <div className="flex justify-end pt-2">
         <Button size="small" variant="primary" onClick={onRequestFinish}>
           Готово
         </Button>

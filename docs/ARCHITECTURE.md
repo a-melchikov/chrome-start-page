@@ -25,6 +25,7 @@ flowchart LR
   Registry --> Search[Search widget]
   Registry --> Pomodoro[Pomodoro widget]
   Registry --> Image[Image widget]
+  Registry --> Clock[Clock widget]
   Pomodoro <--> Background[entrypoints/background + chrome.alarms]
 ```
 
@@ -51,8 +52,10 @@ Renderer-derived state is not persisted.
 `storage/schema.ts` defines `DashboardConfig` version 5 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
-adds `engine`, Pomodoro adds duration and sound settings, and Image adds `source`,
-`objectPosition`, and optional `altText`.
+adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
+`objectPosition`, and optional `altText`, and Clock adds `timeFormat`, `showTime`,
+`showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
+`showTimezoneName`, and `showTimezoneAbbr`.
 
 `widgets/registry.tsx` is the only widget integration point. A definition owns:
 

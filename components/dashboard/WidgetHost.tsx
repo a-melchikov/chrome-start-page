@@ -45,6 +45,8 @@ export function WidgetHost({
     (widget as { source?: unknown }).source !== null &&
     'type' in ((widget as { source?: unknown }).source as object) &&
     (widget as { source: { type: string } }).source.type !== 'none';
+  const isClock = widget.type === 'clock';
+  const isTitleHidden = isClock;
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
     setShouldRestoreEditFocus(true);
@@ -109,15 +111,15 @@ export function WidgetHost({
   return (
     <>
       <article
-        aria-label={isBare ? displayName : undefined}
-        aria-labelledby={isBare ? undefined : titleId}
+        aria-label={isBare || isTitleHidden ? displayName : undefined}
+        aria-labelledby={isBare || isTitleHidden ? undefined : titleId}
         className={classNames(
           'relative flex h-full min-w-0',
           isBare
             ? isOverlayControls
               ? 'flex-col overflow-hidden rounded-xl'
               : 'items-center overflow-visible'
-            : 'widget-card-surface liquid-glass-surface min-h-40 flex-col overflow-hidden rounded-xl p-4',
+            : 'widget-card-surface liquid-glass-surface flex-col overflow-hidden rounded-xl p-4',
           isEditing && 'cursor-move',
         )}
       >
@@ -166,6 +168,24 @@ export function WidgetHost({
               {controls}
             </div>
           )
+        ) : isTitleHidden ? (
+          <>
+            {controls ? (
+              <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
+                {controls}
+              </div>
+            ) : null}
+            <div
+              className={classNames(
+                'min-h-0 min-w-0 flex-1',
+                isClock
+                  ? 'flex flex-col justify-center overflow-hidden'
+                  : 'overflow-auto overscroll-contain pr-1',
+              )}
+            >
+              {(usesDialogEditor ? content : editor) ?? content ?? fallback}
+            </div>
+          </>
         ) : (
           <>
             <header className="mb-3 flex min-h-8 shrink-0 items-center justify-between gap-2">
@@ -183,7 +203,14 @@ export function WidgetHost({
               </h2>
               {controls}
             </header>
-            <div className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain pr-1">
+            <div
+              className={classNames(
+                'min-h-0 min-w-0 flex-1',
+                isClock
+                  ? 'flex flex-col justify-center overflow-hidden'
+                  : 'overflow-auto overscroll-contain pr-1',
+              )}
+            >
               {(usesDialogEditor ? content : editor) ?? content ?? fallback}
             </div>
           </>

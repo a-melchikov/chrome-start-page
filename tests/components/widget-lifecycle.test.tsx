@@ -42,6 +42,11 @@ async function addImageWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Изображение' }));
 }
 
+async function addClockWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Часы' }));
+}
+
 async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
@@ -190,7 +195,8 @@ describe('widget lifecycle', () => {
       screen.getByRole('dialog', { name: 'Настройки поиска' }),
     ).toBeVisible();
     expect(screen.queryByLabelText('Заголовок')).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Поисковик'), 'yandex');
+    await user.click(screen.getByRole('combobox', { name: 'Поисковик' }));
+    await user.click(screen.getByRole('option', { name: 'Яндекс' }));
     await user.click(screen.getByRole('button', { name: 'Готово' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -229,7 +235,8 @@ describe('widget lifecycle', () => {
     expect(editButton).toHaveClass('size-8');
     expect(article).toContainElement(toolbar);
     await user.click(editButton);
-    await user.selectOptions(screen.getByLabelText('Поисковик'), 'bing');
+    await user.click(screen.getByRole('combobox', { name: 'Поисковик' }));
+    await user.click(screen.getByRole('option', { name: 'Bing' }));
     await user.keyboard('{Escape}');
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -371,5 +378,60 @@ describe('widget lifecycle', () => {
     expect(
       screen.getByText('Неподдерживаемый тип виджета: unknown'),
     ).toBeVisible();
+  });
+
+  it('creates, edits and immediately persists a ClockWidget', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+
+    await addClockWidget(user);
+
+    const clockArticle = await screen.findByRole('article', {
+      name: 'Часы',
+    });
+    expect(clockArticle).toBeInTheDocument();
+    expect(clockArticle).toHaveClass(
+      'widget-card-surface',
+      'liquid-glass-surface',
+    );
+
+    const storedConfig = await getStoredConfig();
+    expect(storedConfig?.widgets).toHaveLength(1);
+    expect(storedConfig?.widgets[0]).toMatchObject({
+      type: 'clock',
+      timeFormat: '24h',
+      showTime: true,
+      showSeconds: false,
+      timezone: 'local',
+      layout: { w: 4, h: 2 },
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Редактировать виджет «Часы»',
+      }),
+    );
+    expect(
+      await screen.findByRole('dialog', { name: 'Настройки часов' }),
+    ).toBeVisible();
+
+    const timeFormatSelect = screen.getByRole('combobox', {
+      name: 'Формат времени',
+    });
+    await user.click(timeFormatSelect);
+    await user.click(screen.getByRole('option', { name: /12-часовой/ }));
+
+    expect(screen.queryByLabelText(/Название виджета/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+    await waitFor(async () => {
+      const updatedConfig = await getStoredConfig();
+      expect(updatedConfig?.widgets[0]).toMatchObject({
+        type: 'clock',
+        timeFormat: '12h',
+      });
+    });
   });
 });

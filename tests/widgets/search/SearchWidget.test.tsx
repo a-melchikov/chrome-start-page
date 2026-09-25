@@ -121,7 +121,8 @@ describe('SearchWidgetEditor', () => {
 
     expect(screen.queryByLabelText('Заголовок')).not.toBeInTheDocument();
     expect(screen.getByTestId('search-engine-icon-google')).toBeVisible();
-    await user.selectOptions(screen.getByLabelText('Поисковик'), 'yandex');
+    await user.click(screen.getByRole('combobox', { name: 'Поисковик' }));
+    await user.click(screen.getByRole('option', { name: 'Яндекс' }));
 
     expect(screen.getByText(/"engine":"yandex"/)).toBeVisible();
     expect(screen.getByTestId('search-engine-icon-yandex')).toBeVisible();

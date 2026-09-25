@@ -3,6 +3,13 @@ import type { ComponentType, ReactNode } from 'react';
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
 import {
+  createDefaultClockWidget,
+  DEFAULT_CLOCK_WIDGET_LAYOUT,
+} from './clock/defaults';
+import { ClockWidget } from './clock/ClockWidget';
+import { ClockWidgetEditor } from './clock/ClockWidgetEditor';
+import type { ClockWidgetConfig } from './clock/types';
+import {
   createDefaultImageWidget,
   DEFAULT_IMAGE_WIDGET_LAYOUT,
 } from './image/defaults';
@@ -179,6 +186,17 @@ function isImageWidgetConfig(value: unknown): value is ImageWidgetConfig {
   );
 }
 
+function isClockWidgetConfig(value: unknown): value is ClockWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'clock' &&
+    'timezone' in value &&
+    typeof value.timezone === 'string'
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<MarkdownWidgetConfig>({
     type: 'markdown',
@@ -271,6 +289,30 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_IMAGE_WIDGET_LAYOUT.minW,
         minH: DEFAULT_IMAGE_WIDGET_LAYOUT.minH,
+        resizeHandles: ['se'],
+      },
+    },
+  }),
+  defineWidget<ClockWidgetConfig>({
+    type: 'clock',
+    metadata: {
+      name: 'Часы',
+      description: 'Цифровые часы с датой и выбором часового пояса.',
+    },
+    create: createDefaultClockWidget,
+    isConfig: isClockWidgetConfig,
+    Renderer: ClockWidget,
+    Editor: ClockWidgetEditor,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: false,
+      editorTitle: 'Настройки часов',
+      editorDialogSize: 'default',
+      titleStyle: 'default',
+      layout: {
+        minW: DEFAULT_CLOCK_WIDGET_LAYOUT.minW,
+        minH: DEFAULT_CLOCK_WIDGET_LAYOUT.minH,
         resizeHandles: ['se'],
       },
     },

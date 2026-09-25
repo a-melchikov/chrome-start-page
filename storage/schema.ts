@@ -1,3 +1,4 @@
+import type { ClockWidgetConfig } from '../widgets/clock/types';
 import type { ImageWidgetConfig } from '../widgets/image/types';
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
@@ -51,6 +52,7 @@ export interface WidgetConfigMap {
   search: SearchWidgetConfig;
   pomodoro: PomodoroWidgetConfig;
   image: ImageWidgetConfig;
+  clock: ClockWidgetConfig;
 }
 
 export type WidgetType = keyof WidgetConfigMap;

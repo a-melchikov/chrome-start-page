@@ -545,4 +545,114 @@ describe('migrateDashboardConfig', () => {
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
+
+  it('accepts valid clock widgets in v5 config', () => {
+    const validConfig = {
+      ...createDefaultDashboardConfig(),
+      widgets: [
+        {
+          id: 'clock-local',
+          type: 'clock' as const,
+          timeFormat: '24h' as const,
+          showTime: true,
+          showSeconds: false,
+          showDate: true,
+          dateFormat: 'full' as const,
+          showDayOfWeek: true,
+          timezone: 'local',
+          showTimezoneName: true,
+          showTimezoneAbbr: false,
+          layout: { x: 0, y: 0, w: 4, h: 2 },
+        },
+        {
+          id: 'clock-custom',
+          type: 'clock' as const,
+          title: 'Лондон',
+          timeFormat: '12h' as const,
+          showTime: true,
+          showSeconds: true,
+          showDate: false,
+          dateFormat: 'numeric' as const,
+          showDayOfWeek: false,
+          timezone: 'Europe/London',
+          showTimezoneName: false,
+          showTimezoneAbbr: true,
+          layout: { x: 4, y: 0, w: 2, h: 2 },
+        },
+      ],
+    };
+
+    expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
+  });
+
+  it('rejects clock widgets with invalid formats or timezone', () => {
+    // Invalid timeFormat
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'clock-bad-time-format',
+            type: 'clock',
+            timeFormat: '48h',
+            showTime: true,
+            showSeconds: false,
+            showDate: true,
+            dateFormat: 'full',
+            showDayOfWeek: true,
+            timezone: 'local',
+            showTimezoneName: true,
+            showTimezoneAbbr: false,
+            layout: { x: 0, y: 0, w: 4, h: 2 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid dateFormat
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'clock-bad-date-format',
+            type: 'clock',
+            timeFormat: '24h',
+            showTime: true,
+            showSeconds: false,
+            showDate: true,
+            dateFormat: 'unsupported-format',
+            showDayOfWeek: true,
+            timezone: 'local',
+            showTimezoneName: true,
+            showTimezoneAbbr: false,
+            layout: { x: 0, y: 0, w: 4, h: 2 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid timezone
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'clock-bad-tz',
+            type: 'clock',
+            timeFormat: '24h',
+            showTime: true,
+            showSeconds: false,
+            showDate: true,
+            dateFormat: 'full',
+            showDayOfWeek: true,
+            timezone: 'Invalid/Non_Existent_Timezone_123',
+            showTimezoneName: true,
+            showTimezoneAbbr: false,
+            layout: { x: 0, y: 0, w: 4, h: 2 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
 });

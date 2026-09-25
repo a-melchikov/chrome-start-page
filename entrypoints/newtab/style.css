@@ -218,6 +218,27 @@
     border-right: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
   }
+
+  .widget-clock-container {
+    container-type: size;
+    overflow: hidden;
+  }
+
+  .widget-clock-time {
+    font-size: clamp(2rem, min(48cqh, 24cqw), 6.5rem);
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  .widget-clock-date {
+    font-size: clamp(0.75rem, min(16cqh, 6.5cqw), 1.25rem);
+    line-height: 1.2;
+  }
+
+  .widget-clock-sub {
+    font-size: clamp(0.7rem, min(12cqh, 4.5cqw), 0.95rem);
+    line-height: 1.2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

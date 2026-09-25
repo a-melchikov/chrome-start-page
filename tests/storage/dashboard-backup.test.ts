@@ -539,4 +539,43 @@ describe('dashboard backup replacement transaction', () => {
       'В резервной копии отсутствуют необходимые локальные изображения',
     );
   });
+
+  it('exports and restores a dashboard containing a clock widget', async () => {
+    const clockConfig: DashboardConfig = {
+      ...createConfig(),
+      widgets: [
+        {
+          id: 'clock-1',
+          type: 'clock',
+          title: 'Офис Токио',
+          timeFormat: '12h',
+          showTime: true,
+          showSeconds: true,
+          showDate: true,
+          dateFormat: 'shortWithYear',
+          showDayOfWeek: true,
+          timezone: 'Asia/Tokyo',
+          showTimezoneName: true,
+          showTimezoneAbbr: true,
+          layout: { x: 0, y: 0, w: 4, h: 2 },
+        },
+      ],
+    };
+
+    const backup = await createDashboardBackup(
+      clockConfig,
+      new Date(EXPORTED_AT),
+    );
+    expect(backup.dashboard.widgets).toHaveLength(1);
+    expect(backup.dashboard.widgets[0]).toEqual(clockConfig.widgets[0]);
+
+    const serialized = serializeDashboardBackup(backup);
+    const prepared = await prepareDashboardImport(serialized);
+    expect(prepared.dashboard.widgets[0]).toEqual(clockConfig.widgets[0]);
+
+    const current = createConfig();
+    await replaceDashboardFromBackup(current, prepared);
+    const stored = await loadDashboardConfig();
+    expect(stored.widgets[0]).toEqual(clockConfig.widgets[0]);
+  });
 });
