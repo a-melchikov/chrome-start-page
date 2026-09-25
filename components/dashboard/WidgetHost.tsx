@@ -127,12 +127,12 @@ export function WidgetHost({
               <div
                 className={classNames(
                   'h-full w-full min-w-0',
-                  isEditing && hasImage && 'pointer-events-none select-none',
-                  !hasImage && 'cursor-pointer',
+                  isEditing && 'pointer-events-none select-none',
+                  !isEditing && !hasImage && 'cursor-pointer',
                 )}
-                inert={isEditing && hasImage ? true : undefined}
+                inert={isEditing ? true : undefined}
                 onClick={
-                  !hasImage && !isWidgetEditing && onRequestEdit
+                  !isEditing && !hasImage && !isWidgetEditing && onRequestEdit
                     ? startEditing
                     : undefined
                 }

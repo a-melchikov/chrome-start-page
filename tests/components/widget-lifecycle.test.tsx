@@ -309,7 +309,7 @@ describe('widget lifecycle', () => {
     );
   });
 
-  it('creates an ImageWidget and opens editor by clicking empty placeholder', async () => {
+  it('creates an ImageWidget, uses edit button in edit mode, and opens editor by clicking empty placeholder in view mode', async () => {
     const user = userEvent.setup();
     render(<App />);
     await enableEditMode(user);
@@ -324,8 +324,32 @@ describe('widget lifecycle', () => {
     const placeholder = screen.getByText('Выберите изображение');
     expect(placeholder).toBeInTheDocument();
 
-    await user.click(placeholder);
+    const placeholderContainer = placeholder.closest('.min-w-0');
+    expect(placeholderContainer).toHaveClass('pointer-events-none');
+    expect(placeholderContainer).toHaveAttribute('inert');
 
+    // In edit mode, editing is accessed via the toolbar button
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Редактировать виджет «Изображение»',
+      }),
+    );
+    expect(
+      await screen.findByRole('dialog', { name: 'Настройки изображения' }),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+    // In view mode, clicking the empty placeholder directly opens the editor
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Выключить режим редактирования',
+      }),
+    );
+    expect(placeholderContainer).not.toHaveClass('pointer-events-none');
+    expect(placeholderContainer).not.toHaveAttribute('inert');
+
+    await user.click(placeholder);
     expect(
       await screen.findByRole('dialog', { name: 'Настройки изображения' }),
     ).toBeVisible();
