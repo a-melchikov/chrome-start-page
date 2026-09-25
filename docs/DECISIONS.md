@@ -355,6 +355,11 @@ by [Open-Meteo](https://open-meteo.com/) Forecast and Geocoding APIs:
 - The cache is not included in dashboard export/backup and is cleaned up on widget
   removal or backup import.
 - Schema v5 is preserved without a version bump.
+- Visual-mode artwork is built from local SVG/CSS layers driven by a pure scene
+  model. It uses the existing forecast fields and adds no assets or permissions.
+- Для карточек введён общий параметр `WidgetPresentation.cardInset`. Погода
+  использует `none`, чтобы сцена занимала всю карточку; компактный вид задаёт
+  внутренние отступы самостоятельно. Это не меняет сохранённую схему.
 
 ### Why
 
@@ -367,7 +372,8 @@ and guarantees instant new-tab load times.
 
 Users must grant host permissions when configuring weather or choosing their location.
 Ephemeral forecast data does not bloat backup archives. Visual effects adapt to day/night,
-precipitation, and wind conditions while fully respecting `prefers-reduced-motion`.
+precipitation, apparent heat, UV, and wind while fully respecting
+`prefers-reduced-motion`. Compact mode remains a structured data view.
 
 ### Rejected Alternatives
 

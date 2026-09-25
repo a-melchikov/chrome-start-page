@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WeatherWidget } from '../../../widgets/weather/WeatherWidget';
 import type {
@@ -68,6 +68,10 @@ describe('WeatherWidget component', () => {
     vi.restoreAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders unconfigured placeholder when location is unset', () => {
     const config: WeatherWidgetConfig = {
       id: 'weather-test',
@@ -128,15 +132,25 @@ describe('WeatherWidget component', () => {
       layout: { x: 0, y: 0, w: 5, h: 5 },
     };
 
-    render(<WeatherWidget config={config} />);
+    const { container } = render(<WeatherWidget config={config} />);
     expect(screen.getByText('Москва')).toBeInTheDocument();
     expect(screen.getByText('+16°')).toBeInTheDocument();
     expect(screen.getByText('Ясно')).toBeInTheDocument();
-    expect(screen.getByText(/Обновлено в/)).toBeInTheDocument();
+    expect(screen.getByText('Россия')).toBeInTheDocument();
+    expect(screen.queryByText('Москва, Россия')).toBeNull();
+    expect(screen.getByText(/обновлено в/)).toBeInTheDocument();
     expect(screen.getByText(/3\.1 м\/с/)).toBeInTheDocument();
     expect(screen.getByText(/55%/)).toBeInTheDocument();
     expect(screen.getByText(/мм рт\. ст\./)).toBeInTheDocument();
     expect(screen.getByText('+10° / +18°')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-weather="clear"]'),
+    ).toBeInTheDocument();
+    expect(container.querySelector('.weather-sun-core')).toBeInTheDocument();
+    expect(container.querySelector('.weather-text-scrim')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-weather-metrics="inline"]'),
+    ).toHaveClass('grid-cols-2');
   });
 
   it('shows stale cache warning badge when error occurs with existing forecast', () => {
@@ -158,8 +172,78 @@ describe('WeatherWidget component', () => {
       layout: { x: 0, y: 0, w: 5, h: 5 },
     };
 
-    render(<WeatherWidget config={config} />);
+    const { container } = render(<WeatherWidget config={config} />);
     expect(screen.getByText('Устарело')).toBeInTheDocument();
     expect(screen.getByText('+16°')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather]')).toBeNull();
+  });
+
+  it('keeps the scene readable at small sizes and reveals forecasts only when room permits', () => {
+    const callbacks: ResizeObserverCallback[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.spyOn(useWeatherModule, 'useWeather').mockReturnValue({
+      forecast: mockForecast,
+      fetchedAt: Date.now(),
+      loading: false,
+      error: null,
+      accessRequired: false,
+      retry: vi.fn(),
+      grantAccess: vi.fn(),
+    });
+
+    const config: WeatherWidgetConfig = {
+      id: 'weather-test',
+      type: 'weather',
+      mode: 'visual',
+      location: cityLocation,
+      layout: { x: 0, y: 0, w: 5, h: 5 },
+    };
+    const { container } = render(<WeatherWidget config={config} />);
+    const resize = (width: number, height: number) => {
+      act(() => {
+        callbacks.at(-1)?.(
+          [{ contentRect: { width, height } } as ResizeObserverEntry],
+          {} as ResizeObserver,
+        );
+      });
+    };
+
+    resize(195, 144);
+    expect(screen.getByText('Москва')).toBeInTheDocument();
+    expect(screen.getByText('+16°')).toBeInTheDocument();
+    expect(screen.getByText('Ясно')).toBeInTheDocument();
+    expect(container.querySelector('.weather-sun-core')).toBeInTheDocument();
+    expect(screen.getByText(/3\.1 м\/с/)).toBeInTheDocument();
+    expect(screen.getByText(/55%/)).toBeInTheDocument();
+    expect(screen.getByText(/мм рт\. ст\./)).toBeInTheDocument();
+    expect(screen.getByText('+10° / +18°')).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-weather-metrics="inline"]'),
+    ).toHaveClass('grid-cols-2');
+
+    resize(360, 272);
+    expect(screen.getByText(/3\.1 м\/с/)).toBeInTheDocument();
+    expect(screen.queryByText('По часам')).toBeNull();
+
+    resize(360, 430);
+    expect(screen.getByText('По часам')).toBeInTheDocument();
+    expect(screen.queryByText('На 5 дней')).toBeNull();
+
+    resize(360, 650);
+    expect(screen.getByText('На 5 дней')).toBeInTheDocument();
+
+    resize(550, 650);
+    expect(
+      container.querySelector('[data-weather-metrics="inline"]'),
+    ).toHaveClass('grid-cols-4');
   });
 });

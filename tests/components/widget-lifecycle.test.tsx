@@ -509,6 +509,16 @@ describe('widget lifecycle', () => {
     await enableEditMode(user);
     await addWeatherWidget(user);
 
+    const weatherArticle = await screen.findByRole('article', {
+      name: 'Погода',
+    });
+    expect(weatherArticle).toHaveClass('widget-card-surface--full-bleed');
+    expect(weatherArticle).not.toHaveClass('p-4');
+    expect(
+      screen.getByRole('button', { name: 'Удалить виджет «Погода»' })
+        .parentElement?.parentElement,
+    ).toHaveClass('bg-theme-surface-elevated');
+
     expect(
       await screen.findByRole('dialog', { name: 'Настройки погоды' }),
     ).toBeVisible();

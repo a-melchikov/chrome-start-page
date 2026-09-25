@@ -32,6 +32,13 @@ Version 0.1.0 implements six repeatable widget types:
 - **Weather** — a card widget (default `5×5`, minimum `3×3`) supporting visual
   and compact modes, Open-Meteo forecasts and city geocoding,
   detailed meteorological metrics, 12-hour future hourly strip, and 5-day daily forecast.
+  Visual mode uses a local layered scene for sun, moon, clouds, rain, snow, fog,
+  and thunderstorms. Sunlight reacts to apparent heat and UV; precipitation
+  reacts to intensity and wind. The larger forecasts appear only when the card
+  has enough room, and motion follows `prefers-reduced-motion`.
+  Визуальная сцена заполняет карточку до краёв: город и обновление находятся
+  сверху, температура и четыре показателя — снизу. На узкой карточке показатели
+  переходят в сетку 2×2; компактный режим сохраняет обычную подачу данных.
 
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column

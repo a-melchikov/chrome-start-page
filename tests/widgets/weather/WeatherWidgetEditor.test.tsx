@@ -64,7 +64,7 @@ describe('WeatherWidgetEditor component', () => {
       />,
     );
 
-    const input = screen.getByPlaceholderText('Введите название (от 3 букв)…');
+    const input = screen.getByPlaceholderText('Введите название (от 2 букв)…');
     fireEvent.change(input, { target: { value: 'Мос' } });
 
     await waitFor(() => {

@@ -59,7 +59,7 @@ adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
 `objectPosition`, and optional `altText`, Clock adds `timeFormat`, `showTime`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
 `showTimezoneName`, and `showTimezoneAbbr`, and Weather adds `mode`
-(`'visual' | 'compact'`) and `location` (`'unset' | 'auto' | 'city'`). Weather
+(`'visual' | 'compact'`) and `location` (`'unset' | 'city'`). Weather
 forecast data is cached in WXT Storage under `local:weather-cache:<id>` and not
 persisted to dashboard config or backup.
 
@@ -304,9 +304,18 @@ geocoding without API keys:
   freshness window of 30 minutes and a failure retry cooldown of 5 minutes.
   Cached entries are isolated per widget instance, excluded from backups, and
   automatically purged when widgets are removed or backups are restored.
-- In visual mode, SVG/CSS animated effects (clouds, precipitation, celestial bodies)
-  render behind content with support for `prefers-reduced-motion`. In compact
-  mode, the interface focuses purely on structured metrics.
+- In visual mode, `weather-scene.ts` derives scene intensity, light, clouds, and
+  wind drift from the existing forecast; `WeatherVisualEffects` renders local
+  SVG/CSS layers behind readable text zones. Rain combines WMO codes with
+  measured rain and showers, and motion respects `prefers-reduced-motion`.
+  Compact mode keeps the structured metrics without the scene.
+- `WidgetPresentation.cardInset` задаёт общий отступ карточки. Для погоды
+  используется `none`: визуальная сцена занимает всю поверхность до скруглённого
+  края, а компактный режим и служебные состояния задают собственные отступы.
+  `WidgetHost` применяет настройку реестра без отдельной ветки для погоды.
+- Визуальный режим располагает город и обновление сверху, температуру и четыре
+  показателя снизу. Показатели занимают одну строку на широкой карточке и сетку
+  2×2 на узкой. Прогнозы появляются поверх той же сцены при достаточной высоте.
 
 ## Extension Boundary
 

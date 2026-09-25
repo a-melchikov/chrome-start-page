@@ -48,6 +48,8 @@ export function WidgetHost({
   const displayName = getWidgetDisplayName(widget);
   const content = definition?.render(widget, onWidgetChange);
   const isBare = definition?.presentation.chrome === 'bare';
+  const isFullBleedCard =
+    !isBare && definition?.presentation.cardInset === 'none';
   const isOverlayControls =
     isBare && definition?.presentation.controlsPosition === 'overlay';
   const hasImage =
@@ -146,7 +148,10 @@ export function WidgetHost({
             ? isOverlayControls
               ? 'flex-col overflow-hidden rounded-xl'
               : 'items-center overflow-visible'
-            : 'widget-card-surface liquid-glass-surface flex-col overflow-hidden rounded-xl p-4',
+            : classNames(
+                'widget-card-surface liquid-glass-surface flex-col overflow-hidden rounded-xl',
+                isFullBleedCard ? 'widget-card-surface--full-bleed' : 'p-4',
+              ),
           isEditing && 'cursor-move',
         )}
         onAnimationEnd={(event) => {
@@ -202,7 +207,14 @@ export function WidgetHost({
           )
         ) : isTitleHidden ? (
           <>
-            <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
+            <div
+              className={classNames(
+                'absolute right-2 top-2 z-10 rounded-lg p-0.5',
+                isEditing &&
+                  isFullBleedCard &&
+                  'border border-theme-border/70 bg-theme-surface-elevated shadow-sm',
+              )}
+            >
               {controls}
             </div>
             <div

@@ -55,6 +55,7 @@ export interface WidgetLayoutConstraints {
 
 export interface WidgetPresentation {
   chrome: 'card' | 'bare';
+  cardInset?: 'default' | 'none';
   editor: 'inline' | 'dialog';
   allowCustomTitle: boolean;
   editorTitle?: string;
@@ -363,6 +364,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     Editor: WeatherWidgetEditor,
     presentation: {
       chrome: 'card',
+      cardInset: 'none',
       editor: 'dialog',
       allowCustomTitle: false,
       editorTitle: 'Настройки погоды',

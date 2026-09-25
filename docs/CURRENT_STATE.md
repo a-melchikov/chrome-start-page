@@ -45,7 +45,11 @@ Last updated: 2026-09-25
   indicators (temperature, feels-like, min/max, wind speed/direction, pressure,
   humidity, UV, visibility, precipitation), 12-hour hourly forecast strip,
   5-day daily forecast, isolated cache with 30-minute freshness and 5-minute
-  retry cooldown, and animated SVG/CSS effects with `prefers-reduced-motion` compliance.
+  retry cooldown, and a layered SVG/CSS scene with distinct sun, moon, clouds,
+  rain, snow, fog, and thunderstorms. Rain density and drift follow forecast
+  intensity and wind, with `prefers-reduced-motion` compliance.
+  Визуальная сцена занимает всю карточку, с мягкими тенями и локальным
+  затемнением текста; четыре показателя остаются доступны даже в размере 3×3.
 - Light/dark/system themes, arbitrary persisted background, and local or HTTPS
 
   wallpaper rendered full-screen with cover cropping.

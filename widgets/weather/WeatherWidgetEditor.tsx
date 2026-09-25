@@ -5,6 +5,8 @@ import { searchCities } from './api';
 import { WeatherWidget } from './WeatherWidget';
 import type { WeatherLocation, WeatherWidgetConfig } from './types';
 
+const MIN_CITY_QUERY_LENGTH = 2;
+
 export interface WeatherWidgetEditorProps {
   config: WeatherWidgetConfig;
   onChange: (config: WeatherWidgetConfig) => void;
@@ -30,7 +32,7 @@ export function WeatherWidgetEditor({
   // Debounced city search
   useEffect(() => {
     const trimmed = searchQuery.trim();
-    if (trimmed.length < 3) {
+    if (trimmed.length < MIN_CITY_QUERY_LENGTH) {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -75,7 +77,7 @@ export function WeatherWidgetEditor({
   const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchQuery(val);
-    if (val.trim().length < 3) {
+    if (val.trim().length < MIN_CITY_QUERY_LENGTH) {
       setSearchResults([]);
       setIsSearching(false);
       setSearchError(null);
@@ -127,7 +129,7 @@ export function WeatherWidgetEditor({
         <div className="mb-2 text-xs font-medium text-theme-text-muted">
           Предпросмотр
         </div>
-        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden rounded-lg border border-theme-border bg-theme-surface-elevated/40">
+        <div className="relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border border-theme-border bg-theme-surface-elevated shadow-sm">
           <WeatherWidget config={config} />
         </div>
       </div>
@@ -187,7 +189,7 @@ export function WeatherWidgetEditor({
         <div className="relative">
           <Input
             id={searchInputId}
-            placeholder="Введите название (от 3 букв)…"
+            placeholder="Введите название (от 2 букв)…"
             value={searchQuery}
             onChange={handleSearchQueryChange}
             onKeyDown={handleKeyDown}
@@ -214,7 +216,7 @@ export function WeatherWidgetEditor({
                   aria-selected={idx === selectedIndex}
                   className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs transition-colors ${
                     idx === selectedIndex
-                      ? 'bg-theme-accent text-white'
+                      ? 'bg-theme-accent text-theme-accent-text shadow-sm ring-1 ring-inset ring-theme-accent-text/20'
                       : 'text-theme-text-primary hover:bg-theme-surface'
                   }`}
                   role="option"
@@ -224,7 +226,7 @@ export function WeatherWidgetEditor({
                   <span
                     className={`ml-1 text-[11px] ${
                       idx === selectedIndex
-                        ? 'text-white/80'
+                        ? 'text-theme-accent-text/75'
                         : 'text-theme-text-muted'
                     }`}
                   >
@@ -235,7 +237,7 @@ export function WeatherWidgetEditor({
             </ul>
           )}
 
-          {searchQuery.trim().length >= 3 &&
+          {searchQuery.trim().length >= MIN_CITY_QUERY_LENGTH &&
             !isSearching &&
             searchResults.length === 0 &&
             !searchError && (
