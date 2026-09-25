@@ -133,6 +133,10 @@ describe('WeatherWidget component', () => {
     expect(screen.getByText('+16°')).toBeInTheDocument();
     expect(screen.getByText('Ясно')).toBeInTheDocument();
     expect(screen.getByText(/Обновлено в/)).toBeInTheDocument();
+    expect(screen.getByText(/3\.1 м\/с/)).toBeInTheDocument();
+    expect(screen.getByText(/55%/)).toBeInTheDocument();
+    expect(screen.getByText(/мм рт\. ст\./)).toBeInTheDocument();
+    expect(screen.getByText('+10° / +18°')).toBeInTheDocument();
   });
 
   it('shows stale cache warning badge when error occurs with existing forecast', () => {

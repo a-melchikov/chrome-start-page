@@ -33,7 +33,7 @@ export interface WeatherWidgetProps {
 }
 
 export function WeatherWidget({ config }: WeatherWidgetProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
@@ -52,29 +52,39 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
     grantAccess,
   } = useWeather(config);
 
+  const containerRef = (node: HTMLDivElement | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    if (node && typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (entry) {
+          setDimensions({
+            width: Math.round(entry.contentRect.width),
+            height: Math.round(entry.contentRect.height),
+          });
+        }
+      });
+      observer.observe(node);
+      observerRef.current = observer;
+    }
+  };
+
   useEffect(() => {
-    const element = containerRef.current;
-    if (!element || typeof ResizeObserver === 'undefined') return;
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setDimensions({
-          width: Math.round(entry.contentRect.width),
-          height: Math.round(entry.contentRect.height),
-        });
-      }
-    });
-
-    observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observerRef.current?.disconnect();
+    };
   }, []);
 
   const locationTitle =
     config.location.type === 'city' ? config.location.name : 'Погода';
 
-  const isSmall = dimensions.height < 210 || dimensions.width < 220;
-  const isLarge = dimensions.height >= 320 && dimensions.width >= 240;
+  const isCompactHeight = dimensions.height < 230;
+  const isSmall = dimensions.height < 140 || dimensions.width < 200;
+  const isLarge = dimensions.height >= 340 && dimensions.width >= 260;
+  const showDaily = dimensions.height >= 440 && dimensions.width >= 260;
 
   // Unconfigured state
   if (config.location.type === 'unset') {
@@ -196,7 +206,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
 
       {/* Content wrapper with readable background scrim in visual mode */}
       <div
-        className={`relative z-1 flex h-full w-full flex-col overflow-hidden p-3 ${
+        className={`relative z-1 flex h-full w-full flex-col justify-between overflow-hidden p-3 ${
           isVisual ? 'bg-theme-surface/35 backdrop-blur-[2px]' : ''
         }`}
       >
@@ -210,7 +220,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
               {locationTitle}
             </h3>
             {config.location.type === 'city' && config.location.country ? (
-              <p className="truncate text-[11px] text-theme-text-muted">
+              <p className="truncate text-[11px] leading-tight text-theme-text-muted">
                 {[config.location.region, config.location.country]
                   .filter(Boolean)
                   .join(', ')}
@@ -245,9 +255,13 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         </div>
 
         {/* Primary weather indicator: Temperature and Condition */}
-        <div className="my-auto flex items-center justify-between gap-3 py-2">
+        <div className="flex flex-1 min-h-0 items-center justify-between gap-3 py-1">
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold tracking-tight text-theme-text-primary">
+            <span
+              className={`${
+                isCompactHeight ? 'text-3xl' : 'text-4xl'
+              } font-bold tracking-tight text-theme-text-primary`}
+            >
               {formatTemperature(current.temperature)}
             </span>
             {current.apparentTemperature !== null && !isSmall ? (
@@ -260,9 +274,11 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             ) : null}
           </div>
 
-          <div className="flex flex-col items-end">
+          <div className="flex shrink-0 flex-col items-end">
             <WeatherConditionIcon
-              className="size-8 text-theme-accent"
+              className={`${
+                isCompactHeight ? 'size-7' : 'size-8'
+              } text-theme-accent`}
               code={current.code}
               isDay={current.isDay}
             />
@@ -274,9 +290,13 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
 
         {/* Secondary Parameters (Medium / Large view) */}
         {!isSmall && (
-          <div className="grid grid-cols-2 gap-x-2 gap-y-1 rounded-lg border border-theme-border/40 bg-theme-surface-elevated/20 p-2 text-[11px] sm:grid-cols-4">
+          <div
+            className={`shrink-0 rounded-lg border border-theme-border/40 bg-theme-surface-elevated/20 px-2.5 py-1.5 text-[11px] grid gap-x-2 gap-y-1 ${
+              dimensions.width >= 360 ? 'grid-cols-4' : 'grid-cols-2'
+            }`}
+          >
             {/* Min / Max */}
-            <div className="flex items-center gap-1.5 text-theme-text-secondary">
+            <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
               <ThermometerIcon className="size-3.5 shrink-0 text-theme-text-muted" />
               <span className="truncate">
                 {formatTemperature(todayDaily?.min)} /{' '}
@@ -285,7 +305,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             </div>
 
             {/* Wind */}
-            <div className="flex items-center gap-1.5 text-theme-text-secondary">
+            <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
               <WindIcon className="size-3.5 shrink-0 text-theme-text-muted" />
               <span className="truncate">
                 {formatWindSpeed(current.windSpeed)}{' '}
@@ -294,7 +314,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             </div>
 
             {/* Humidity */}
-            <div className="flex items-center gap-1.5 text-theme-text-secondary">
+            <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
               <DropletIcon className="size-3.5 shrink-0 text-theme-text-muted" />
               <span className="truncate">
                 {formatHumidity(current.humidity)}
@@ -302,7 +322,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             </div>
 
             {/* Pressure */}
-            <div className="flex items-center gap-1.5 text-theme-text-secondary">
+            <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
               <GaugeIcon className="size-3.5 shrink-0 text-theme-text-muted" />
               <span className="truncate">
                 {formatPressure(current.pressure)}
@@ -312,13 +332,13 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             {/* UV Index (if space permits) */}
             {isLarge && (
               <>
-                <div className="flex items-center gap-1.5 text-theme-text-secondary">
+                <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
                   <SunMediumIcon className="size-3.5 shrink-0 text-theme-text-muted" />
                   <span className="truncate">
                     УФ {formatUvIndex(current.uv)}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-theme-text-secondary">
+                <div className="flex min-w-0 items-center gap-1.5 text-theme-text-secondary">
                   <EyeIcon className="size-3.5 shrink-0 text-theme-text-muted" />
                   <span className="truncate">
                     {formatVisibility(current.visibility)}
@@ -365,7 +385,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         )}
 
         {/* Large View: 5-day daily forecast */}
-        {isLarge && daily.length > 0 && (
+        {showDaily && daily.length > 0 && (
           <div className="mt-2">
             <div className="mb-1 text-[11px] font-medium text-theme-text-muted">
               На 5 дней

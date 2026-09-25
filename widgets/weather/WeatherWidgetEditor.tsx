@@ -244,11 +244,6 @@ export function WeatherWidgetEditor({
               </p>
             )}
         </div>
-
-        <p className="text-[10px] text-theme-text-muted">
-          Поиск городов на базе Open-Meteo и GeoNames (некоммерческое
-          использование)
-        </p>
       </div>
 
       {/* Dialog footer */}
