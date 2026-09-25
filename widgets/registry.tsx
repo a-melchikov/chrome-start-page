@@ -2,6 +2,13 @@ import type { ComponentType, ReactNode } from 'react';
 
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
+import {
+  createDefaultImageWidget,
+  DEFAULT_IMAGE_WIDGET_LAYOUT,
+} from './image/defaults';
+import { ImageWidget } from './image/ImageWidget';
+import { ImageWidgetEditor } from './image/ImageWidgetEditor';
+import type { ImageWidgetConfig } from './image/types';
 import { createDefaultMarkdownWidget } from './markdown/defaults';
 import { MarkdownWidget } from './markdown/MarkdownWidget';
 import { MarkdownWidgetEditor } from './markdown/MarkdownWidgetEditor';
@@ -37,6 +44,7 @@ export interface WidgetPresentation {
   editorTitle?: string;
   editorDialogSize?: 'default' | 'fullscreen';
   titleStyle?: 'default' | 'prominent';
+  controlsPosition?: 'inline' | 'overlay';
   layout: WidgetLayoutConstraints;
 }
 
@@ -157,6 +165,20 @@ function isPomodoroWidgetConfig(value: unknown): value is PomodoroWidgetConfig {
   );
 }
 
+function isImageWidgetConfig(value: unknown): value is ImageWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'image' &&
+    'source' in value &&
+    typeof value.source === 'object' &&
+    value.source !== null &&
+    'objectPosition' in value &&
+    typeof value.objectPosition === 'string'
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<MarkdownWidgetConfig>({
     type: 'markdown',
@@ -225,6 +247,30 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: 3,
         minH: 4,
+        resizeHandles: ['se'],
+      },
+    },
+  }),
+  defineWidget<ImageWidgetConfig>({
+    type: 'image',
+    metadata: {
+      name: 'Изображение',
+      description: 'Локальное изображение или ссылка.',
+    },
+    create: createDefaultImageWidget,
+    isConfig: isImageWidgetConfig,
+    Renderer: ImageWidget,
+    Editor: ImageWidgetEditor,
+    presentation: {
+      chrome: 'bare',
+      editor: 'dialog',
+      allowCustomTitle: false,
+      editorTitle: 'Настройки изображения',
+      editorDialogSize: 'default',
+      controlsPosition: 'overlay',
+      layout: {
+        minW: DEFAULT_IMAGE_WIDGET_LAYOUT.minW,
+        minH: DEFAULT_IMAGE_WIDGET_LAYOUT.minH,
         resizeHandles: ['se'],
       },
     },

@@ -1,3 +1,4 @@
+import type { ImageWidgetConfig } from '../widgets/image/types';
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
@@ -14,6 +15,15 @@ export type WallpaperConfig =
   | { type: 'local'; assetId: string };
 
 export function isWallpaperAssetId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  );
+}
+
+export function isImageAssetId(value: unknown): value is string {
   return (
     typeof value === 'string' &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -40,6 +50,7 @@ export interface WidgetConfigMap {
   markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;
   pomodoro: PomodoroWidgetConfig;
+  image: ImageWidgetConfig;
 }
 
 export type WidgetType = keyof WidgetConfigMap;

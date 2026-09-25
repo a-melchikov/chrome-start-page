@@ -5,8 +5,15 @@ import {
   type Theme,
   type WallpaperConfig,
   type WidgetConfig,
+  isImageAssetId,
   isWallpaperAssetId,
 } from './schema';
+import {
+  IMAGE_OBJECT_POSITIONS,
+  type ImageFitMode,
+  type ImageObjectPosition,
+  type ImageWidgetSource,
+} from '../widgets/image/types';
 import { isSearchEngine } from '../widgets/search/engines';
 import { DEFAULT_LIQUID_GLASS } from './defaults';
 
@@ -108,6 +115,38 @@ function isValidWidgetId(value: unknown): value is string {
   return typeof value === 'string' && WIDGET_ID_PATTERN.test(value);
 }
 
+function isImageWidgetSource(value: unknown): value is ImageWidgetSource {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (value.type === 'none') {
+    return true;
+  }
+
+  if (value.type === 'url') {
+    return isAbsoluteHttpsUrl(value.url);
+  }
+
+  return value.type === 'local' && isImageAssetId(value.assetId);
+}
+
+function isImageObjectPosition(value: unknown): value is ImageObjectPosition {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  if ((IMAGE_OBJECT_POSITIONS as readonly string[]).includes(value)) {
+    return true;
+  }
+
+  return /^\d+(\.\d+)?%\s+\d+(\.\d+)?%$/.test(value.trim());
+}
+
+function isImageFitMode(value: unknown): value is ImageFitMode {
+  return value === 'cover' || value === 'contain';
+}
+
 function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (
     !isRecord(value) ||
@@ -133,6 +172,20 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
       isIntegerInRange(value.longBreakDuration, 1, 60) &&
       isIntegerInRange(value.longBreakInterval, 1, 12) &&
       typeof value.soundEnabled === 'boolean'
+    );
+  }
+
+  if (value.type === 'image') {
+    return (
+      isImageWidgetSource(value.source) &&
+      isImageObjectPosition(value.objectPosition) &&
+      (value.fitMode === undefined || isImageFitMode(value.fitMode)) &&
+      (value.zoom === undefined ||
+        (typeof value.zoom === 'number' &&
+          Number.isFinite(value.zoom) &&
+          value.zoom >= 1 &&
+          value.zoom <= 3)) &&
+      (value.altText === undefined || typeof value.altText === 'string')
     );
   }
 

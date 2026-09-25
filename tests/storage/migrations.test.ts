@@ -457,4 +457,92 @@ describe('migrateDashboardConfig', () => {
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
+
+  it('accepts valid image widgets with none, url, and local sources', () => {
+    const validConfig = {
+      ...createDefaultDashboardConfig(),
+      widgets: [
+        {
+          id: 'img-1',
+          type: 'image' as const,
+          source: { type: 'none' as const },
+          objectPosition: 'center' as const,
+          layout: { x: 0, y: 0, w: 4, h: 4 },
+        },
+        {
+          id: 'img-2',
+          type: 'image' as const,
+          source: {
+            type: 'url' as const,
+            url: 'https://example.com/photo.webp',
+          },
+          objectPosition: 'top-left' as const,
+          altText: 'Красивое фото',
+          layout: { x: 4, y: 0, w: 6, h: 4 },
+        },
+        {
+          id: 'img-3',
+          type: 'image' as const,
+          source: {
+            type: 'local' as const,
+            assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
+          },
+          objectPosition: 'bottom' as const,
+          layout: { x: 0, y: 4, w: 4, h: 4 },
+        },
+      ],
+    };
+
+    expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
+  });
+
+  it('rejects image widgets with invalid sources or positions', () => {
+    // Insecure HTTP url
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'img-bad-url',
+            type: 'image',
+            source: { type: 'url', url: 'http://insecure.example.com/pic.png' },
+            objectPosition: 'center',
+            layout: { x: 0, y: 0, w: 4, h: 4 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid local assetId
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'img-bad-asset',
+            type: 'image',
+            source: { type: 'local', assetId: 'not-a-valid-uuid' },
+            objectPosition: 'center',
+            layout: { x: 0, y: 0, w: 4, h: 4 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid object position
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'img-bad-pos',
+            type: 'image',
+            source: { type: 'none' },
+            objectPosition: 'diagonal-center',
+            layout: { x: 0, y: 0, w: 4, h: 4 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
 });

@@ -1,5 +1,5 @@
 const INTERACTIVE_ELEMENT_SELECTOR =
-  'button, input, textarea, select, option, label, a, [contenteditable="true"], [role="slider"]';
+  'button, input, textarea, select, option, label, a, [contenteditable="true"], [role="slider"], dialog, dialog *, [data-no-drag], [data-no-drag] *';
 
 export function createDashboardDragConfig(isEditing: boolean) {
   return {

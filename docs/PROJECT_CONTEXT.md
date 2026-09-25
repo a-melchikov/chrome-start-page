@@ -17,12 +17,18 @@ Version 0.1.0 implements two repeatable widget types:
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and
   DuckDuckGo use fixed GET endpoints and bundled brand icons. Its height is
   fixed; only width and engine are configurable.
+- **Image** — a bare resizable widget (default `4×4`, minimum `2×2`) with
+  rounded corners, offline local file storage or HTTPS URL, display modes (fill/cover
+  with interactive drag-and-pan and zoom vs contain), quick ratio presets (`1:1`, `4:3`,
+  `16:9`, original), 3×3 object positioning, grid width/height adjustment in settings,
+  high-contrast resize handle in edit mode, GIF pause/play toggle on click, and floating
+  overlay controls in edit mode.
 
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
 draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
 behavior, restoration after Chrome restarts, and full versioned JSON backup and
-restore with embedded local wallpaper assets.
+restore (format v2) with embedded local wallpaper and image assets.
 
 Поверхности Markdown и Search используют включённый по умолчанию статический
 Liquid Glass: полупрозрачный tint, размытие и насыщенность фона, светлую кромку

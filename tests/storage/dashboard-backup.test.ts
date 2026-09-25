@@ -24,8 +24,10 @@ import {
   loadWallpaperAsset,
   saveWallpaperAsset,
 } from '../../storage/wallpaper-assets';
+import { loadImageAsset, saveImageAsset } from '../../storage/image-assets';
 import type { LocalWallpaperAssetV1 } from '../../storage/wallpaper-codec';
 import type { DashboardConfig } from '../../storage/schema';
+import type { ImageWidgetConfig } from '../../widgets/image/types';
 
 const OLD_ASSET_ID = '8dc04e26-6465-4e84-bc05-633c0e28415b';
 const EXPORTED_ASSET_ID = '7af1599d-ae5f-4590-9791-bc299eb3b4db';
@@ -102,6 +104,7 @@ function createAsset(assetId: string): LocalWallpaperAssetV1 {
 function createEnvelope(
   dashboard: unknown,
   localWallpaper: unknown = null,
+  localImages: unknown = [],
 ): Record<string, unknown> {
   return {
     format: DASHBOARD_BACKUP_FORMAT,
@@ -109,6 +112,7 @@ function createEnvelope(
     exportedAt: EXPORTED_AT,
     dashboard,
     localWallpaper,
+    localImages,
   };
 }
 
@@ -133,10 +137,11 @@ describe('dashboard backup format', () => {
 
     expect(backup).toEqual({
       format: DASHBOARD_BACKUP_FORMAT,
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: EXPORTED_AT,
       dashboard: config,
       localWallpaper: null,
+      localImages: [],
     });
     expect(parseDashboardBackupJson(serializeDashboardBackup(backup))).toEqual(
       backup,
@@ -169,11 +174,26 @@ describe('dashboard backup format', () => {
       createDashboardBackup(config, new Date(EXPORTED_AT)),
     ).resolves.toEqual({
       format: DASHBOARD_BACKUP_FORMAT,
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: EXPORTED_AT,
       dashboard: config,
       localWallpaper: asset,
+      localImages: [],
     });
+  });
+
+  it('parses legacy formatVersion 1 backups with backward compatibility', () => {
+    const v1Backup = {
+      format: DASHBOARD_BACKUP_FORMAT,
+      formatVersion: 1,
+      exportedAt: EXPORTED_AT,
+      dashboard: createConfig(),
+      localWallpaper: null,
+    };
+
+    const parsed = parseDashboardBackup(v1Backup);
+    expect(parsed.formatVersion).toBe(2);
+    expect(parsed.localImages).toEqual([]);
   });
 
   it('migrates legacy dashboard data inside the current backup format', () => {
@@ -209,7 +229,7 @@ describe('dashboard backup format', () => {
       () =>
         parseDashboardBackup({
           ...createEnvelope(createConfig()),
-          formatVersion: 2,
+          formatVersion: 3,
         }),
     ],
     [
@@ -357,6 +377,16 @@ describe('dashboard backup format', () => {
 describe('dashboard backup replacement transaction', () => {
   beforeEach(() => {
     fakeBrowser.reset();
+    imageShouldDecode = true;
+    vi.stubGlobal('Image', FakeImage);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:image'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    });
   });
 
   it('replaces the full dashboard and removes the previous local asset', async () => {
@@ -368,6 +398,7 @@ describe('dashboard backup replacement transaction', () => {
     const prepared: PreparedDashboardImport = {
       dashboard: imported,
       localWallpaper: createAsset(IMPORTED_ASSET_ID),
+      localImages: [],
     };
     await saveDashboardConfig(current);
     await saveWallpaperAsset(createAsset(OLD_ASSET_ID));
@@ -398,6 +429,7 @@ describe('dashboard backup replacement transaction', () => {
         assetId: IMPORTED_ASSET_ID,
       }),
       localWallpaper: createAsset(IMPORTED_ASSET_ID),
+      localImages: [],
     };
     await saveDashboardConfig(current);
     await saveWallpaperAsset(createAsset(OLD_ASSET_ID));
@@ -429,12 +461,82 @@ describe('dashboard backup replacement transaction', () => {
     const result = await replaceDashboardFromBackup(current, {
       dashboard: imported,
       localWallpaper: null,
+      localImages: [],
     });
 
     expect(result.warning).toContain('старые локальные обои');
     await expect(loadDashboardConfig()).resolves.toEqual(imported);
     await expect(loadWallpaperAsset(OLD_ASSET_ID)).resolves.toEqual(
       createAsset(OLD_ASSET_ID),
+    );
+  });
+
+  it('includes referenced local images in export and restores them with fresh asset IDs', async () => {
+    const imgAsset = createAsset(EXPORTED_ASSET_ID);
+    await saveImageAsset(imgAsset);
+
+    const configWithImage: DashboardConfig = {
+      ...createConfig(),
+      widgets: [
+        {
+          id: 'img-1',
+          type: 'image',
+          source: { type: 'local', assetId: EXPORTED_ASSET_ID },
+          objectPosition: 'center',
+          layout: { x: 0, y: 0, w: 4, h: 4 },
+        },
+      ],
+    };
+
+    const backup = await createDashboardBackup(
+      configWithImage,
+      new Date(EXPORTED_AT),
+    );
+    expect(backup.localImages).toEqual([imgAsset]);
+
+    const serialized = serializeDashboardBackup(backup);
+    const prepared = await prepareDashboardImport(serialized);
+
+    expect(prepared.localImages).toHaveLength(1);
+    const newAsset = prepared.localImages[0];
+    expect(newAsset).toBeDefined();
+    const newAssetId = newAsset!.assetId;
+    expect(newAssetId).not.toBe(EXPORTED_ASSET_ID);
+
+    const importedWidget = prepared.dashboard.widgets.find(
+      (w): w is ImageWidgetConfig => w.id === 'img-1' && w.type === 'image',
+    );
+    expect(importedWidget?.source).toEqual({
+      type: 'local',
+      assetId: newAssetId,
+    });
+
+    const current = createConfig();
+    await replaceDashboardFromBackup(current, prepared);
+
+    await expect(loadImageAsset(newAssetId)).resolves.toEqual(newAsset);
+  });
+
+  it('rejects backup with image widget when local image is missing from localImages', () => {
+    const envelope = createEnvelope(
+      {
+        ...createConfig(),
+        widgets: [
+          {
+            id: 'img-1',
+            type: 'image',
+            source: { type: 'local', assetId: EXPORTED_ASSET_ID },
+            objectPosition: 'center',
+            layout: { x: 0, y: 0, w: 4, h: 4 },
+          },
+        ],
+      },
+      null,
+      [],
+    );
+
+    expect(() => parseDashboardBackup(envelope)).toThrow(
+      'В резервной копии отсутствуют необходимые локальные изображения',
     );
   });
 });

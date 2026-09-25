@@ -25,6 +25,10 @@ Last updated: 2026-09-20
   copyable code blocks, and fullscreen live split editing.
 - Multiple compact Search widgets with Google/Yandex/Bing/DuckDuckGo, fixed GET
   endpoints, local brand SVGs, icon fallback, one-row layout, and dialog settings.
+- Bare Image widgets with offline local asset storage (compressed over 6 MiB, max
+  32 MiB) and HTTPS URL support, 3×3 interactive object-positioning, canvas-based
+  GIF pause/play toggle on click, recommended aspect-ratio grid sizing, optional
+  alt text, and floating overlay controls in edit mode.
 - Light/dark/system themes, arbitrary persisted background, and local or HTTPS
   wallpaper rendered full-screen with cover cropping.
 - Local PNG/JPEG/WebP/GIF/AVIF/SVG validation, conditional lossless compression
@@ -44,13 +48,14 @@ Last updated: 2026-09-20
   непрозрачную Markdown-карточку и bare Search без внешней капсулы. CSS-fallback
   сохраняет tint, рамку и тень без `backdrop-filter`.
 - Separate «Импорт и экспорт» dialog in global edit mode. Export downloads a
-  versioned JSON backup with the complete dashboard and embedded local
-  wallpaper; confirmed import validates the file and atomically replaces the
-  current state with rollback protection and fresh local asset IDs.
+  versioned JSON backup (format v2) with the complete dashboard, embedded local
+  wallpaper, and all local widget images; confirmed import validates the file
+  and atomically replaces the current state with rollback protection and fresh
+  local asset IDs. Backups in format v1 remain fully supported.
 - Automated tests for storage/migrations, wallpaper codecs/assets/transactions,
-  backup format/import transactions, image validation, state persistence,
+  backup format/import transactions, image assets/validation, state persistence,
   widget lifecycle, layout constraints, Markdown/security/tasks/editor, Search
-  behavior, and App appearance/edit flows.
+  behavior, Image widget/editor, and App appearance/edit flows.
 
 ## Partially Implemented
 

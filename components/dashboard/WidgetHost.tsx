@@ -36,6 +36,15 @@ export function WidgetHost({
   const displayName = getWidgetDisplayName(widget);
   const content = definition?.render(widget, onWidgetChange);
   const isBare = definition?.presentation.chrome === 'bare';
+  const isOverlayControls =
+    isBare && definition?.presentation.controlsPosition === 'overlay';
+  const hasImage =
+    widget.type === 'image' &&
+    'source' in widget &&
+    typeof (widget as { source?: unknown }).source === 'object' &&
+    (widget as { source?: unknown }).source !== null &&
+    'type' in ((widget as { source?: unknown }).source as object) &&
+    (widget as { source: { type: string } }).source.type !== 'none';
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
     setShouldRestoreEditFocus(true);
@@ -82,6 +91,11 @@ export function WidgetHost({
       ) : null}
       <IconButton
         aria-label={`Удалить виджет «${displayName}»`}
+        className={
+          isOverlayControls && hasImage
+            ? 'text-theme-text-secondary hover:text-red-400'
+            : undefined
+        }
         size="xs"
         title={`Удалить виджет «${displayName}»`}
         variant="danger-ghost"
@@ -100,24 +114,58 @@ export function WidgetHost({
         className={classNames(
           'relative flex h-full min-w-0',
           isBare
-            ? 'items-center overflow-visible'
+            ? isOverlayControls
+              ? 'flex-col overflow-hidden rounded-xl'
+              : 'items-center overflow-visible'
             : 'widget-card-surface liquid-glass-surface min-h-40 flex-col overflow-hidden rounded-xl p-4',
           isEditing && 'cursor-move',
         )}
       >
         {isBare ? (
-          <div className="flex h-full w-full items-center gap-2">
-            <div
-              className={classNames(
-                'min-w-0 flex-1',
-                isEditing && 'pointer-events-none select-none',
-              )}
-              inert={isEditing ? true : undefined}
-            >
-              {content ?? fallback}
+          isOverlayControls ? (
+            <div className="relative h-full w-full overflow-hidden rounded-xl">
+              <div
+                className={classNames(
+                  'h-full w-full min-w-0',
+                  isEditing && hasImage && 'pointer-events-none select-none',
+                  !hasImage && 'cursor-pointer',
+                )}
+                inert={isEditing && hasImage ? true : undefined}
+                onClick={
+                  !hasImage && !isWidgetEditing && onRequestEdit
+                    ? startEditing
+                    : undefined
+                }
+              >
+                {content ?? fallback}
+              </div>
+              {controls ? (
+                <div
+                  className={classNames(
+                    'absolute right-2 top-2 z-10 rounded-lg p-0.5 transition-colors',
+                    hasImage
+                      ? 'border border-theme-border/50 bg-theme-surface/85 backdrop-blur-md shadow-xs'
+                      : '',
+                  )}
+                >
+                  {controls}
+                </div>
+              ) : null}
             </div>
-            {controls}
-          </div>
+          ) : (
+            <div className="flex h-full w-full items-center gap-2">
+              <div
+                className={classNames(
+                  'min-w-0 flex-1',
+                  isEditing && 'pointer-events-none select-none',
+                )}
+                inert={isEditing ? true : undefined}
+              >
+                {content ?? fallback}
+              </div>
+              {controls}
+            </div>
+          )
         ) : (
           <>
             <header className="mb-3 flex min-h-8 shrink-0 items-center justify-between gap-2">

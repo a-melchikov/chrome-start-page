@@ -37,6 +37,11 @@ async function addPomodoroWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Помодоро' }));
 }
 
+async function addImageWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Изображение' }));
+}
+
 async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
@@ -302,6 +307,28 @@ describe('widget lifecycle', () => {
     await waitFor(async () =>
       expect((await getStoredConfig())?.widgets).toHaveLength(1),
     );
+  });
+
+  it('creates an ImageWidget and opens editor by clicking empty placeholder', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+
+    await addImageWidget(user);
+
+    const imageArticle = await screen.findByRole('article', {
+      name: 'Изображение',
+    });
+    expect(imageArticle).toBeVisible();
+
+    const placeholder = screen.getByText('Выберите изображение');
+    expect(placeholder).toBeInTheDocument();
+
+    await user.click(placeholder);
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Настройки изображения' }),
+    ).toBeVisible();
   });
 
   it('renders a safe fallback for an unsupported widget type', () => {

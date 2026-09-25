@@ -5,6 +5,11 @@ import {
   saveDashboardConfig,
 } from '../storage/dashboard-storage';
 import {
+  cleanupOrphanedImageAssets,
+  cleanupUnusedImageAssets,
+  collectLocalImageAssetIds,
+} from '../storage/image-assets';
+import {
   createDashboardBackup,
   createDashboardBackupFileName,
   prepareDashboardImport,
@@ -182,6 +187,8 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
         configRef.current = loadedConfig;
         setConfig(loadedConfig);
+        const activeAssetIds = collectLocalImageAssetIds(loadedConfig.widgets);
+        void cleanupOrphanedImageAssets(activeAssetIds).catch(() => undefined);
       })
       .catch((loadError: unknown) => {
         if (isActive) {
@@ -429,6 +436,13 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       configRef.current = nextConfig;
       setConfig(nextConfig);
       setError(null);
+
+      if (currentConfig.widgets !== nextConfig.widgets) {
+        void cleanupUnusedImageAssets(
+          currentConfig.widgets,
+          nextConfig.widgets,
+        ).catch(() => undefined);
+      }
 
       if (persistence === 'debounced') {
         pendingWidgetConfigRef.current = nextConfig;

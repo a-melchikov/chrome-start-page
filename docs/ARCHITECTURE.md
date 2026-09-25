@@ -8,11 +8,13 @@ flowchart LR
   WXT --> App[React App]
   App --> Hook[useDashboardConfig]
   Hook <--> Repo[dashboard-storage]
-  Hook <--> Assets[wallpaper-assets + transactions]
+  Hook <--> WallpaperAssets[wallpaper-assets + transactions]
+  Hook <--> ImageAssets[image-assets]
   Hook <--> Backup[dashboard-backup]
   Repo --> Validate[validation + migrations]
   Repo <--> Local[(chrome.storage.local)]
-  Assets <--> Local
+  WallpaperAssets <--> Local
+  ImageAssets <--> Local
   Backup <--> Local
   App --> Dashboard
   App --> Wallpaper[WallpaperLayer]
@@ -22,6 +24,7 @@ flowchart LR
   Registry --> Markdown[Markdown widget]
   Registry --> Search[Search widget]
   Registry --> Pomodoro[Pomodoro widget]
+  Registry --> Image[Image widget]
   Pomodoro <--> Background[entrypoints/background + chrome.alarms]
 ```
 
@@ -48,7 +51,8 @@ Renderer-derived state is not persisted.
 `storage/schema.ts` defines `DashboardConfig` version 5 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
-adds `engine`, and Pomodoro adds duration and sound settings.
+adds `engine`, Pomodoro adds duration and sound settings, and Image adds `source`,
+`objectPosition`, and optional `altText`.
 
 `widgets/registry.tsx` is the only widget integration point. A definition owns:
 
@@ -99,19 +103,21 @@ finish before the replacement commit.
 ## Backup Format and Restore
 
 `storage/dashboard-backup.ts` owns the JSON wire format independently of the
-persisted dashboard schema. Format v1 contains the marker
-`chrome-start-page-backup`, `formatVersion`, an ISO export timestamp, a
-`DashboardConfig`, and either the referenced `LocalWallpaperAssetV1` or `null`.
-Only this envelope is accepted; nested dashboard data still passes through the
-normal migration boundary.
+persisted dashboard schema. Format v2 contains the marker
+`chrome-start-page-backup`, `formatVersion: 2`, an ISO export timestamp, a
+`DashboardConfig`, the referenced `LocalWallpaperAssetV1` or `null`, and
+an array of `localImages: LocalWallpaperAssetV1[]`. Format v1 backups without
+`localImages` remain fully supported and restore cleanly. Only this envelope
+is accepted; nested dashboard data still passes through the normal migration boundary.
 
-Local wallpaper data is decoded, checked against its config asset ID, and
-browser-validated before any write. Import assigns it a fresh UUID, saves the
-new asset before the replacement config, rolls it back if the config write
-fails, and removes the previous asset only after commit. Non-local imports save
-the replacement config before removing any previous local asset. A cleanup
-failure is reported as a warning without rolling back an already valid import.
-HTTPS wallpaper remains a URL and is revalidated before commit.
+Local wallpaper and image data are decoded, checked against config asset IDs, and
+browser-validated before any write. Import assigns fresh UUIDs to all local
+assets, saves the new assets before the replacement config, rolls them back if
+the config write fails, and removes previous assets only after commit. Non-local
+imports save the replacement config before removing any previous local assets.
+A cleanup failure is reported as a warning without rolling back an already valid
+import. HTTPS wallpaper and remote images remain URLs and are revalidated before
+commit.
 
 The dashboard backup dialog performs file selection and Blob download but never
 accesses extension storage directly. Browser-native Blob/object URLs avoid a

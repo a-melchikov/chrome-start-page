@@ -111,7 +111,7 @@ export function hasExcessiveSvgNesting(
   return false;
 }
 
-function isSvg(bytes: Uint8Array) {
+export function isSvg(bytes: Uint8Array) {
   if (bytes.length > MAX_SVG_FILE_BYTES) {
     return false;
   }

@@ -98,7 +98,9 @@ export function WidgetCanvas({
             <GridLayout
               className={isEditing ? 'dashboard-grid--editing' : undefined}
               compactor={collisionBlockingCompactor}
-              dragConfig={createDashboardDragConfig(isEditing)}
+              dragConfig={createDashboardDragConfig(
+                isEditing && editingWidgetId === null,
+              )}
               gridConfig={{
                 cols: DASHBOARD_GRID_COLUMNS,
                 rowHeight: DASHBOARD_GRID_ROW_HEIGHT,
@@ -106,7 +108,10 @@ export function WidgetCanvas({
                 containerPadding: [0, 0],
               }}
               layout={gridLayout}
-              resizeConfig={{ enabled: isEditing, handles: ['se'] }}
+              resizeConfig={{
+                enabled: isEditing && editingWidgetId === null,
+                handles: ['se'],
+              }}
               width={getDashboardGridWidth(width)}
               onDragStop={persistGridLayout}
               onResizeStop={persistGridLayout}
