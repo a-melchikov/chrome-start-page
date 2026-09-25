@@ -4,6 +4,7 @@ import type { WidgetType } from '../../storage/schema';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import {
   ClockIcon,
+  CloudSunIcon,
   DocumentTextIcon,
   PhotoIcon,
   SearchIcon,
@@ -26,6 +27,7 @@ const WIDGET_ICONS: Record<
   pomodoro: TimerIcon,
   image: PhotoIcon,
   clock: ClockIcon,
+  weather: CloudSunIcon,
 };
 
 export function AddWidgetDialog({

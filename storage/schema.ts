@@ -3,6 +3,7 @@ import type { ImageWidgetConfig } from '../widgets/image/types';
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
+import type { WeatherWidgetConfig } from '../widgets/weather/types';
 
 import type { ThemeId } from '../themes/types';
 
@@ -53,6 +54,7 @@ export interface WidgetConfigMap {
   pomodoro: PomodoroWidgetConfig;
   image: ImageWidgetConfig;
   clock: ClockWidgetConfig;
+  weather: WeatherWidgetConfig;
 }
 
 export type WidgetType = keyof WidgetConfigMap;

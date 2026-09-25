@@ -9,7 +9,7 @@ have the complete dashboard restored from local Chrome storage.
 
 ## Current Product
 
-Version 0.1.0 implements five repeatable widget types:
+Version 0.1.0 implements six repeatable widget types:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   sanitized CommonMark/GFM rendering, interactive task lists, safe links and
@@ -29,6 +29,9 @@ Version 0.1.0 implements five repeatable widget types:
   without card title, timezone abbreviation, and container-query responsive text scaling.
 - **Pomodoro** — a configurable focus/break timer with cycle progression,
   persistent runtime state, background alarms, notifications, and audio.
+- **Weather** — a card widget (default `5×5`, minimum `3×3`) supporting visual
+  and compact modes, Open-Meteo forecasts and city geocoding,
+  detailed meteorological metrics, 12-hour future hourly strip, and 5-day daily forecast.
 
 The dashboard has light/dark/system themes, an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column

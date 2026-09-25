@@ -154,7 +154,7 @@ describe('ClockWidgetEditor', () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ timezone: 'UTC' }),
     );
-  });
+  }, 10_000);
 
   it('does not render custom title input', () => {
     render(

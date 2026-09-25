@@ -40,8 +40,16 @@ Last updated: 2026-09-25
   formats, 4 date presets, optional seconds, system local or IANA timezones with
   searchable selection, centered display without card title, timezone abbreviation, and
   container-query responsive typography.
+- Weather widgets with visual and compact modes, Open-Meteo Forecast and
+  Geocoding integration, city search, comprehensive meteorological
+  indicators (temperature, feels-like, min/max, wind speed/direction, pressure,
+  humidity, UV, visibility, precipitation), 12-hour hourly forecast strip,
+  5-day daily forecast, isolated cache with 30-minute freshness and 5-minute
+  retry cooldown, and animated SVG/CSS effects with `prefers-reduced-motion` compliance.
 - Light/dark/system themes, arbitrary persisted background, and local or HTTPS
+
   wallpaper rendered full-screen with cover cropping.
+
 - Local PNG/JPEG/WebP/GIF/AVIF/SVG validation, conditional lossless compression
   above 6 MiB, transactional asset replacement, and original-byte fallback
   under `unlimitedStorage`.

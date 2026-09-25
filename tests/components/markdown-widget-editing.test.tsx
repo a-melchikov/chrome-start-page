@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
@@ -152,8 +159,9 @@ describe('MarkdownWidget editing', () => {
       name: 'Редактировать виджет «Заметки»',
     });
     await waitFor(() => expect(editButton).toHaveFocus());
-    expect(screen.getByRole('article', { name: 'Заметки' })).toBeVisible();
-    expect(screen.getByText('текст').tagName).toBe('STRONG');
+    const article = screen.getByRole('article', { name: 'Заметки' });
+    expect(article).toBeVisible();
+    expect(within(article).getByText('текст').tagName).toBe('STRONG');
     await waitFor(async () =>
       expect(await getStoredMarkdownWidget()).toMatchObject({
         title: 'Заметки',

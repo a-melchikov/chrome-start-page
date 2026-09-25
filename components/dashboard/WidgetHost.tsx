@@ -58,7 +58,8 @@ export function WidgetHost({
     'type' in ((widget as { source?: unknown }).source as object) &&
     (widget as { source: { type: string } }).source.type !== 'none';
   const isClock = widget.type === 'clock';
-  const isTitleHidden = isClock;
+  const isWeather = widget.type === 'weather';
+  const isTitleHidden = isClock || isWeather;
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
     setShouldRestoreEditFocus(true);
@@ -209,7 +210,9 @@ export function WidgetHost({
                 'min-h-0 min-w-0 flex-1',
                 isClock
                   ? 'flex flex-col justify-center overflow-hidden'
-                  : 'overflow-auto overscroll-contain pr-1',
+                  : isWeather
+                    ? 'flex flex-col overflow-hidden'
+                    : 'overflow-auto overscroll-contain pr-1',
               )}
             >
               {(usesDialogEditor ? content : editor) ?? content ?? fallback}

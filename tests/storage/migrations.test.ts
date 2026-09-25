@@ -655,4 +655,115 @@ describe('migrateDashboardConfig', () => {
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
+
+  it('accepts valid weather widgets in v5 config', () => {
+    const migrated = migrateDashboardConfig({
+      ...createDefaultDashboardConfig(),
+      widgets: [
+        {
+          id: 'weather-unset',
+          type: 'weather',
+          mode: 'visual',
+          location: { type: 'unset' },
+          layout: { x: 0, y: 0, w: 5, h: 5 },
+        },
+        {
+          id: 'weather-auto',
+          type: 'weather',
+          mode: 'compact',
+          location: { type: 'auto' },
+          layout: { x: 5, y: 0, w: 5, h: 5 },
+        },
+        {
+          id: 'weather-city',
+          type: 'weather',
+          mode: 'visual',
+          location: {
+            type: 'city',
+            id: 524901,
+            name: 'Москва',
+            region: 'Москва',
+            country: 'Россия',
+            latitude: 55.75,
+            longitude: 37.62,
+            timezone: 'Europe/Moscow',
+          },
+          layout: { x: 0, y: 5, w: 5, h: 5 },
+        },
+      ],
+    });
+
+    expect(migrated.widgets).toHaveLength(3);
+    expect(migrated.widgets[0]?.type).toBe('weather');
+    expect(migrated.widgets[1]?.type).toBe('weather');
+    expect(migrated.widgets[2]?.type).toBe('weather');
+  });
+
+  it('rejects weather widgets with invalid mode, coordinates, or timezone', () => {
+    // Invalid mode
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'weather-bad-mode',
+            type: 'weather',
+            mode: 'animated',
+            location: { type: 'unset' },
+            layout: { x: 0, y: 0, w: 5, h: 5 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid latitude
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'weather-bad-lat',
+            type: 'weather',
+            mode: 'visual',
+            location: {
+              type: 'city',
+              id: 123,
+              name: 'Test',
+              region: '',
+              country: 'Country',
+              latitude: 95,
+              longitude: 37,
+              timezone: 'Europe/Moscow',
+            },
+            layout: { x: 0, y: 0, w: 5, h: 5 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Invalid city timezone ('local' is disallowed for city)
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        widgets: [
+          {
+            id: 'weather-bad-tz',
+            type: 'weather',
+            mode: 'visual',
+            location: {
+              type: 'city',
+              id: 123,
+              name: 'Test',
+              region: '',
+              country: 'Country',
+              latitude: 55,
+              longitude: 37,
+              timezone: 'local',
+            },
+            layout: { x: 0, y: 0, w: 5, h: 5 },
+          },
+        ],
+      }),
+    ).toThrow(InvalidDashboardConfigError);
+  });
 });

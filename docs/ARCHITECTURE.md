@@ -26,6 +26,9 @@ flowchart LR
   Registry --> Pomodoro[Pomodoro widget]
   Registry --> Image[Image widget]
   Registry --> Clock[Clock widget]
+  Registry --> Weather[Weather widget]
+  Weather <--> WeatherCache[storage/weather-cache]
+  Weather <--> OpenMeteo[Open-Meteo API]
   Pomodoro <--> Background[entrypoints/background + chrome.alarms]
 ```
 
@@ -53,9 +56,12 @@ Renderer-derived state is not persisted.
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
 adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
-`objectPosition`, and optional `altText`, and Clock adds `timeFormat`, `showTime`,
+`objectPosition`, and optional `altText`, Clock adds `timeFormat`, `showTime`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
-`showTimezoneName`, and `showTimezoneAbbr`.
+`showTimezoneName`, and `showTimezoneAbbr`, and Weather adds `mode`
+(`'visual' | 'compact'`) and `location` (`'unset' | 'auto' | 'city'`). Weather
+forecast data is cached in WXT Storage under `local:weather-cache:<id>` and not
+persisted to dashboard config or backup.
 
 `widgets/registry.tsx` is the only widget integration point. It dynamically
 loads each widget renderer when that widget is mounted and loads its editor only
@@ -284,9 +290,28 @@ visual tokens from widget logic and components:
   automatically resets `backgroundColor` to the theme's curated default while
   leaving manual color-picker overrides accessible.
 
+## Weather Widget and Open-Meteo Integration
+
+Weather is a card widget (`5×5`, min `3×3`) supporting visual and compact
+modes. It integrates with [Open-Meteo](https://open-meteo.com/) for forecast and
+geocoding without API keys:
+
+- Location is configured by searching for a city (`type: 'city'`).
+- Forecast requests use `host_permissions` for `https://api.open-meteo.com/*`,
+  while city searches use `https://geocoding-api.open-meteo.com/*`.
+  Endpoints are declared statically in the manifest.
+- Forecast data is cached in WXT Storage under `local:weather-cache:<id>` with a
+  freshness window of 30 minutes and a failure retry cooldown of 5 minutes.
+  Cached entries are isolated per widget instance, excluded from backups, and
+  automatically purged when widgets are removed or backups are restored.
+- In visual mode, SVG/CSS animated effects (clouds, precipitation, celestial bodies)
+  render behind content with support for `prefers-reduced-motion`. In compact
+  mode, the interface focuses purely on structured metrics.
+
 ## Extension Boundary
 
 `wxt.config.ts` is the manifest source. Permissions are `storage`,
-`unlimitedStorage`, `favicon`, `alarms`, `notifications`, and `offscreen`; no host
-permissions exist. Static assets in `public/` are bundled, and generated
-`.wxt/` and `.output/` directories are never source files.
+`unlimitedStorage`, `favicon`, `alarms`, `notifications`, and `offscreen`.
+Host permissions include `https://api.open-meteo.com/*` and
+`https://geocoding-api.open-meteo.com/*`. Static assets in `public/` are
+bundled, and generated `.wxt/` and `.output/` directories are never source files.

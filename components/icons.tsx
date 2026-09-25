@@ -187,3 +187,12 @@ export function CheckIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function CloudSunIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41" />
+      <path d="M15.5 12a3.5 3.5 0 0 0-4.9-3.2A4.5 4.5 0 0 0 4 13a4.5 4.5 0 0 0 4.5 4.5h9a3.5 3.5 0 0 0 0-7c-.68 0-1.32.2-1.85.55" />
+    </BaseIcon>
+  );
+}

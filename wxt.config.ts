@@ -27,6 +27,10 @@ export default defineConfig({
       'notifications',
       'offscreen',
     ],
+    host_permissions: [
+      'https://api.open-meteo.com/*',
+      'https://geocoding-api.open-meteo.com/*',
+    ],
     content_security_policy: {
       extension_pages: "script-src 'self'; object-src 'none'; base-uri 'none';",
     },

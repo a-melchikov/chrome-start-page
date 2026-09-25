@@ -20,6 +20,11 @@ import { createDefaultSearchWidget } from './search/defaults';
 import { isSearchEngine } from './search/engines';
 import type { SearchWidgetConfig } from './search/types';
 import {
+  createDefaultWeatherWidget,
+  DEFAULT_WEATHER_WIDGET_LAYOUT,
+} from './weather/defaults';
+import type { WeatherWidgetConfig } from './weather/types';
+import {
   ClockWidget,
   ClockWidgetEditor,
   ImageWidget,
@@ -30,6 +35,8 @@ import {
   PomodoroWidgetEditor,
   SearchWidget,
   SearchWidgetEditor,
+  WeatherWidget,
+  WeatherWidgetEditor,
 } from './lazy-components';
 
 export interface WidgetMetadata {
@@ -209,6 +216,20 @@ function isClockWidgetConfig(value: unknown): value is ClockWidgetConfig {
   );
 }
 
+function isWeatherWidgetConfig(value: unknown): value is WeatherWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'weather' &&
+    'mode' in value &&
+    (value.mode === 'visual' || value.mode === 'compact') &&
+    'location' in value &&
+    typeof value.location === 'object' &&
+    value.location !== null
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<MarkdownWidgetConfig>({
     type: 'markdown',
@@ -325,6 +346,31 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_CLOCK_WIDGET_LAYOUT.minW,
         minH: DEFAULT_CLOCK_WIDGET_LAYOUT.minH,
+        resizeHandles: ['se'],
+      },
+    },
+  }),
+  defineWidget<WeatherWidgetConfig>({
+    type: 'weather',
+    metadata: {
+      name: 'Погода',
+      description:
+        'Прогноз погоды для выбранного города или текущего местоположения.',
+    },
+    create: createDefaultWeatherWidget,
+    isConfig: isWeatherWidgetConfig,
+    Renderer: WeatherWidget,
+    Editor: WeatherWidgetEditor,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: false,
+      editorTitle: 'Настройки погоды',
+      editorDialogSize: 'default',
+      titleStyle: 'default',
+      layout: {
+        minW: DEFAULT_WEATHER_WIDGET_LAYOUT.minW,
+        minH: DEFAULT_WEATHER_WIDGET_LAYOUT.minH,
         resizeHandles: ['se'],
       },
     },

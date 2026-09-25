@@ -29,8 +29,9 @@ describe('command catalog', () => {
     const commands = buildCommandCatalog(config, false);
 
     expect(commands.filter((command) => command.kind === 'add')).toHaveLength(
-      5,
+      6,
     );
+
     expect(commands.filter((command) => command.kind === 'theme')).toHaveLength(
       THEMES.length,
     );

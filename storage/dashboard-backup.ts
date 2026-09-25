@@ -19,7 +19,9 @@ import {
   type LocalWallpaperAssetV1,
 } from './wallpaper-codec';
 import { saveDashboardConfig } from './dashboard-storage';
+import { clearWeatherCaches } from './weather-cache';
 import type { DashboardConfig } from './schema';
+
 import {
   WallpaperValidationAbortedError,
   validateWallpaperBytes,
@@ -517,6 +519,7 @@ export async function replaceDashboardFromBackup(
     }
   }
   void cleanupOrphanedImageAssets(activeImageAssetIds).catch(() => undefined);
+  void clearWeatherCaches().catch(() => undefined);
 
   return {
     config,

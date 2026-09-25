@@ -338,3 +338,39 @@ all older configs parse cleanly as valid theme IDs).
 - Hardcoding per-theme utility classes inside each React component.
 - Requiring a schema v6 migration for theme preset expansion.
 - Forcing a fixed background color with no manual color-picker customization.
+
+## ADR-012 — Weather Widget and Open-Meteo Integration
+
+Status: Accepted
+
+### Decision
+
+Add a `weather` widget type supporting visual and compact representations, powered
+by [Open-Meteo](https://open-meteo.com/) Forecast and Geocoding APIs:
+
+- City search and forecast endpoints use `host_permissions` (`https://api.open-meteo.com/*`
+  and `https://geocoding-api.open-meteo.com/*`) declared in the manifest.
+- Weather forecast data is cached in WXT Storage under `local:weather-cache:<id>`
+  with a 30-minute freshness window and 5-minute retry backoff.
+- The cache is not included in dashboard export/backup and is cleaned up on widget
+  removal or backup import.
+- Schema v5 is preserved without a version bump.
+
+### Why
+
+Open-Meteo offers comprehensive weather forecasts and GeoNames-based city geocoding
+without requiring user API keys or a dedicated proxy backend, making it ideal for a
+local-first browser extension. Isolated caching prevents excessive network requests
+and guarantees instant new-tab load times.
+
+### Consequences
+
+Users must grant host permissions when configuring weather or choosing their location.
+Ephemeral forecast data does not bloat backup archives. Visual effects adapt to day/night,
+precipitation, and wind conditions while fully respecting `prefers-reduced-motion`.
+
+### Rejected Alternatives
+
+- Services requiring proprietary API keys (OpenWeatherMap, WeatherAPI).
+- Persisting forecast responses or search queries directly in `DashboardConfig`.
+- Background polling workers making network calls while tabs are inactive.

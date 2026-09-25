@@ -94,6 +94,10 @@ export function Dashboard({
           ...position,
         },
       });
+
+      if (type === 'weather') {
+        setEditingWidgetId(baseWidget.id);
+      }
     }
   };
 

@@ -16,6 +16,7 @@ import {
   type ImageWidgetSource,
 } from '../widgets/image/types';
 import { isSearchEngine } from '../widgets/search/engines';
+import type { WeatherLocation } from '../widgets/weather/types';
 import { DEFAULT_LIQUID_GLASS } from './defaults';
 
 export class InvalidDashboardConfigError extends Error {
@@ -183,6 +184,31 @@ function isValidTimezone(value: unknown): value is string {
   }
 }
 
+function isWeatherLocation(value: unknown): value is WeatherLocation {
+  if (!isRecord(value)) return false;
+  if (value.type === 'unset' || value.type === 'auto') return true;
+  return (
+    value.type === 'city' &&
+    Number.isSafeInteger(value.id) &&
+    (value.id as number) > 0 &&
+    typeof value.name === 'string' &&
+    value.name.trim().length > 0 &&
+    value.name.length <= 160 &&
+    typeof value.region === 'string' &&
+    value.region.length <= 160 &&
+    typeof value.country === 'string' &&
+    value.country.length <= 160 &&
+    isFiniteNumber(value.latitude) &&
+    value.latitude >= -90 &&
+    value.latitude <= 90 &&
+    isFiniteNumber(value.longitude) &&
+    value.longitude >= -180 &&
+    value.longitude <= 180 &&
+    isValidTimezone(value.timezone) &&
+    value.timezone !== 'local'
+  );
+}
+
 function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (
     !isRecord(value) ||
@@ -236,6 +262,13 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
       isValidTimezone(value.timezone) &&
       typeof value.showTimezoneName === 'boolean' &&
       typeof value.showTimezoneAbbr === 'boolean'
+    );
+  }
+
+  if (value.type === 'weather') {
+    return (
+      (value.mode === 'visual' || value.mode === 'compact') &&
+      isWeatherLocation(value.location)
     );
   }
 
@@ -421,18 +454,31 @@ function readVersion(value: unknown): number {
 function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
   let hasChanges = false;
   const widgets = config.widgets.map((widget) => {
-    if (widget.type !== 'search' || widget.layout.h === 1) {
-      return widget;
+    let normalized = widget;
+
+    if (widget.type === 'search' && widget.layout.h !== 1) {
+      hasChanges = true;
+      normalized = {
+        ...normalized,
+        layout: {
+          ...normalized.layout,
+          h: 1,
+        },
+      };
     }
 
-    hasChanges = true;
-    return {
-      ...widget,
-      layout: {
-        ...widget.layout,
-        h: 1,
-      },
-    };
+    if (
+      normalized.type === 'weather' &&
+      (normalized.location as { type: string }).type === 'auto'
+    ) {
+      hasChanges = true;
+      normalized = {
+        ...normalized,
+        location: { type: 'unset' },
+      };
+    }
+
+    return normalized;
   });
 
   return hasChanges ? { ...config, widgets } : config;

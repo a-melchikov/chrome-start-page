@@ -9,6 +9,8 @@ import {
   cleanupUnusedImageAssets,
   collectLocalImageAssetIds,
 } from '../storage/image-assets';
+import { cleanupUnusedWeatherCaches } from '../storage/weather-cache';
+
 import {
   createDashboardBackup,
   createDashboardBackupFileName,
@@ -439,6 +441,10 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
       if (currentConfig.widgets !== nextConfig.widgets) {
         void cleanupUnusedImageAssets(
+          currentConfig.widgets,
+          nextConfig.widgets,
+        ).catch(() => undefined);
+        void cleanupUnusedWeatherCaches(
           currentConfig.widgets,
           nextConfig.widgets,
         ).catch(() => undefined);

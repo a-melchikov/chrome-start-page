@@ -40,3 +40,31 @@ if (typeof window !== 'undefined') {
     vi.mocked(window.matchMedia).mockClear();
   });
 }
+
+try {
+  const { fakeBrowser } = await import('wxt/testing/fake-browser');
+  if (fakeBrowser?.permissions) {
+    const grantedOrigins = new Set<string>();
+    fakeBrowser.permissions.contains = vi
+      .fn()
+      .mockImplementation(async (details: { origins?: string[] }) => {
+        return (
+          details.origins?.every((origin) => grantedOrigins.has(origin)) ?? true
+        );
+      });
+    fakeBrowser.permissions.request = vi
+      .fn()
+      .mockImplementation(async (details: { origins?: string[] }) => {
+        details.origins?.forEach((origin) => grantedOrigins.add(origin));
+        return true;
+      });
+    fakeBrowser.permissions.remove = vi
+      .fn()
+      .mockImplementation(async (details: { origins?: string[] }) => {
+        details.origins?.forEach((origin) => grantedOrigins.delete(origin));
+        return true;
+      });
+  }
+} catch {
+  // Ignored if fakeBrowser is not loaded
+}

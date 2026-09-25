@@ -53,6 +53,11 @@ async function addClockWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Часы' }));
 }
 
+async function addWeatherWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Погода' }));
+}
+
 async function getStoredConfig(): Promise<DashboardConfig | null> {
   return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 }
@@ -494,6 +499,34 @@ describe('widget lifecycle', () => {
         type: 'clock',
         timeFormat: '12h',
       });
+    });
+  });
+
+  it('creates a WeatherWidget, opens editor immediately, and persists config', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await enableEditMode(user);
+    await addWeatherWidget(user);
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Настройки погоды' }),
+    ).toBeVisible();
+
+    const storedConfig = await getStoredConfig();
+    expect(storedConfig?.widgets).toHaveLength(1);
+    expect(storedConfig?.widgets[0]).toMatchObject({
+      type: 'weather',
+      mode: 'visual',
+      location: { type: 'unset' },
+      layout: { w: 5, h: 5 },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('dialog', { name: 'Настройки погоды' }),
+      ).not.toBeInTheDocument();
     });
   });
 });

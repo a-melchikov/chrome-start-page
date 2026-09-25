@@ -5,7 +5,7 @@
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
 Russian-language. Current persisted schema version: `5`; current widget types:
-`markdown` and `search`.
+`markdown`, `search`, `pomodoro`, `image`, `clock`, and `weather`.
 
 Source code and configuration are the source of truth for implementation state.
 `PLAN.md` is an obsolete bootstrap plan and must not be treated as the current

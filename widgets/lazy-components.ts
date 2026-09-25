@@ -50,3 +50,13 @@ export const ClockWidgetEditor = lazy(() =>
     default: module.ClockWidgetEditor,
   })),
 );
+export const WeatherWidget = lazy(() =>
+  import('./weather/WeatherWidget').then((module) => ({
+    default: module.WeatherWidget,
+  })),
+);
+export const WeatherWidgetEditor = lazy(() =>
+  import('./weather/WeatherWidgetEditor').then((module) => ({
+    default: module.WeatherWidgetEditor,
+  })),
+);
