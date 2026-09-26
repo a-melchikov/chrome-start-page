@@ -359,6 +359,15 @@
     outline-offset: 2px;
   }
 
+  .dashboard-grid--editing [data-widget-id]:focus-visible {
+    outline: 2px dashed var(--theme-ring, #71717a);
+    outline-offset: 2px;
+  }
+
+  .dashboard-grid--editing .widget-selected:focus-visible {
+    outline: 3px dashed var(--theme-accent, #3b82f6);
+  }
+
   .react-grid-layout:not(.dashboard-grid--editing)
     > .react-grid-item
     > .react-resizable-handle {
