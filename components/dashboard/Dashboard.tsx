@@ -76,6 +76,7 @@ interface DashboardProps {
   onSelectTheme?: (themeRef: ThemeRef) => void;
   onDuplicateCustomTheme?: (id: string) => void;
   onDeleteCustomTheme?: (id: string) => void;
+  reopenAppearanceToken?: number;
 }
 
 export function Dashboard({
@@ -120,6 +121,7 @@ export function Dashboard({
   onSelectTheme,
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
+  reopenAppearanceToken,
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
@@ -391,6 +393,7 @@ export function Dashboard({
         onSelectTheme={onSelectTheme}
         onDuplicateCustomTheme={onDuplicateCustomTheme}
         onDeleteCustomTheme={onDeleteCustomTheme}
+        reopenAppearanceToken={reopenAppearanceToken}
       />
       <ConfirmWidgetDeleteDialog
         open={pendingGroupDeleteIds.length > 0}

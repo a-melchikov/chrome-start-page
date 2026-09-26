@@ -368,18 +368,22 @@
       var(--theme-glass-border, rgba(255, 255, 255, 0.32));
   }
 
-  [data-theme='synthwave-84'] .theme-glow {
+  [data-theme='synthwave-84'] .theme-glow,
+  [data-theme-glow='true'] .theme-glow {
     text-shadow: var(--theme-glow, 0 0 8px rgba(255, 126, 219, 0.5));
   }
 
-  [data-theme='synthwave-84'] h2.theme-glow {
+  [data-theme='synthwave-84'] h2.theme-glow,
+  [data-theme-glow='true'] h2.theme-glow,
+  [data-theme-glow='true'] .theme-preview-title.theme-glow {
     /* Filter the clipped glyphs after truncation so the glow stays outside the title box. */
     text-shadow: none;
     filter: drop-shadow(0 0 4px rgba(255, 126, 219, 0.5))
       drop-shadow(0 0 9px rgba(54, 249, 246, 0.18));
   }
 
-  [data-theme='synthwave-84'] .theme-glow-box {
+  [data-theme='synthwave-84'] .theme-glow-box,
+  [data-theme-glow='true'] .theme-glow-box {
     box-shadow: var(--theme-glow, 0 0 12px rgba(255, 126, 219, 0.4));
   }
 

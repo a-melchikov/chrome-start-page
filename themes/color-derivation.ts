@@ -76,7 +76,7 @@ export function deriveDependentColors(
       0.18,
     );
     const quoteBorder = normPrimary.accent;
-    const link = mixHex(normPrimary.accent, '#1d4ed8', 0.5);
+    const link = normPrimary.textPrimary;
     const linkHover = darken(link, 0.12);
     const pomodoroTrack = mixHex(
       normPrimary.surfaceBg,
@@ -142,7 +142,7 @@ export function deriveDependentColors(
     0.2,
   );
   const quoteBorder = normPrimary.accent;
-  const link = mixHex(normPrimary.accent, '#93c5fd', 0.5);
+  const link = normPrimary.textPrimary;
   const linkHover = lighten(link, 0.15);
   const pomodoroTrack = mixHex(
     normPrimary.surfaceBg,
@@ -364,8 +364,8 @@ export function createCustomThemeSnapshot(
       mode === 'light' ? '#d4d4d8' : '#52525b',
     ),
     link: extractHexFromColorString(
-      t.link,
-      mode === 'light' ? '#1d4ed8' : '#93c5fd',
+      t.textPrimary,
+      mode === 'light' ? '#09090b' : '#f4f4f5',
     ),
     linkHover: extractHexFromColorString(
       t.linkHover,

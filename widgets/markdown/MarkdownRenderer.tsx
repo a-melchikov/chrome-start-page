@@ -26,6 +26,7 @@ interface MarkdownRendererProps {
   content: string;
   emptyMessage?: string;
   onContentChange?: (content: string) => void;
+  compact?: boolean;
 }
 
 const extendedTags = [
@@ -127,47 +128,83 @@ function CodeBlock({ children }: { children: ReactNode }) {
 function createComponents(
   content: string,
   onContentChange?: (content: string) => void,
+  compact = false,
 ): Components {
   return {
     h1: ({ node: _node, ...props }) => (
       <h1
-        className="mt-4 mb-2 text-lg font-bold text-theme-text-primary first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-2 mb-1 text-xs font-bold'
+            : 'mt-4 mb-2 text-lg font-bold',
+          'text-theme-text-primary first:mt-0',
+        )}
         {...props}
       />
     ),
     h2: ({ node: _node, ...props }) => (
       <h2
-        className="mt-4 mb-2 text-base font-bold text-theme-text-primary first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-1.5 mb-1 text-[11px] font-bold'
+            : 'mt-4 mb-2 text-base font-bold',
+          'text-theme-text-primary first:mt-0',
+        )}
         {...props}
       />
     ),
     h3: ({ node: _node, ...props }) => (
       <h3
-        className="mt-3 mb-1.5 text-sm font-bold text-theme-text-primary first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-1 mb-0.5 text-[10px] font-bold'
+            : 'mt-3 mb-1.5 text-sm font-bold',
+          'text-theme-text-primary first:mt-0',
+        )}
         {...props}
       />
     ),
     h4: ({ node: _node, ...props }) => (
       <h4
-        className="mt-3 mb-1 text-sm font-semibold text-theme-text-primary first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-1 mb-0.5 text-[10px] font-semibold'
+            : 'mt-3 mb-1 text-sm font-semibold',
+          'text-theme-text-primary first:mt-0',
+        )}
         {...props}
       />
     ),
     h5: ({ node: _node, ...props }) => (
       <h5
-        className="mt-2 mb-1 text-xs font-semibold text-theme-text-primary first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-1 mb-0.5 text-[10px] font-semibold'
+            : 'mt-2 mb-1 text-xs font-semibold',
+          'text-theme-text-primary first:mt-0',
+        )}
         {...props}
       />
     ),
     h6: ({ node: _node, ...props }) => (
       <h6
-        className="mt-2 mb-1 text-xs font-semibold text-theme-text-muted first:mt-0"
+        className={classNames(
+          compact
+            ? 'mt-1 mb-0.5 text-[10px] font-semibold'
+            : 'mt-2 mb-1 text-xs font-semibold',
+          'text-theme-text-muted first:mt-0',
+        )}
         {...props}
       />
     ),
     p: ({ node: _node, ...props }) => (
       <p
-        className="my-2 break-words leading-6 text-theme-text-primary first:mt-0 last:mb-0"
+        className={classNames(
+          compact
+            ? 'my-1 break-words text-[10px] leading-snug'
+            : 'my-2 break-words leading-6',
+          'text-theme-text-primary first:mt-0 last:mb-0',
+        )}
         {...props}
       />
     ),
@@ -182,14 +219,22 @@ function createComponents(
     ),
     blockquote: ({ node: _node, ...props }) => (
       <blockquote
-        className="my-3 rounded-r-md border-l-4 border-theme-accent bg-theme-surface-muted/40 py-1 pl-3 text-theme-text-primary italic"
+        className={classNames(
+          compact
+            ? 'my-1 rounded-r border-l-2 py-0.5 pl-2 text-[10px]'
+            : 'my-3 rounded-r-md border-l-4 py-1 pl-3',
+          'border-theme-accent bg-theme-surface-muted/40 text-theme-text-primary italic',
+        )}
         {...props}
       />
     ),
     ul: ({ node: _node, className, ...props }) => (
       <ul
         className={classNames(
-          'my-2 list-disc space-y-1 pl-5 text-theme-text-primary',
+          compact
+            ? 'my-1 list-disc space-y-0.5 pl-3.5 text-[10px]'
+            : 'my-2 list-disc space-y-1 pl-5',
+          'text-theme-text-primary',
           className?.includes('contains-task-list') && 'list-none pl-1',
         )}
         {...props}
@@ -197,7 +242,12 @@ function createComponents(
     ),
     ol: ({ node: _node, ...props }) => (
       <ol
-        className="my-2 list-decimal space-y-1 pl-5 text-theme-text-primary"
+        className={classNames(
+          compact
+            ? 'my-1 list-decimal space-y-0.5 pl-3.5 text-[10px]'
+            : 'my-2 list-decimal space-y-1 pl-5',
+          'text-theme-text-primary',
+        )}
         {...props}
       />
     ),
@@ -228,8 +278,11 @@ function createComponents(
         <li
           className={classNames(
             'break-words pl-0.5 text-theme-text-primary',
+            compact && 'text-[10px] leading-snug',
             className?.includes('task-list-item') &&
-              'flex items-start gap-2 pl-0',
+              (compact
+                ? 'flex items-start gap-1 pl-0'
+                : 'flex items-start gap-2 pl-0'),
           )}
           {...props}
           onClick={handleClick}
@@ -243,7 +296,10 @@ function createComponents(
         <input
           {...props}
           aria-label={props.checked ? 'Выполнено' : 'Не выполнено'}
-          className="mt-1 size-4 shrink-0 cursor-pointer accent-theme-accent"
+          className={classNames(
+            compact ? 'mt-0.5 size-3' : 'mt-1 size-4',
+            'shrink-0 cursor-pointer accent-theme-accent',
+          )}
           disabled={!onContentChange}
           type="checkbox"
           onChange={() => undefined}
@@ -253,7 +309,10 @@ function createComponents(
       if (href.startsWith('#')) {
         return (
           <a
-            className="font-medium text-theme-accent underline underline-offset-2 hover:opacity-80"
+            className={classNames(
+              compact ? 'text-[10px]' : '',
+              'font-medium text-theme-accent underline underline-offset-2 hover:opacity-80',
+            )}
             href={href}
             {...props}
           >
@@ -270,12 +329,15 @@ function createComponents(
 
       return (
         <a
-          className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 align-middle font-medium text-theme-link transition-colors hover:bg-theme-surface-elevated hover:text-theme-link-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none"
+          className={classNames(
+            compact ? 'gap-1 px-0.5 py-0 text-[10px]' : 'gap-1.5 px-1 py-0.5',
+            'inline-flex max-w-full items-center rounded-md align-middle font-medium text-theme-text-primary transition-colors hover:bg-theme-surface-elevated focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none',
+          )}
           href={normalizedUrl.href}
           title={getTextContent(children)}
           {...props}
         >
-          <LinkFavicon href={normalizedUrl.href} />
+          <LinkFavicon href={normalizedUrl.href} compact={compact} />
           <span className="min-w-0">{children}</span>
         </a>
       );
@@ -363,18 +425,33 @@ export function MarkdownRenderer({
   content,
   emptyMessage = 'Markdown пока пуст.',
   onContentChange,
+  compact = false,
 }: MarkdownRendererProps) {
   const components = useMemo(
-    () => createComponents(content, onContentChange),
-    [content, onContentChange],
+    () => createComponents(content, onContentChange, compact),
+    [content, onContentChange, compact],
   );
 
   if (!content.trim()) {
-    return <p className="text-sm text-theme-text-muted">{emptyMessage}</p>;
+    return (
+      <p
+        className={classNames(
+          compact ? 'text-[10px]' : 'text-sm',
+          'text-theme-text-muted',
+        )}
+      >
+        {emptyMessage}
+      </p>
+    );
   }
 
   return (
-    <div className="min-w-0 text-sm text-theme-text-secondary">
+    <div
+      className={classNames(
+        'min-w-0 text-theme-text-secondary',
+        compact ? 'text-[10px] leading-snug' : 'text-sm',
+      )}
+    >
       <ReactMarkdown
         components={components}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, markdownSanitizeSchema]]}

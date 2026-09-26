@@ -89,6 +89,7 @@ export function App() {
   const [isNewTheme, setIsNewTheme] = useState(false);
   const [fullScreenPreviewDraft, setFullScreenPreviewDraft] =
     useState<CustomTheme | null>(null);
+  const [appearanceReopenToken, setAppearanceReopenToken] = useState(0);
 
   const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
 
@@ -154,9 +155,21 @@ export function App() {
     root.style.colorScheme = resolvedThemeMode;
     applyThemeVariables(root, isCustom ? resolvedThemeDef.tokens : null);
 
+    const hasGlow =
+      resolvedThemeDef.id === 'synthwave-84' ||
+      Boolean(
+        resolvedThemeDef.tokens.glow && resolvedThemeDef.tokens.glow !== 'none',
+      );
+    if (hasGlow) {
+      root.dataset.themeGlow = 'true';
+    } else {
+      delete root.dataset.themeGlow;
+    }
+
     return () => {
       root.classList.remove('dark');
       delete root.dataset.theme;
+      delete root.dataset.themeGlow;
       root.style.removeProperty('color-scheme');
       applyThemeVariables(root, null);
     };
@@ -195,6 +208,7 @@ export function App() {
       setIsThemeEditorOpen(false);
       setThemeBeingEdited(null);
       setFullScreenPreviewDraft(null);
+      setAppearanceReopenToken((t) => t + 1);
     },
     [appearance.theme, isNewTheme, saveCustomTheme],
   );
@@ -322,6 +336,7 @@ export function App() {
           onSelectTheme={selectTheme}
           onDuplicateCustomTheme={duplicateCustomTheme}
           onDeleteCustomTheme={deleteCustomTheme}
+          reopenAppearanceToken={appearanceReopenToken}
         />
       </div>
 
@@ -337,6 +352,7 @@ export function App() {
             setIsThemeEditorOpen(open);
             if (!open) {
               setThemeBeingEdited(null);
+              setAppearanceReopenToken((t) => t + 1);
             }
           }}
           onSave={handleSaveCustomTheme}

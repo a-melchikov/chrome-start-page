@@ -90,6 +90,7 @@ interface DashboardControlsProps {
   onSelectTheme?: (themeRef: ThemeRef) => void;
   onDuplicateCustomTheme?: (id: string) => void;
   onDeleteCustomTheme?: (id: string) => void;
+  reopenAppearanceToken?: number;
 }
 
 export function DashboardControls({
@@ -132,6 +133,7 @@ export function DashboardControls({
   onSelectTheme,
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
+  reopenAppearanceToken,
 }: DashboardControlsProps) {
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
@@ -144,6 +146,22 @@ export function DashboardControls({
     token: number;
   } | null>(null);
   const [paletteFeedback, setPaletteFeedback] = useState<string | null>(null);
+
+  const [prevReopenToken, setPrevReopenToken] = useState(
+    reopenAppearanceToken ?? 0,
+  );
+
+  if (reopenAppearanceToken && reopenAppearanceToken > prevReopenToken) {
+    setPrevReopenToken(reopenAppearanceToken);
+    setRequestedSection({ section: 'theme', token: reopenAppearanceToken });
+    setIsAppearanceOpen(true);
+  }
+
+  const handleOpenThemeEditor = (themeToEdit?: CustomTheme) => {
+    setIsAppearanceOpen(false);
+    setRequestedSection(null);
+    onOpenThemeEditor?.(themeToEdit);
+  };
 
   useEffect(() => {
     if (!paletteFeedback) return;
@@ -233,7 +251,7 @@ export function DashboardControls({
           );
       }
       if (command.action === 'add-custom-theme') {
-        onOpenThemeEditor?.();
+        handleOpenThemeEditor();
       }
       return;
     }
@@ -436,7 +454,7 @@ export function DashboardControls({
           onSetLocalWallpaper={onSetLocalWallpaper}
           onSetUrlWallpaper={onSetUrlWallpaper}
           onSelectTheme={onSelectTheme}
-          onOpenThemeEditor={onOpenThemeEditor}
+          onOpenThemeEditor={handleOpenThemeEditor}
           onDuplicateCustomTheme={onDuplicateCustomTheme}
           onDeleteCustomTheme={onDeleteCustomTheme}
         />

@@ -23,6 +23,7 @@ import {
 import { isValidHex, normalizeHex } from '../../themes/color-utils';
 import { THEMES } from '../../themes/registry';
 import type { WidgetConfig } from '../../storage/schema';
+import { EyeIcon } from '../icons';
 import { Button, Dialog, Input } from '../ui';
 import { classNames } from '../ui/class-names';
 import { ThemePreview } from './ThemePreview';
@@ -302,14 +303,15 @@ export function CustomThemeEditorDialog({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="small"
               onClick={() => onPreviewFullScreen(draft)}
-              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-zinc-700"
               title="Показать всю страницу в реальном масштабе"
             >
-              👁️ Показать всю страницу
-            </button>
+              <EyeIcon className="size-4" />
+              Показать всю страницу
+            </Button>
             <Button
               variant="secondary"
               size="small"

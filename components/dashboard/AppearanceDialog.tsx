@@ -235,7 +235,7 @@ export function AppearanceDialog({
                             )}
                           </button>
 
-                          <div className="mt-2 flex items-center justify-between border-t border-theme-border/60 pt-2">
+                          <div className="mt-auto flex items-center justify-between pt-1">
                             {/* Color swatches on the left */}
                             <div className="flex items-center gap-1.5">
                               <span

@@ -39,6 +39,7 @@ export function ThemePreview({
       )}
       style={containerStyle}
       data-theme-preview
+      data-theme-glow={customTheme.glow ? 'true' : 'false'}
     >
       <div className="flex items-center justify-between border-b border-theme-border bg-theme-surface/80 px-3 py-2 text-xs font-medium text-theme-text-secondary backdrop-blur-xs">
         <span className="flex items-center gap-1.5">
@@ -112,7 +113,7 @@ function SamplePreviewContent({ customTheme }: { customTheme: CustomTheme }) {
           const mode = '{customTheme.mode}';
         </div>
         <div className="mt-1 flex items-center justify-between text-[11px]">
-          <span style={{ color: c.link }}>Ссылка на ресурс ›</span>
+          <span style={{ color: c.textPrimary }}>Ссылка на ресурс ›</span>
           <span style={{ color: c.textMuted }}>2 мин назад</span>
         </div>
       </div>
@@ -260,7 +261,7 @@ function DashboardWidgetsPreview({
                 className="mb-1 flex shrink-0 items-center justify-between border-b pb-1 text-[11px] font-semibold"
                 style={{ borderColor: c.borderSubtle, color: c.textPrimary }}
               >
-                <span className="truncate">
+                <span className="theme-glow theme-preview-title truncate">
                   {widget.title || getWidgetFallbackTitle(widget.type)}
                 </span>
                 <span
@@ -276,7 +277,11 @@ function DashboardWidgetsPreview({
             )}
 
             <div className="min-h-0 flex-1 overflow-hidden pointer-events-none select-none text-xs">
-              <PassiveWidgetContent widget={widget} customTheme={customTheme} />
+              <PassiveWidgetContent
+                widget={widget}
+                customTheme={customTheme}
+                rowSpan={rowSpan}
+              />
             </div>
           </div>
         );
@@ -305,9 +310,11 @@ function getWidgetFallbackTitle(type: string): string {
 function PassiveWidgetContent({
   widget,
   customTheme,
+  rowSpan,
 }: {
   widget: WidgetConfig;
   customTheme: CustomTheme;
+  rowSpan?: number;
 }) {
   const c = customTheme.colors;
 
@@ -327,26 +334,36 @@ function PassiveWidgetContent({
         </div>
       );
 
-    case 'clock':
+    case 'clock': {
+      const isCompact = (rowSpan ?? 1) <= 2;
       return (
-        <div className="flex h-full flex-col items-center justify-center py-1">
+        <div className="flex h-full flex-col items-center justify-center text-center">
           <span
-            className="text-sm font-bold tracking-tight"
+            className={classNames(
+              'theme-glow font-semibold tracking-tight tabular-nums leading-none',
+              isCompact ? 'text-xs' : 'text-sm',
+            )}
             style={{ color: c.textPrimary }}
           >
             12:00
           </span>
-          <span className="text-[10px]" style={{ color: c.textSecondary }}>
-            Пятница, 26 сентября
-          </span>
+          {!isCompact && (
+            <span
+              className="mt-1 truncate text-[9px] leading-none"
+              style={{ color: c.textSecondary }}
+            >
+              26 сентября
+            </span>
+          )}
         </div>
       );
+    }
 
     case 'pomodoro':
       return (
         <div className="flex items-center gap-2 py-1">
           <span
-            className="flex size-7 items-center justify-center rounded-full border text-[10px] font-bold"
+            className="theme-glow flex size-7 items-center justify-center rounded-full border text-[10px] font-bold"
             style={{
               borderColor: c.pomodoroProgress,
               backgroundColor: c.surfaceElevated,
@@ -395,8 +412,8 @@ function PassiveWidgetContent({
 
     case 'markdown':
       return (
-        <div className="h-full overflow-hidden text-[11px] leading-tight">
-          <MarkdownRenderer content={widget.content?.trim() || ''} />
+        <div className="h-full overflow-hidden text-[10px] leading-snug">
+          <MarkdownRenderer content={widget.content?.trim() || ''} compact />
         </div>
       );
 
