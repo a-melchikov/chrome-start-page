@@ -1,8 +1,8 @@
 import {
   DASHBOARD_CONFIG_VERSION,
+  type BackgroundColorConfig,
   type DashboardConfig,
   type LiquidGlassConfig,
-  type Theme,
   type WallpaperConfig,
   type WidgetConfig,
   isImageAssetId,
@@ -18,6 +18,16 @@ import {
 import { isSearchEngine } from '../widgets/search/engines';
 import type { WeatherLocation } from '../widgets/weather/types';
 import { DEFAULT_LIQUID_GLASS } from './defaults';
+import {
+  ALL_CUSTOM_THEME_COLOR_KEYS,
+  type BuiltinThemeId,
+  type CustomTheme,
+  type CustomThemeColors,
+  type ThemeRef,
+} from '../themes/types';
+import { BUILTIN_THEME_IDS, isBuiltinThemeId } from '../themes/registry';
+import { isCustomThemeColorKey } from '../themes/color-derivation';
+import { isValidHex } from '../themes/color-utils';
 
 export class InvalidDashboardConfigError extends Error {
   constructor(message = 'Dashboard config has an invalid structure') {
@@ -54,21 +64,9 @@ function isIntegerInRange(
   );
 }
 
-const VALID_THEMES: ReadonlySet<string> = new Set<Theme>([
-  'system',
-  'light',
-  'dark',
-  'tokyo-night',
-  'rainy-tokyo',
-  'cozy-lofi-night',
-  'catppuccin-mocha',
-  'catppuccin-latte',
-  'nord',
-  'synthwave-84',
-  'solarized-dark',
-]);
+const VALID_THEMES: ReadonlySet<string> = new Set<string>(BUILTIN_THEME_IDS);
 
-function isTheme(value: unknown): value is Theme {
+function isLegacyTheme(value: unknown): value is BuiltinThemeId {
   return typeof value === 'string' && VALID_THEMES.has(value);
 }
 
@@ -117,6 +115,13 @@ function isValidWidgetId(value: unknown): value is string {
   return typeof value === 'string' && WIDGET_ID_PATTERN.test(value);
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_PATTERN.test(value);
+}
+
 function isImageWidgetSource(value: unknown): value is ImageWidgetSource {
   if (!isRecord(value)) {
     return false;
@@ -134,15 +139,10 @@ function isImageWidgetSource(value: unknown): value is ImageWidgetSource {
 }
 
 function isImageObjectPosition(value: unknown): value is ImageObjectPosition {
-  if (typeof value !== 'string') {
-    return false;
-  }
-
-  if ((IMAGE_OBJECT_POSITIONS as readonly string[]).includes(value)) {
-    return true;
-  }
-
-  return /^\d+(\.\d+)?%\s+\d+(\.\d+)?%$/.test(value.trim());
+  return (
+    typeof value === 'string' &&
+    (IMAGE_OBJECT_POSITIONS as readonly string[]).includes(value)
+  );
 }
 
 function isImageFitMode(value: unknown): value is ImageFitMode {
@@ -254,14 +254,9 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (value.type === 'clock') {
     return (
       isClockTimeFormat(value.timeFormat) &&
-      typeof value.showTime === 'boolean' &&
-      typeof value.showSeconds === 'boolean' &&
-      typeof value.showDate === 'boolean' &&
       isClockDateFormat(value.dateFormat) &&
-      typeof value.showDayOfWeek === 'boolean' &&
-      isValidTimezone(value.timezone) &&
-      typeof value.showTimezoneName === 'boolean' &&
-      typeof value.showTimezoneAbbr === 'boolean'
+      typeof value.showSeconds === 'boolean' &&
+      isValidTimezone(value.timezone)
     );
   }
 
@@ -279,8 +274,12 @@ interface RetiredGoogleCalendarWidgetConfig {
   id: string;
   type: 'google-calendar';
   title?: string;
-  selectedCalendarIds: string[] | null;
-  layout: { x: number; y: number; w: number; h: number };
+  layout: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
 }
 
 function isRetiredGoogleCalendarWidgetConfig(
@@ -288,20 +287,15 @@ function isRetiredGoogleCalendarWidgetConfig(
 ): value is RetiredGoogleCalendarWidgetConfig {
   return (
     isRecord(value) &&
-    value.type === 'google-calendar' &&
     isValidWidgetId(value.id) &&
     (value.title === undefined || typeof value.title === 'string') &&
     isWidgetLayout(value.layout) &&
-    (value.selectedCalendarIds === null ||
-      (Array.isArray(value.selectedCalendarIds) &&
-        value.selectedCalendarIds.every(
-          (calendarId) => typeof calendarId === 'string',
-        )))
+    value.type === 'google-calendar'
   );
 }
 
 interface LegacyAppearanceConfig {
-  theme: Theme;
+  theme: string;
   backgroundColor: string;
 }
 
@@ -313,12 +307,19 @@ interface DashboardConfigV4Appearance extends WallpaperAppearanceConfig {
   liquidGlassEnabled: boolean;
 }
 
-function hasValidLegacyDashboardEnvelope(value: unknown): value is Record<
-  string,
-  unknown
-> & {
+interface DashboardConfigV5Appearance extends LegacyAppearanceConfig {
+  wallpaper: WallpaperConfig;
+  liquidGlass: LiquidGlassConfig;
+}
+
+function hasValidLegacyDashboardEnvelope(value: unknown): value is {
+  version: number;
   widgets: unknown[];
-  appearance: Record<string, unknown> & LegacyAppearanceConfig;
+  appearance: {
+    theme: unknown;
+    backgroundColor: unknown;
+    [key: string]: unknown;
+  };
 } {
   if (!isRecord(value)) {
     return false;
@@ -329,7 +330,7 @@ function hasValidLegacyDashboardEnvelope(value: unknown): value is Record<
   return (
     Array.isArray(value.widgets) &&
     isRecord(appearance) &&
-    isTheme(appearance.theme) &&
+    isLegacyTheme(appearance.theme) &&
     typeof appearance.backgroundColor === 'string'
   );
 }
@@ -395,14 +396,116 @@ function isLiquidGlassConfig(value: unknown): value is LiquidGlassConfig {
   );
 }
 
-function isDashboardConfigV5(value: unknown): value is DashboardConfig {
+function isDashboardConfigV5(value: unknown): value is Record<
+  string,
+  unknown
+> & {
+  version: 5;
+  widgets: WidgetConfig[];
+  appearance: DashboardConfigV5Appearance;
+} {
   return (
     hasValidLegacyDashboardEnvelope(value) &&
-    value.version === DASHBOARD_CONFIG_VERSION &&
+    value.version === 5 &&
     isWallpaperConfig(value.appearance.wallpaper) &&
     isLiquidGlassConfig(value.appearance.liquidGlass) &&
     value.widgets.every(isWidgetConfig)
   );
+}
+
+function isCustomThemeColors(value: unknown): value is CustomThemeColors {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value);
+  if (keys.length !== ALL_CUSTOM_THEME_COLOR_KEYS.length) return false;
+  return ALL_CUSTOM_THEME_COLOR_KEYS.every(
+    (key) => typeof value[key] === 'string' && isValidHex(value[key]),
+  );
+}
+
+function isCustomTheme(value: unknown): value is CustomTheme {
+  if (!isRecord(value)) return false;
+  if (!isValidUuid(value.id)) return false;
+  if (
+    typeof value.name !== 'string' ||
+    value.name.trim().length === 0 ||
+    value.name.trim().length > 64
+  ) {
+    return false;
+  }
+  if (
+    value.description !== undefined &&
+    (typeof value.description !== 'string' || value.description.length > 200)
+  ) {
+    return false;
+  }
+  if (value.mode !== 'light' && value.mode !== 'dark') return false;
+  if (value.baseThemeId !== undefined && !isBuiltinThemeId(value.baseThemeId)) {
+    return false;
+  }
+  if (!isCustomThemeColors(value.colors)) return false;
+  if (
+    !Array.isArray(value.manualOverrides) ||
+    !value.manualOverrides.every((k) => isCustomThemeColorKey(k))
+  ) {
+    return false;
+  }
+  if (value.glow !== undefined && typeof value.glow !== 'boolean') {
+    return false;
+  }
+  return true;
+}
+
+function isValidCustomThemesList(value: unknown): value is CustomTheme[] {
+  if (!Array.isArray(value)) return false;
+  if (!value.every(isCustomTheme)) return false;
+
+  const ids = new Set(value.map((t) => t.id));
+  if (ids.size !== value.length) return false;
+
+  const names = new Set(value.map((t) => t.name.trim().toLowerCase()));
+  if (names.size !== value.length) return false;
+
+  return true;
+}
+
+function isThemeRef(
+  value: unknown,
+  customThemes: readonly CustomTheme[],
+): value is ThemeRef {
+  if (!isRecord(value)) return false;
+  if (value.type === 'builtin') {
+    return isBuiltinThemeId(value.id);
+  }
+  if (value.type === 'custom') {
+    return isValidUuid(value.id) && customThemes.some((t) => t.id === value.id);
+  }
+  return false;
+}
+
+function isBackgroundColorConfig(
+  value: unknown,
+): value is BackgroundColorConfig {
+  if (!isRecord(value)) return false;
+  if (value.type === 'theme') return true;
+  if (value.type === 'custom') {
+    return typeof value.color === 'string' && isValidHex(value.color);
+  }
+  return false;
+}
+
+function isDashboardConfigV6(value: unknown): value is DashboardConfig {
+  if (!isRecord(value)) return false;
+  if (value.version !== DASHBOARD_CONFIG_VERSION) return false;
+  if (!Array.isArray(value.widgets) || !value.widgets.every(isWidgetConfig)) {
+    return false;
+  }
+  if (!isValidCustomThemesList(value.customThemes)) return false;
+  if (!isRecord(value.appearance)) return false;
+  if (!isThemeRef(value.appearance.theme, value.customThemes)) return false;
+  if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
+  if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
+  if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  return true;
 }
 
 function isLegacyWidgetConfig(value: unknown): boolean {
@@ -495,7 +598,14 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     return normalizeDashboardConfig({
       version: DASHBOARD_CONFIG_VERSION,
       appearance: {
-        ...value.appearance,
+        theme: {
+          type: 'builtin',
+          id: value.appearance.theme as BuiltinThemeId,
+        },
+        backgroundColor: {
+          type: 'custom',
+          color: value.appearance.backgroundColor,
+        },
         wallpaper: { type: 'none' },
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
@@ -504,6 +614,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
           ? ({ ...widget, type: 'markdown' } as WidgetConfig)
           : (widget as unknown as WidgetConfig),
       ),
+      customThemes: [],
     });
   }
 
@@ -515,11 +626,19 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     return normalizeDashboardConfig({
       version: DASHBOARD_CONFIG_VERSION,
       appearance: {
-        ...value.appearance,
+        theme: {
+          type: 'builtin',
+          id: value.appearance.theme as BuiltinThemeId,
+        },
+        backgroundColor: {
+          type: 'custom',
+          color: value.appearance.backgroundColor,
+        },
         wallpaper: { type: 'none' },
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
       widgets: value.widgets.filter(isWidgetConfig),
+      customThemes: [],
     });
   }
 
@@ -529,12 +648,21 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     }
 
     return normalizeDashboardConfig({
-      ...value,
       version: DASHBOARD_CONFIG_VERSION,
+      widgets: value.widgets,
       appearance: {
-        ...value.appearance,
+        theme: {
+          type: 'builtin',
+          id: value.appearance.theme as BuiltinThemeId,
+        },
+        backgroundColor: {
+          type: 'custom',
+          color: value.appearance.backgroundColor,
+        },
+        wallpaper: value.appearance.wallpaper,
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
+      customThemes: [],
     });
   }
 
@@ -546,20 +674,47 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
     const { liquidGlassEnabled, ...appearance } = value.appearance;
 
     return normalizeDashboardConfig({
-      ...value,
       version: DASHBOARD_CONFIG_VERSION,
+      widgets: value.widgets,
       appearance: {
-        ...appearance,
+        theme: { type: 'builtin', id: appearance.theme as BuiltinThemeId },
+        backgroundColor: { type: 'custom', color: appearance.backgroundColor },
+        wallpaper: appearance.wallpaper,
         liquidGlass: {
           ...DEFAULT_LIQUID_GLASS,
           enabled: liquidGlassEnabled,
         },
       },
+      customThemes: [],
+    });
+  }
+
+  if (version === 5) {
+    if (!isDashboardConfigV5(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return normalizeDashboardConfig({
+      version: DASHBOARD_CONFIG_VERSION,
+      widgets: value.widgets,
+      appearance: {
+        theme: {
+          type: 'builtin',
+          id: value.appearance.theme as BuiltinThemeId,
+        },
+        backgroundColor: {
+          type: 'custom',
+          color: value.appearance.backgroundColor,
+        },
+        wallpaper: value.appearance.wallpaper,
+        liquidGlass: value.appearance.liquidGlass,
+      },
+      customThemes: [],
     });
   }
 
   if (version === DASHBOARD_CONFIG_VERSION) {
-    if (!isDashboardConfigV5(value)) {
+    if (!isDashboardConfigV6(value)) {
       throw new InvalidDashboardConfigError();
     }
 

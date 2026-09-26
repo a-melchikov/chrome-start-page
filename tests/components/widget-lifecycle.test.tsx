@@ -78,6 +78,9 @@ describe('widget lifecycle', () => {
       name: 'Markdown',
     });
     expect(markdownArticle).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Markdown' })).toHaveClass(
+      'theme-glow',
+    );
     expect(markdownArticle).toHaveClass('new-widget');
     expect(markdownArticle).toHaveAttribute('data-new-widget', 'true');
     fireEvent(

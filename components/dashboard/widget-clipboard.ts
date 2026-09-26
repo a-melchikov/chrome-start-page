@@ -108,6 +108,7 @@ export function parseWidgetClipboard(source: string): WidgetClipboardPayload {
       version: DASHBOARD_CONFIG_VERSION,
       appearance: DEFAULT_APPEARANCE,
       widgets: payload.widgets,
+      customThemes: [],
     }).widgets;
     localImages = payload.localImages.map(parseWallpaperAsset);
   } catch {

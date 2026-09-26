@@ -13,8 +13,8 @@ export const DEFAULT_LIQUID_GLASS: Readonly<LiquidGlassConfig> = {
 };
 
 export const DEFAULT_APPEARANCE: Readonly<AppearanceConfig> = {
-  theme: 'system',
-  backgroundColor: '#18181b',
+  theme: { type: 'builtin', id: 'system' },
+  backgroundColor: { type: 'theme' },
   wallpaper: { type: 'none' },
   liquidGlass: DEFAULT_LIQUID_GLASS,
 };
@@ -25,8 +25,11 @@ export function createDefaultDashboardConfig(): DashboardConfig {
     widgets: [],
     appearance: {
       ...DEFAULT_APPEARANCE,
+      theme: { ...DEFAULT_APPEARANCE.theme },
+      backgroundColor: { ...DEFAULT_APPEARANCE.backgroundColor },
       wallpaper: { ...DEFAULT_APPEARANCE.wallpaper },
       liquidGlass: { ...DEFAULT_LIQUID_GLASS },
     },
+    customThemes: [],
   };
 }

@@ -133,11 +133,12 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [widget],
+      customThemes: [],
       appearance: {
-        theme: 'system',
-        backgroundColor: '#18181b',
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -248,11 +249,12 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [widget],
+      customThemes: [],
       appearance: {
-        theme: 'system',
-        backgroundColor: '#18181b',
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -425,11 +427,12 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [widget],
+      customThemes: [],
       appearance: {
-        theme: 'system',
-        backgroundColor: '#18181b',
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -468,8 +471,9 @@ describe('useDashboardConfig layout persistence', () => {
       layout: { x: 0, y: 0, w: 4, h: 3 },
     };
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [widget],
+      customThemes: [],
       appearance: createDefaultDashboardConfig().appearance,
     });
     const dashboard = renderHook(() => useDashboardConfig());
@@ -503,7 +507,8 @@ describe('useDashboardConfig layout persistence', () => {
   it('replaces the live and stored dashboard after a confirmed import', async () => {
     const current = createDefaultDashboardConfig();
     const imported: DashboardConfig = {
-      version: 5,
+      version: 6,
+      customThemes: [],
       widgets: [
         {
           id: 'imported-notes',
@@ -515,8 +520,8 @@ describe('useDashboardConfig layout persistence', () => {
       ],
       appearance: {
         ...current.appearance,
-        theme: 'dark',
-        backgroundColor: '#123456',
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
       },
     };
     await saveDashboardConfig(current);

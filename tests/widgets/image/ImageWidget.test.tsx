@@ -49,6 +49,7 @@ describe('ImageWidget', () => {
 
     expect(screen.getByText('Выберите изображение')).toBeInTheDocument();
     expect(screen.queryByTestId('image-widget-img')).toBeNull();
+    expect(document.querySelector('.widget-image-media')).toBeNull();
   });
 
   it('renders a remote URL image with specified objectPosition and decorative alt', () => {
@@ -61,6 +62,7 @@ describe('ImageWidget', () => {
     render(<ImageWidget config={config} />);
 
     const img = screen.getByTestId('image-widget-img');
+    expect(img.closest('.widget-image-media')).not.toBeNull();
     expect(img).toHaveAttribute('src', 'https://example.com/photo.webp');
     expect(img).toHaveAttribute('alt', '');
     expect(img).toHaveClass('object-cover');

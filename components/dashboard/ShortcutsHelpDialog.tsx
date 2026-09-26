@@ -88,7 +88,7 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       {
         keys: ['← ↑ → ↓', 'Shift+стрелка'],
         separator: 'или',
-        description: 'Переместить выделение на 1 или 5 клеток',
+        description: 'На 1 клетку или до края/препятствия; вниз — до низа окна',
       },
     ],
   },

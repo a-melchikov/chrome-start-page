@@ -1,5 +1,6 @@
 import type { DashboardConfig, WidgetType } from '../../storage/schema';
 import { THEMES } from '../../themes/registry';
+import type { BuiltinThemeId, ThemeRef } from '../../themes/types';
 import { extractMarkdownLinks } from '../../widgets/markdown/extract-links';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import { getWidgetDisplayName } from './widget-display';
@@ -12,7 +13,13 @@ export type PaletteCommand =
       id: string;
       kind: 'action';
       action:
-        'edit' | 'add-dialog' | 'appearance' | 'backup' | 'export' | 'themes';
+        | 'edit'
+        | 'add-dialog'
+        | 'appearance'
+        | 'backup'
+        | 'export'
+        | 'themes'
+        | 'add-custom-theme';
       label: string;
       category: string;
       keywords?: string;
@@ -44,7 +51,7 @@ export type PaletteCommand =
   | {
       id: string;
       kind: 'theme';
-      themeId: DashboardConfig['appearance']['theme'];
+      themeId: ThemeRef;
       label: string;
       category: string;
       keywords?: string;
@@ -86,6 +93,14 @@ export function buildCommandCatalog(
       action: 'add-dialog',
       label: 'Добавить виджет',
       category: 'Действия',
+    },
+    {
+      id: 'action:add-custom-theme',
+      kind: 'action',
+      action: 'add-custom-theme',
+      label: 'Добавить собственную тему',
+      category: 'Действия',
+      keywords: 'создать добавить тему палитра цветов',
     },
     {
       id: 'action:appearance',
@@ -143,12 +158,20 @@ export function buildCommandCatalog(
       keywords: widget.type,
     })),
     ...THEMES.map((theme): PaletteCommand => ({
-      id: `theme:${theme.id}`,
+      id: `theme:builtin:${theme.id}`,
       kind: 'theme',
-      themeId: theme.id,
+      themeId: { type: 'builtin', id: theme.id as BuiltinThemeId },
       label: theme.name,
       category: 'Темы',
       keywords: theme.description,
+    })),
+    ...(config.customThemes ?? []).map((theme): PaletteCommand => ({
+      id: `theme:custom:${theme.id}`,
+      kind: 'theme',
+      themeId: { type: 'custom', id: theme.id },
+      label: theme.name,
+      category: 'Темы',
+      keywords: theme.description ?? 'собственная тема',
     })),
     ...config.widgets.flatMap((widget) =>
       widget.type === 'markdown'

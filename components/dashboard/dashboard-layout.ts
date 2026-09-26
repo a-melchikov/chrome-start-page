@@ -130,6 +130,97 @@ function intersects(left: WidgetLayout, right: WidgetLayout): boolean {
   );
 }
 
+function overlapsOnAxis(
+  firstStart: number,
+  firstEnd: number,
+  secondStart: number,
+  secondEnd: number,
+): boolean {
+  return firstStart < secondEnd && firstEnd > secondStart;
+}
+
+export function getVisibleGridBottomRow(
+  canvasTop: number,
+  viewportHeight: number,
+): number {
+  return Math.max(
+    0,
+    Math.floor(
+      (viewportHeight - canvasTop + DASHBOARD_GRID_GAP) /
+        (DASHBOARD_GRID_ROW_HEIGHT + DASHBOARD_GRID_GAP),
+    ),
+  );
+}
+
+export function moveWidgetGroupToEdge(
+  widgets: readonly WidgetConfig[],
+  selectedIds: ReadonlySet<string>,
+  deltaX: number,
+  deltaY: number,
+  visibleBottomRow?: number,
+): readonly WidgetConfig[] {
+  const selected = widgets.filter((widget) => selectedIds.has(widget.id));
+  if (selected.length === 0) return widgets;
+
+  const occupied = widgets.filter((widget) => !selectedIds.has(widget.id));
+  const horizontal = deltaX !== 0;
+  const forward = deltaX > 0 || deltaY > 0;
+  if ((horizontal && deltaY !== 0) || (!horizontal && deltaY === 0)) {
+    return widgets;
+  }
+  if (deltaY > 0 && visibleBottomRow === undefined) return widgets;
+  const bottomRow = visibleBottomRow ?? 0;
+
+  let distance = Math.min(
+    ...selected.map(({ layout }) => {
+      if (deltaX > 0) return DASHBOARD_GRID_COLUMNS - layout.x - layout.w;
+      if (deltaX < 0) return layout.x;
+      if (deltaY < 0) return layout.y;
+      return Math.max(0, bottomRow - layout.y - layout.h);
+    }),
+  );
+
+  for (const moving of selected) {
+    for (const obstacle of occupied) {
+      if (
+        horizontal
+          ? !overlapsOnAxis(
+              moving.layout.y,
+              moving.layout.y + moving.layout.h,
+              obstacle.layout.y,
+              obstacle.layout.y + obstacle.layout.h,
+            )
+          : !overlapsOnAxis(
+              moving.layout.x,
+              moving.layout.x + moving.layout.w,
+              obstacle.layout.x,
+              obstacle.layout.x + obstacle.layout.w,
+            )
+      ) {
+        continue;
+      }
+
+      const gap = horizontal
+        ? forward
+          ? obstacle.layout.x - moving.layout.x - moving.layout.w
+          : moving.layout.x - obstacle.layout.x - obstacle.layout.w
+        : forward
+          ? obstacle.layout.y - moving.layout.y - moving.layout.h
+          : moving.layout.y - obstacle.layout.y - obstacle.layout.h;
+      if (gap >= 0) distance = Math.min(distance, gap);
+    }
+  }
+
+  return distance > 0
+    ? moveWidgetGroup(
+        widgets,
+        selectedIds,
+        deltaX > 0 ? distance : deltaX < 0 ? -distance : 0,
+        deltaY > 0 ? distance : deltaY < 0 ? -distance : 0,
+      )
+    : widgets;
+}
+
 export function moveWidgetGroup(
   widgets: readonly WidgetConfig[],
   selectedIds: ReadonlySet<string>,

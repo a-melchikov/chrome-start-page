@@ -74,7 +74,7 @@ describe('App', () => {
     );
     await user.type(await screen.findByRole('combobox'), 'Переключить тему');
     await user.click(screen.getByRole('option', { name: /Переключить тему/ }));
-    expect(screen.getAllByRole('option')).toHaveLength(11);
+    expect(screen.getAllByRole('option')).toHaveLength(13);
     await user.click(screen.getByRole('option', { name: /Nord/ }));
     await waitFor(() =>
       expect(document.documentElement).toHaveAttribute('data-theme', 'nord'),
@@ -288,7 +288,7 @@ describe('App', () => {
   it('replaces the dashboard only after import confirmation', async () => {
     const user = userEvent.setup();
     const current: DashboardConfig = {
-      version: 5,
+      version: 6,
       widgets: [
         {
           id: 'current-widget',
@@ -298,9 +298,10 @@ describe('App', () => {
           layout: { x: 0, y: 0, w: 4, h: 3 },
         },
       ],
+      customThemes: [],
       appearance: {
-        theme: 'light',
-        backgroundColor: '#f4f4f5',
+        theme: { type: 'builtin', id: 'light' },
+        backgroundColor: { type: 'custom', color: '#f4f4f5' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -311,7 +312,7 @@ describe('App', () => {
       },
     };
     const imported: DashboardConfig = {
-      version: 5,
+      version: 6,
       widgets: [
         {
           id: 'imported-widget',
@@ -321,10 +322,11 @@ describe('App', () => {
           layout: { x: 2, y: 1, w: 5, h: 4 },
         },
       ],
+      customThemes: [],
       appearance: {
         ...current.appearance,
-        theme: 'dark',
-        backgroundColor: '#123456',
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
       },
     };
     await saveDashboardConfig(current);
@@ -382,8 +384,8 @@ describe('App', () => {
         DASHBOARD_STORAGE_KEY,
       );
       expect(storedConfig?.appearance).toEqual({
-        theme: 'dark',
-        backgroundColor: '#123456',
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -420,8 +422,59 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.theme).toBe('tokyo-night');
-      expect(storedConfig?.appearance.backgroundColor).toBe('#1a1b26');
+      expect(storedConfig?.appearance.theme).toEqual({
+        type: 'builtin',
+        id: 'tokyo-night',
+      });
+      expect(storedConfig?.appearance.backgroundColor).toEqual({
+        type: 'theme',
+      });
+    });
+  });
+
+  it.each([
+    ['Бумага и шалфей', 'paper-sage', '#f6f3eb'],
+    ['Абрикосовый полдень', 'apricot-noon', '#fff3e8'],
+  ] as const)('selects and restores %s', async (name, theme, background) => {
+    const user = userEvent.setup();
+    const view = render(<App />);
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    await user.click(screen.getByRole('button', { name }));
+
+    expect(document.documentElement).toHaveAttribute('data-theme', theme);
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(screen.getByRole('main')).toHaveStyle({
+      backgroundColor: background,
+    });
+    await waitFor(async () => {
+      const storedConfig = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(storedConfig?.appearance.theme).toEqual({
+        type: 'builtin',
+        id: theme,
+      });
+      expect(storedConfig?.appearance.backgroundColor).toEqual({
+        type: 'theme',
+      });
+    });
+
+    view.unmount();
+    render(<App />);
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute('data-theme', theme),
+    );
+    expect(screen.getByRole('main')).toHaveStyle({
+      backgroundColor: background,
     });
   });
 
@@ -431,6 +484,9 @@ describe('App', () => {
 
     const app = screen.getByRole('main');
     expect(app).toHaveClass('liquid-glass-enabled');
+    expect(document.querySelector('.dashboard-toolbar')).toHaveClass(
+      'liquid-glass-surface',
+    );
 
     await user.click(
       await screen.findByRole('button', {
@@ -482,11 +538,12 @@ describe('App', () => {
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [],
+      customThemes: [],
       appearance: {
-        theme: 'light',
-        backgroundColor: '#abcdef',
+        theme: { type: 'builtin', id: 'light' },
+        backgroundColor: { type: 'custom', color: '#abcdef' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -520,11 +577,12 @@ describe('App', () => {
 
   it('maps saved Liquid Glass controls to CSS custom properties', async () => {
     const config: DashboardConfig = {
-      version: 5,
+      version: 6,
       widgets: [],
+      customThemes: [],
       appearance: {
-        theme: 'dark',
-        backgroundColor: '#18181b',
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -549,11 +607,12 @@ describe('App', () => {
 
   it('keeps Liquid Glass custom properties when the effect is disabled', async () => {
     const config: DashboardConfig = {
-      version: 5,
+      version: 6,
       widgets: [],
+      customThemes: [],
       appearance: {
-        theme: 'light',
-        backgroundColor: '#f4f4f5',
+        theme: { type: 'builtin', id: 'light' },
+        backgroundColor: { type: 'custom', color: '#f4f4f5' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: false,
@@ -583,11 +642,12 @@ describe('App', () => {
       url: 'https://example.com/previous.jpg',
     };
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [],
+      customThemes: [],
       appearance: {
-        theme: 'system',
-        backgroundColor: '#f4f4f5',
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#f4f4f5' },
         wallpaper: previousWallpaper,
         liquidGlass: {
           enabled: true,
@@ -780,7 +840,7 @@ describe('App', () => {
   it('opens command palette on slash (/) shortcut', async () => {
     const user = userEvent.setup();
     await saveDashboardConfig({
-      version: 5,
+      version: 6,
       widgets: [
         {
           id: 'search-widget',
@@ -789,9 +849,10 @@ describe('App', () => {
           layout: { x: 0, y: 0, w: 6, h: 1 },
         },
       ],
+      customThemes: [],
       appearance: {
-        theme: 'system',
-        backgroundColor: '#18181b',
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,

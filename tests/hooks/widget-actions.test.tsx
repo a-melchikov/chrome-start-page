@@ -102,6 +102,22 @@ describe('widget actions', () => {
     expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(2);
   });
 
+  it('records an edge jump as one undoable layout change', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+    act(() =>
+      dashboard.result.current.addWidget({
+        ...markdown('first'),
+        layout: { x: 7, y: 0, w: 3, h: 3 },
+      }),
+    );
+
+    act(() => dashboard.result.current.moveWidgets(['first'], 1, 0, true));
+    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(9);
+    act(() => dashboard.result.current.undo());
+    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(7);
+  });
+
   it('restores a deleted Pomodoro ID and keeps copies on fresh timer state', async () => {
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());

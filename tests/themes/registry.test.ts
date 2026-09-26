@@ -6,9 +6,28 @@ import {
 } from '../../themes/registry';
 import type { ThemeId } from '../../themes/types';
 
+function luminance(color: string): number {
+  const linear = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+
+  return (
+    linear(parseInt(color.slice(1, 3), 16)) * 0.2126 +
+    linear(parseInt(color.slice(3, 5), 16)) * 0.7152 +
+    linear(parseInt(color.slice(5, 7), 16)) * 0.0722
+  );
+}
+
+function contrastRatio(first: string, second: string): number {
+  const lighter = Math.max(luminance(first), luminance(second));
+  const darker = Math.min(luminance(first), luminance(second));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 describe('theme registry', () => {
-  it('registers all 11 themes with complete tokens', () => {
-    expect(THEMES.length).toBe(11);
+  it('registers all 13 themes with complete tokens', () => {
+    expect(THEMES.length).toBe(13);
 
     for (const theme of THEMES) {
       expect(theme.id).toBeDefined();
@@ -67,6 +86,54 @@ describe('theme registry', () => {
     expect(latteResolved.mode).toBe('light');
     expect(latteResolved.definition.id).toBe('catppuccin-latte');
   });
+
+  it.each([
+    ['paper-sage', '#f6f3eb', '#fffefa', '#276354'],
+    ['apricot-noon', '#fff3e8', '#fffcf8', '#b34f36'],
+  ] as const)(
+    'defines %s as a light preset with its intended palette',
+    (id, background, surface, accent) => {
+      const theme = getThemeDefinition(id);
+      expect(theme.mode).toBe('light');
+      expect(theme.defaultBackgroundColor).toBe(background);
+      expect(theme.previewColors).toEqual({ bg: background, surface, accent });
+      expect(theme.tokens.canvasBg).toBe(background);
+      expect(theme.tokens.surfaceBg).toBe(surface);
+      expect(theme.tokens.accent).toBe(accent);
+      expect(resolveTheme(id, true).mode).toBe('light');
+    },
+  );
+
+  it.each(['paper-sage', 'apricot-noon'] as const)(
+    'keeps text and controls readable in %s',
+    (id) => {
+      const tokens = getThemeDefinition(id).tokens;
+      for (const surface of [
+        tokens.canvasBg,
+        tokens.surfaceBg,
+        tokens.surfaceElevated,
+        tokens.surfaceMuted,
+      ]) {
+        for (const foreground of [
+          tokens.textPrimary,
+          tokens.textSecondary,
+          tokens.textMuted,
+          tokens.accent,
+          tokens.link,
+        ]) {
+          expect(contrastRatio(foreground, surface)).toBeGreaterThanOrEqual(
+            4.5,
+          );
+        }
+      }
+      expect(
+        contrastRatio(tokens.accentText, tokens.accent),
+      ).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(tokens.dangerText, tokens.dangerBg),
+      ).toBeGreaterThanOrEqual(4.5);
+    },
+  );
 
   it('falls back to default theme for unknown id', () => {
     const fallback = getThemeDefinition('unknown' as ThemeId);

@@ -10,6 +10,7 @@ import type {
   WidgetConfig,
   WidgetType,
 } from '../../storage/schema';
+import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
   createWidgetConfig,
   getWidgetDefinition,
@@ -19,7 +20,10 @@ import { MotionNotice } from '../ui/MotionNotice';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
 import { DashboardControls } from './DashboardControls';
 import { WidgetCanvas } from './WidgetCanvas';
-import { calculateNextWidgetPosition } from './dashboard-layout';
+import {
+  calculateNextWidgetPosition,
+  getVisibleGridBottomRow,
+} from './dashboard-layout';
 
 interface DashboardProps {
   appearance: AppearanceConfig;
@@ -43,6 +47,8 @@ interface DashboardProps {
     ids: readonly string[],
     deltaX: number,
     deltaY: number,
+    toEdge: boolean,
+    visibleBottomRow?: number,
   ) => void;
   onFinishNudge: () => void;
   onRemoveWidgets: (ids: readonly string[]) => void;
@@ -66,6 +72,10 @@ interface DashboardProps {
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   onUpdateWidget: (widget: WidgetConfig) => void;
   onUpdateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
+  onOpenThemeEditor?: (themeToEdit?: CustomTheme) => void;
+  onSelectTheme?: (themeRef: ThemeRef) => void;
+  onDuplicateCustomTheme?: (id: string) => void;
+  onDeleteCustomTheme?: (id: string) => void;
 }
 
 export function Dashboard({
@@ -106,6 +116,10 @@ export function Dashboard({
   onSetUrlWallpaper,
   onUpdateWidget,
   onUpdateWidgetLayouts,
+  onOpenThemeEditor,
+  onSelectTheme,
+  onDuplicateCustomTheme,
+  onDeleteCustomTheme,
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
@@ -347,7 +361,19 @@ export function Dashboard({
         onFinishNudge={onFinishNudge}
         onFlushAppearancePreview={onFlushAppearancePreview}
         onImportDashboard={importDashboard}
-        onMoveSelection={(dx, dy) => onMoveWidgets(selectedIds, dx, dy)}
+        onMoveSelection={(dx, dy, toEdge) => {
+          const canvas = document.querySelector<HTMLElement>(
+            '[data-dashboard-canvas="desktop"]',
+          );
+          const visibleBottomRow =
+            toEdge && dy > 0 && canvas
+              ? getVisibleGridBottomRow(
+                  canvas.getBoundingClientRect().top,
+                  window.innerHeight,
+                )
+              : undefined;
+          onMoveWidgets(selectedIds, dx, dy, toEdge, visibleBottomRow);
+        }}
         onPasteSelection={(source) => void pasteSelection(source)}
         onRedo={onRedo}
         onRemoveWallpaper={onRemoveWallpaper}
@@ -361,6 +387,10 @@ export function Dashboard({
         onSetUrlWallpaper={onSetUrlWallpaper}
         onToggleFocusedSelection={(widgetId) => selectWidget(widgetId, true)}
         onUndo={onUndo}
+        onOpenThemeEditor={onOpenThemeEditor}
+        onSelectTheme={onSelectTheme}
+        onDuplicateCustomTheme={onDuplicateCustomTheme}
+        onDeleteCustomTheme={onDeleteCustomTheme}
       />
       <ConfirmWidgetDeleteDialog
         open={pendingGroupDeleteIds.length > 0}

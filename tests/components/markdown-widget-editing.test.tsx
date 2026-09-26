@@ -36,11 +36,12 @@ function createMarkdownWidget(
 
 async function seedWidgets(widgets: MarkdownWidgetConfig[]) {
   await saveDashboardConfig({
-    version: 5,
+    version: 6,
     widgets,
+    customThemes: [],
     appearance: {
-      theme: 'system',
-      backgroundColor: '#18181b',
+      theme: { type: 'builtin', id: 'system' },
+      backgroundColor: { type: 'custom', color: '#18181b' },
       wallpaper: { type: 'none' },
       liquidGlass: {
         enabled: true,

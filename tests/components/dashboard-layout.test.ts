@@ -6,8 +6,10 @@ import {
   createGridLayout,
   DASHBOARD_GRID_COLUMNS,
   getDashboardGridWidth,
+  getVisibleGridBottomRow,
   normalizeWidgetLayout,
   moveWidgetGroup,
+  moveWidgetGroupToEdge,
   placeWidgetGroup,
   WIDGET_MIN_HEIGHT,
   WIDGET_MIN_WIDTH,
@@ -60,6 +62,69 @@ describe('dashboard layout', () => {
     expect(moveWidgetGroup(widgets, selected, 3, 0)).toBe(widgets);
     expect(moveWidgetGroup(widgets, selected, -1, 0)).toBe(widgets);
     expect(moveWidgetGroup(widgets, selected, 7, 0)).toBe(widgets);
+  });
+
+  it('moves to the nearest horizontal or upper edge without losing a partial gap', () => {
+    const widgets = [createWidget('first', { x: 7, y: 2, w: 3, h: 3 })];
+    const selected = new Set(['first']);
+
+    expect(moveWidgetGroupToEdge(widgets, selected, 1, 0)[0]?.layout).toEqual({
+      x: 9,
+      y: 2,
+      w: 3,
+      h: 3,
+    });
+    expect(moveWidgetGroupToEdge(widgets, selected, -1, 0)[0]?.layout.x).toBe(
+      0,
+    );
+    expect(moveWidgetGroupToEdge(widgets, selected, 0, -1)[0]?.layout.y).toBe(
+      0,
+    );
+  });
+
+  it('stops a group at the first obstacle and preserves its shape', () => {
+    const widgets = [
+      createWidget('first', { x: 0, y: 0, w: 3, h: 3 }),
+      createWidget('second', { x: 4, y: 0, w: 3, h: 3 }),
+      createWidget('blocked', { x: 10, y: 0, w: 2, h: 3 }),
+    ];
+    const moved = moveWidgetGroupToEdge(
+      widgets,
+      new Set(['first', 'second']),
+      1,
+      0,
+    );
+
+    expect(moved.map((widget) => widget.layout.x)).toEqual([3, 7, 10]);
+  });
+
+  it('stops at nearby obstacles when jumping left or up', () => {
+    const selected = new Set(['first']);
+    const moving = createWidget('first', { x: 5, y: 5, w: 3, h: 3 });
+    const left = createWidget('left', { x: 1, y: 5, w: 3, h: 3 });
+    const above = createWidget('above', { x: 5, y: 1, w: 3, h: 3 });
+    const widgets = [moving, left, above];
+
+    expect(moveWidgetGroupToEdge(widgets, selected, -1, 0)[0]?.layout.x).toBe(
+      4,
+    );
+    expect(moveWidgetGroupToEdge(widgets, selected, 0, -1)[0]?.layout.y).toBe(
+      4,
+    );
+  });
+
+  it('moves down to the visible bottom row or the first obstacle', () => {
+    const selected = new Set(['first']);
+    const widget = createWidget('first', { x: 0, y: 1, w: 3, h: 3 });
+    expect(getVisibleGridBottomRow(80, 912)).toBe(13);
+    expect(
+      moveWidgetGroupToEdge([widget], selected, 0, 1, 9)[0]?.layout.y,
+    ).toBe(6);
+
+    const blocked = createWidget('blocked', { x: 0, y: 6, w: 3, h: 3 });
+    expect(
+      moveWidgetGroupToEdge([widget, blocked], selected, 0, 1, 9)[0]?.layout.y,
+    ).toBe(3);
   });
 
   it('places copied groups at the nearest free anchor while preserving shape', () => {

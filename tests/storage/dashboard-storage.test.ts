@@ -26,10 +26,10 @@ describe('dashboard storage', () => {
 
   it('saves and loads a config without losing widget data', async () => {
     const config: DashboardConfig = {
-      version: 5,
+      version: 6,
       appearance: {
-        theme: 'light',
-        backgroundColor: '#f4f4f5',
+        theme: { type: 'builtin', id: 'light' },
+        backgroundColor: { type: 'custom', color: '#f4f4f5' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -38,6 +38,7 @@ describe('dashboard storage', () => {
           shadow: 50,
         },
       },
+      customThemes: [],
       widgets: [
         {
           id: '12c8b540-4847-45b3-98b7-d13b00833040',
@@ -73,7 +74,7 @@ describe('dashboard storage', () => {
     ).resolves.toEqual(normalizedConfig);
   });
 
-  it('migrates a stored v1 LinksWidget and writes v5 back to storage', async () => {
+  it('migrates a stored v1 LinksWidget and writes v6 back to storage', async () => {
     const legacyConfig = {
       version: 1,
       appearance: { theme: 'system', backgroundColor: '#18181b' },
@@ -92,10 +93,10 @@ describe('dashboard storage', () => {
     const migrated = await loadDashboardConfig();
 
     expect(migrated).toEqual({
-      ...legacyConfig,
-      version: 5,
+      version: 6,
       appearance: {
-        ...legacyConfig.appearance,
+        theme: { type: 'builtin', id: 'system' },
+        backgroundColor: { type: 'custom', color: '#18181b' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -105,6 +106,7 @@ describe('dashboard storage', () => {
         },
       },
       widgets: [{ ...legacyConfig.widgets[0], type: 'markdown' }],
+      customThemes: [],
     });
     await expect(
       storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),

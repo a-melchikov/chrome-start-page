@@ -17,12 +17,13 @@ describe('createDefaultDashboardConfig', () => {
         wallpaper: { type: 'none' },
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
+      customThemes: [],
     });
   });
 
   it('uses the standard Liquid Glass controls for a new dashboard', () => {
     expect(createDefaultDashboardConfig()).toMatchObject({
-      version: 5,
+      version: DASHBOARD_CONFIG_VERSION,
       appearance: {
         liquidGlass: {
           enabled: true,

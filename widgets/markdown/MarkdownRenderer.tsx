@@ -167,7 +167,7 @@ function createComponents(
     ),
     p: ({ node: _node, ...props }) => (
       <p
-        className="my-2 break-words leading-6 text-theme-text-secondary first:mt-0 last:mb-0"
+        className="my-2 break-words leading-6 text-theme-text-primary first:mt-0 last:mb-0"
         {...props}
       />
     ),
@@ -175,21 +175,21 @@ function createComponents(
       <strong className="font-semibold text-theme-text-primary" {...props} />
     ),
     em: ({ node: _node, ...props }) => (
-      <em className="italic text-theme-text-secondary" {...props} />
+      <em className="italic text-theme-text-primary" {...props} />
     ),
     del: ({ node: _node, ...props }) => (
       <del className="text-theme-text-muted" {...props} />
     ),
     blockquote: ({ node: _node, ...props }) => (
       <blockquote
-        className="my-3 rounded-r-md border-l-4 border-theme-accent bg-theme-surface-muted/40 py-1 pl-3 text-theme-text-secondary italic"
+        className="my-3 rounded-r-md border-l-4 border-theme-accent bg-theme-surface-muted/40 py-1 pl-3 text-theme-text-primary italic"
         {...props}
       />
     ),
     ul: ({ node: _node, className, ...props }) => (
       <ul
         className={classNames(
-          'my-2 list-disc space-y-1 pl-5 text-theme-text-secondary',
+          'my-2 list-disc space-y-1 pl-5 text-theme-text-primary',
           className?.includes('contains-task-list') && 'list-none pl-1',
         )}
         {...props}
@@ -197,7 +197,7 @@ function createComponents(
     ),
     ol: ({ node: _node, ...props }) => (
       <ol
-        className="my-2 list-decimal space-y-1 pl-5 text-theme-text-secondary"
+        className="my-2 list-decimal space-y-1 pl-5 text-theme-text-primary"
         {...props}
       />
     ),
@@ -227,7 +227,7 @@ function createComponents(
       return (
         <li
           className={classNames(
-            'break-words pl-0.5 text-theme-text-secondary',
+            'break-words pl-0.5 text-theme-text-primary',
             className?.includes('task-list-item') &&
               'flex items-start gap-2 pl-0',
           )}
@@ -270,7 +270,7 @@ function createComponents(
 
       return (
         <a
-          className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 align-middle font-medium text-theme-text-primary transition-colors hover:bg-theme-surface-elevated focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none"
+          className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 align-middle font-medium text-theme-link transition-colors hover:bg-theme-surface-elevated hover:text-theme-link-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none"
           href={normalizedUrl.href}
           title={getTextContent(children)}
           {...props}

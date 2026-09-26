@@ -242,6 +242,7 @@ describe('useDashboardShortcuts', () => {
       fireKey('KeyD', { key: 'd' });
       fireKey('Delete', { key: 'Delete' });
       fireKey('ArrowRight', { key: 'ArrowRight', shiftKey: true });
+      fireKey('ArrowLeft', { key: 'ArrowLeft' });
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowRight' }));
 
       expect(callbacks.onUndo).toHaveBeenCalledTimes(1);
@@ -250,7 +251,8 @@ describe('useDashboardShortcuts', () => {
       expect(callbacks.onCopySelection).toHaveBeenCalledTimes(1);
       expect(callbacks.onDuplicateSelection).toHaveBeenCalledTimes(2);
       expect(callbacks.onRequestDeleteSelection).toHaveBeenCalledTimes(1);
-      expect(callbacks.onMoveSelection).toHaveBeenCalledWith(5, 0);
+      expect(callbacks.onMoveSelection).toHaveBeenCalledWith(1, 0, true);
+      expect(callbacks.onMoveSelection).toHaveBeenCalledWith(-1, 0, false);
       expect(callbacks.onFinishNudge).toHaveBeenCalledTimes(1);
     });
 

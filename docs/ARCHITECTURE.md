@@ -106,9 +106,12 @@ Current migration behavior:
 
 - v1 `links` becomes `markdown`, preserving ID, title, content, and layout;
 - v1 and v2 appearance data gains `{type: 'none'}` wallpaper state;
-- v1, v2, and v3 gain the default `liquidGlass` group when migrated to v5;
+- v1, v2, and v3 gain the default `liquidGlass` group when migrated to v5+;
 - v4 keeps `liquidGlassEnabled` while migrating it into the v5 group and gains
   standard transparency, blur, and shadow values;
+- v5 appearance `theme: ThemeId` migrates to `theme: { type: 'builtin', id: ThemeId }`,
+  `backgroundColor` string migrates to `{ type: 'custom', color }` (or `{ type: 'theme' }`
+  if matching theme default), and config gains `customThemes: []`;
 - retired WIP `google-calendar` widgets are removed from v2 while all supported
   widgets and appearance data are preserved;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
@@ -127,6 +130,11 @@ widget changes flush on editor finish, Escape, `pagehide`, and unmount.
 позднейшие правки содержимого. Для добавления и удаления сохраняются
 конфигурации и порядок виджетов; новый шаг очищает Redo. Импорт и принятие
 внешнего состояния очищают историю.
+
+Геометрия `Shift+стрелка` вычисляется в `dashboard-layout.ts`: группа движется
+до ближайшего препятствия или края сетки. Для движения вниз `Dashboard`
+передаёт нижний ряд, полностью видимый в текущем окне; обычные стрелки
+по-прежнему сдвигают группу на одну клетку.
 
 Записи конфигурации проходят через общий Web Lock и перед записью сверяют
 `local:dashboard-config` с последней принятой версией. WXT watcher обновляет
@@ -252,7 +260,11 @@ brands and remains enabled only for user Markdown links.
 
 ## Liquid Glass
 
-Статический Liquid Glass применяется только к поверхностям Markdown и Search.
+Статический Liquid Glass применяется к карточкам Markdown, часов, Pomodoro,
+компактной погоды и пустого изображения, поверхности Search и верхней панели
+управления в обоих состояниях.
+Погодная сцена и загруженное изображение получают только стеклянную кромку и
+тень: их содержимое не перекрывает дополнительная подложка.
 Состояние и параметры хранятся в `appearance.liquidGlass`: переключатель,
 прозрачность `0–100%`, размытие `0–40 px` и тень `0–100%`. Стандартные значения
 `40% / 18 px / 50%` можно восстановить отдельной кнопкой без изменения
@@ -260,14 +272,18 @@ brands and remains enabled only for user Markdown links.
 оформления.
 
 `App` добавляет корневой класс `liquid-glass-enabled` и преобразует числа в CSS
-custom properties. Theme-aware формулы используют их для tint, blur и внешней
-тени, а виджеты используют семантические классы поверхностей без передачи
-визуальных параметров через всё дерево Dashboard.
+custom properties. Theme-aware формулы используют их для ровной полупрозрачной
+подложки, blur и короткой внешней тени. Отражение ограничено внутренней кромкой;
+градиент на всей площади карточки не используется. Виджеты используют
+семантические классы поверхностей без передачи визуальных параметров через
+всё дерево Dashboard. Селекторы `:has(.weather-visual)` и
+`:has(.widget-image-media)` исключают подложку поверх визуальных сцен.
 
-При выключении Markdown возвращается к непрозрачной карточке, а Search — к
-прежнему bare-виду без внешней капсулы. Стили учитывают светлую и тёмную тему;
+При выключении карточки и панель управления возвращаются к обычному виду,
+а Search — к прежнему bare-виду без внешней капсулы. Панель и карточки
+используют одинаковую плотность стеклянной подложки. Стили учитывают все темы;
 при отсутствии `backdrop-filter` полупрозрачный фон, рамка и тень остаются
-доступным fallback. Панели управления и диалоги эффект не используют. Новые
+доступным fallback. Диалоги эффект не используют. Новые
 зависимости и разрешения расширения не требуются.
 
 ## Pomodoro Widget
@@ -292,29 +308,34 @@ Active tabs additionally play a local Web Audio chime if open.
 The theme architecture lives in `themes/` and decouples color palettes and
 visual tokens from widget logic and components:
 
-- `themes/types.ts` defines `ThemeId` (11 themes: `system`, `light`, `dark`,
+- `themes/types.ts` defines `BuiltinThemeId` (13 themes: `system`, `light`, `dark`,
   `tokyo-night`, `rainy-tokyo`, `cozy-lofi-night`, `catppuccin-mocha`,
-  `catppuccin-latte`, `nord`, `synthwave-84`, `solarized-dark`),
-  `ThemeTokens`, `ThemeDefinition`, and `ThemePreviewColors`.
-- `themes/palettes.ts` provides complete, high-contrast token definitions for all
-  10 palettes (background, surface, surface-card, borders, primary/muted text,
-  accents, badges, states, scrollbar colors, and optional glow properties).
+  `catppuccin-latte`, `paper-sage`, `apricot-noon`, `nord`, `synthwave-84`,
+  `solarized-dark`), `ThemeRef` (`builtin` or `custom`), `CustomTheme` with 28
+  semantic color keys, `ThemeTokens`, `ThemeDefinition`, and `ThemePreviewColors`.
+- `themes/palettes.ts` provides semantic token definitions for all 12 concrete
+  builtin palettes; `system` resolves to the existing light or dark preset.
+- `themes/color-utils.ts` contains color helpers: hex validation/normalization,
+  relative luminance, WCAG contrast calculation, and linear RGB blending.
+- `themes/color-derivation.ts` deterministically derives 22 secondary colors from
+  6 primary colors (`canvasBg`, `surfaceBg`, `textPrimary`, `textSecondary`, `accent`,
+  `accentText`) and performs WCAG contrast checks.
 - `themes/registry.ts` exposes `THEMES: readonly ThemeDefinition[]`,
-  `getThemeDefinition(id)`, and `resolveTheme(id, systemDarkMode)`.
+  `getThemeDefinition(id)`, `resolveTheme(themeRef, systemDarkMode, customThemes)`,
+  and `applyThemeVariables` for injecting custom theme CSS variables into the DOM.
 - `entrypoints/newtab/themes.css` declares scoped CSS variables
-  (`--theme-bg`, `--theme-surface`, `--theme-accent`, etc.) via
-  `:root, [data-theme="..."]` selectors.
+  (`--theme-canvas-bg`, `--theme-surface-bg`, `--theme-accent`, etc.) via
+  `:root, [data-theme="..."]` selectors for built-in themes.
+- Custom themes apply their full token set via inline style `--theme-*` variables
+  in `App.tsx` and in `ThemePreview.tsx`.
 - `entrypoints/newtab/style.css` defines the Tailwind CSS 4 `@theme` block
   mapping semantic utility classes (`bg-theme-surface`, `text-theme-text-primary`,
-  `border-theme-border`, `bg-theme-accent`) to these custom properties. It also
-  defines `.theme-glow` for retro/synthwave effects and scrollbar styling via
-  `color-mix`.
-- `App.tsx` calls `resolveTheme` to synchronously set `data-theme`, `color-scheme`,
-  and the `.dark` class on the root container.
-- `AppearanceDialog.tsx` displays an interactive grid of theme preview cards with
-  swatches for background, card surface, and accent color. Selecting a preset
-  automatically resets `backgroundColor` to the theme's curated default while
-  leaving manual color-picker overrides accessible.
+  `border-theme-border`, `bg-theme-accent`) to these custom properties.
+- `AppearanceDialog.tsx` displays built-in themes alongside custom user themes with
+  cards for creating, editing, duplicating, and deleting custom themes.
+- `CustomThemeEditorDialog.tsx` provides full-screen editing with live auto-derivation,
+  manual overrides, WCAG contrast alerts, a passive `ThemePreview` thumbnail, and
+  full-screen preview of the entire dashboard.
 
 ## Weather Widget and Open-Meteo Integration
 

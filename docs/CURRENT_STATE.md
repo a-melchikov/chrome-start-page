@@ -5,19 +5,26 @@ Last updated: 2026-09-26
 ## Implemented
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
-- Version 5 local dashboard schema, defaults, runtime validation, queued saves,
+- Version 6 local dashboard schema, defaults, runtime validation, queued saves,
+  `customThemes` array, typed `ThemeRef` (`builtin` / `custom`), `BackgroundColorConfig`,
   v1 LinksWidget → MarkdownWidget migration, v1/v2/v3 appearance migration,
-  v4 Liquid Glass migration, and recovery of old v2 profiles by removing
-  retired WIP Google Calendar widgets.
+  v4 Liquid Glass migration, v5 -> v6 custom theme migration, and recovery of old v2
+  profiles by removing retired WIP Google Calendar widgets.
 - Global extensible theme system and design tokens (`themes/`, `themes.css`,
-  Tailwind CSS 4 `@theme`) with 11 curated presets: System, Light, Dark,
+  Tailwind CSS 4 `@theme`) with 13 curated presets: System, Light, Dark,
   Tokyo Night, Rainy Tokyo, Cozy Lofi Night, Catppuccin Mocha, Catppuccin Latte,
-  Nord, SynthWave '84 (with neon glow), and Solarized Dark. All widgets, controls,
+  Paper Sage, Apricot Noon, Nord, SynthWave '84 (with neon glow), and Solarized Dark.
+  All widgets, controls,
   dialogs, inputs, Liquid Glass surfaces, and scrollbars adapt dynamically to the
   active theme tokens.
+- Custom themes system: full-screen theme editor with 6 primary colors, auto-derivation
+  of 22 secondary roles, manual overrides, WCAG contrast alerts, live `ThemePreview`
+  thumbnail, and full-screen preview mode. Custom themes can be created, edited,
+  duplicated, and deleted from the Appearance dialog.
 - Interactive theme picker in the appearance dialog displaying visual preview
-  cards with background, surface, and accent swatches, with automatic default
-  background color synchronization and optional manual color picker override.
+  cards for both built-in and custom themes with background, surface, and accent
+  swatches, with automatic default background color synchronization and optional
+  manual color picker override.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
 - Выделение виджетов по одному и группой, групповой drag и удаление, сдвиг
@@ -68,12 +75,15 @@ Last updated: 2026-09-26
 - Compact appearance dialog with initially collapsed Theme, Background,
   Wallpaper, and Widgets sections; wallpaper sources are nested as Local and
   URL controls.
-- Включённый по умолчанию статический Liquid Glass для Markdown и Search с
-  theme-aware tint, blur/saturation, светлой кромкой и тенью. Группа
+- Включённый по умолчанию статический Liquid Glass для карточек, Search и
+  верхней панели управления с
+  ровной theme-aware подложкой, blur/saturation, тонкой световой кромкой и
+  короткой тенью. Погодная сцена и готовое изображение получают только кромку
+  и тень. Группа
   `appearance.liquidGlass` хранит переключатель и параметры прозрачности,
   размытия и тени; ползунки дают live preview, а reset возвращает стандартные
   `40% / 18 px / 50%`, не меняя переключатель. Выключенное состояние возвращает
-  непрозрачную Markdown-карточку и bare Search без внешней капсулы. CSS-fallback
+  обычные карточки и bare Search без внешней капсулы. CSS-fallback
   сохраняет tint, рамку и тень без `backdrop-filter`.
 - Separate «Импорт и экспорт» dialog in global edit mode. Export downloads a
   versioned JSON backup (format v2) with the complete dashboard, embedded local

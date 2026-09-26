@@ -10,7 +10,7 @@ import type {
   DashboardConfig,
   WidgetType,
 } from '../../storage/schema';
-import { THEMES } from '../../themes/registry';
+import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
   CopyIcon,
   DuplicateIcon,
@@ -77,7 +77,7 @@ interface DashboardControlsProps {
     signal?: AbortSignal,
   ) => Promise<DashboardImportResult>;
   onRemoveWallpaper: () => Promise<void>;
-  onMoveSelection: (deltaX: number, deltaY: number) => void;
+  onMoveSelection: (deltaX: number, deltaY: number, toEdge: boolean) => void;
   onPasteSelection: (source: string) => void;
   onRedo: () => void;
   onRequestDeleteSelection: () => void;
@@ -86,6 +86,10 @@ interface DashboardControlsProps {
   onUndo: () => void;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
+  onOpenThemeEditor?: (themeToEdit?: CustomTheme) => void;
+  onSelectTheme?: (themeRef: ThemeRef) => void;
+  onDuplicateCustomTheme?: (id: string) => void;
+  onDeleteCustomTheme?: (id: string) => void;
 }
 
 export function DashboardControls({
@@ -124,6 +128,10 @@ export function DashboardControls({
   onUndo,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
+  onOpenThemeEditor,
+  onSelectTheme,
+  onDuplicateCustomTheme,
+  onDeleteCustomTheme,
 }: DashboardControlsProps) {
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
@@ -224,6 +232,9 @@ export function DashboardControls({
             setPaletteFeedback('Не удалось экспортировать dashboard'),
           );
       }
+      if (command.action === 'add-custom-theme') {
+        onOpenThemeEditor?.();
+      }
       return;
     }
 
@@ -240,12 +251,14 @@ export function DashboardControls({
       widget?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
       widget?.focus({ preventScroll: true });
     } else if (command.kind === 'theme') {
-      const theme = THEMES.find((item) => item.id === command.themeId);
-      if (theme)
+      if (onSelectTheme) {
+        onSelectTheme(command.themeId);
+      } else {
         onAppearanceChange({
-          theme: theme.id,
-          backgroundColor: theme.defaultBackgroundColor,
+          theme: command.themeId,
+          backgroundColor: { type: 'theme' },
         });
+      }
     } else if (command.kind === 'link') {
       window.location.assign(command.href);
     }
@@ -258,7 +271,7 @@ export function DashboardControls({
         message={paletteFeedback}
         role="status"
       />
-      <div className="dashboard-toolbar fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl border border-theme-border bg-theme-surface p-1 shadow-lg">
+      <div className="dashboard-toolbar liquid-glass-surface fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl p-1">
         <div
           aria-hidden={!isEditing}
           className="edit-controls items-center gap-2"
@@ -405,6 +418,7 @@ export function DashboardControls({
       <Suspense fallback={null}>
         <AppearanceDialog
           appearance={appearance}
+          customThemes={config?.customThemes ?? []}
           requestedSection={requestedSection}
           isWallpaperUpdating={isWallpaperUpdating}
           open={isAppearanceOpen}
@@ -421,6 +435,10 @@ export function DashboardControls({
           onRemoveWallpaper={onRemoveWallpaper}
           onSetLocalWallpaper={onSetLocalWallpaper}
           onSetUrlWallpaper={onSetUrlWallpaper}
+          onSelectTheme={onSelectTheme}
+          onOpenThemeEditor={onOpenThemeEditor}
+          onDuplicateCustomTheme={onDuplicateCustomTheme}
+          onDeleteCustomTheme={onDeleteCustomTheme}
         />
         <BackupDialog
           error={backupError}

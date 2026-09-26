@@ -39,6 +39,7 @@ describe('widget self writes', () => {
       widgets: saved.widgets,
       appearance: saved.appearance,
       version: saved.version,
+      customThemes: saved.customThemes,
     });
 
     act(() => dashboard.result.current.undo());

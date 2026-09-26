@@ -5,11 +5,14 @@ import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 import type { WeatherWidgetConfig } from '../widgets/weather/types';
 
-import type { ThemeId } from '../themes/types';
+import type { CustomTheme, ThemeRef } from '../themes/types';
 
-export const DASHBOARD_CONFIG_VERSION = 5 as const;
+export const DASHBOARD_CONFIG_VERSION = 6 as const;
 
-export type Theme = ThemeId;
+export type Theme = ThemeRef;
+
+export type BackgroundColorConfig =
+  { type: 'theme' } | { type: 'custom'; color: string };
 
 export type WallpaperConfig =
   | { type: 'none' }
@@ -43,7 +46,7 @@ export interface LiquidGlassConfig {
 
 export interface AppearanceConfig {
   theme: Theme;
-  backgroundColor: string;
+  backgroundColor: BackgroundColorConfig;
   wallpaper: WallpaperConfig;
   liquidGlass: LiquidGlassConfig;
 }
@@ -64,4 +67,5 @@ export interface DashboardConfig {
   version: typeof DASHBOARD_CONFIG_VERSION;
   widgets: WidgetConfig[];
   appearance: AppearanceConfig;
+  customThemes: CustomTheme[];
 }

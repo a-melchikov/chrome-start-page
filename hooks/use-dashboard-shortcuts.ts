@@ -19,7 +19,7 @@ export interface DashboardShortcutsOptions {
   onSelectAll?: () => void;
   onToggleFocusedSelection?: (widgetId: string) => void;
   onRequestDeleteSelection?: () => void;
-  onMoveSelection?: (deltaX: number, deltaY: number) => void;
+  onMoveSelection?: (deltaX: number, deltaY: number, toEdge: boolean) => void;
   onFinishNudge?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -221,8 +221,7 @@ export function useDashboardShortcuts({
         const direction = directions[event.code];
         if (selectedCount > 0 && direction) {
           event.preventDefault();
-          const step = event.shiftKey ? 5 : 1;
-          onMoveSelection?.(direction[0] * step, direction[1] * step);
+          onMoveSelection?.(direction[0], direction[1], event.shiftKey);
           return;
         }
 

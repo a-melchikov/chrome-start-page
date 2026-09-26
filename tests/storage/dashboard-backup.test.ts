@@ -213,7 +213,7 @@ describe('dashboard backup format', () => {
       }),
     );
 
-    expect(parsed.dashboard.version).toBe(5);
+    expect(parsed.dashboard.version).toBe(6);
     expect(parsed.dashboard.widgets[0]).toMatchObject({
       id: 'legacy-links',
       type: 'markdown',

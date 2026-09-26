@@ -91,7 +91,13 @@ describe('CommandPalette', () => {
       />,
     );
     await user.click(screen.getByRole('option', { name: /Переключить тему/ }));
-    expect(screen.getAllByRole('option')).toHaveLength(11);
+    expect(screen.getAllByRole('option')).toHaveLength(13);
+    expect(
+      screen.getByRole('option', { name: /Бумага и шалфей/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: /Абрикосовый полдень/ }),
+    ).toBeInTheDocument();
     await user.type(screen.getByRole('combobox'), 'несуществующая тема');
     expect(screen.getByText('Ничего не найдено')).toBeInTheDocument();
   });

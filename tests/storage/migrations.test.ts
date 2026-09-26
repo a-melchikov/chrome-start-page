@@ -37,9 +37,10 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 5,
+      version: 6,
       appearance: {
-        ...legacyConfig.appearance,
+        theme: { type: 'builtin', id: 'light' },
+        backgroundColor: { type: 'custom', color: '#f4f4f5' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -58,6 +59,7 @@ describe('migrateDashboardConfig', () => {
           layout: { ...legacyConfig.widgets[1].layout, h: 1 },
         },
       ],
+      customThemes: [],
     });
   });
 
@@ -69,11 +71,11 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 5,
+      version: 6,
       widgets: [],
       appearance: {
-        theme: 'dark',
-        backgroundColor: '#123456',
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -82,6 +84,7 @@ describe('migrateDashboardConfig', () => {
           shadow: 50,
         },
       },
+      customThemes: [],
     });
   });
 
@@ -108,10 +111,11 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 5,
+      version: 6,
       widgets: [legacyConfig.widgets[1]],
       appearance: {
-        ...legacyConfig.appearance,
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
         wallpaper: { type: 'none' },
         liquidGlass: {
           enabled: true,
@@ -120,6 +124,7 @@ describe('migrateDashboardConfig', () => {
           shadow: 50,
         },
       },
+      customThemes: [],
     });
   });
 
@@ -138,10 +143,15 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     expect(migrateDashboardConfig(v3Config)).toEqual({
-      ...v3Config,
-      version: 5,
+      version: 6,
+      widgets: [],
       appearance: {
-        ...v3Config.appearance,
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
+        wallpaper: {
+          type: 'url',
+          url: 'https://example.com/wallpaper.jpg',
+        },
         liquidGlass: {
           enabled: true,
           transparency: 40,
@@ -149,6 +159,7 @@ describe('migrateDashboardConfig', () => {
           shadow: 50,
         },
       },
+      customThemes: [],
     });
   });
 
@@ -167,11 +178,11 @@ describe('migrateDashboardConfig', () => {
       } as const;
 
       expect(migrateDashboardConfig(v4Config)).toEqual({
-        version: 5,
+        version: 6,
         widgets: [],
         appearance: {
-          theme: 'dark',
-          backgroundColor: '#123456',
+          theme: { type: 'builtin', id: 'dark' },
+          backgroundColor: { type: 'custom', color: '#123456' },
           wallpaper: { type: 'none' },
           liquidGlass: {
             enabled,
@@ -180,15 +191,51 @@ describe('migrateDashboardConfig', () => {
             shadow: 50,
           },
         },
+        customThemes: [],
       });
     },
   );
+
+  it('migrates a v5 dashboard to v6 with customThemes and theme ref', () => {
+    const v5Config = {
+      version: 5,
+      widgets: [],
+      appearance: {
+        theme: 'dark',
+        backgroundColor: '#123456',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+    } as const;
+
+    expect(migrateDashboardConfig(v5Config)).toEqual({
+      version: 6,
+      widgets: [],
+      customThemes: [],
+      appearance: {
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+    });
+  });
 
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 6,
+        version: 7,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
   });
@@ -219,19 +266,55 @@ describe('migrateDashboardConfig', () => {
     'cozy-lofi-night',
     'catppuccin-mocha',
     'catppuccin-latte',
+    'paper-sage',
+    'apricot-noon',
     'nord',
     'synthwave-84',
     'solarized-dark',
   ] as const)('accepts valid theme %s in schema v5', (theme) => {
+    const v5Config = {
+      version: 5,
+      widgets: [],
+      appearance: {
+        theme,
+        backgroundColor: '#18181b',
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+    };
+    const result = migrateDashboardConfig(v5Config);
+    expect(result.appearance.theme).toEqual({ type: 'builtin', id: theme });
+  });
+
+  it.each([
+    'system',
+    'light',
+    'dark',
+    'tokyo-night',
+    'rainy-tokyo',
+    'cozy-lofi-night',
+    'catppuccin-mocha',
+    'catppuccin-latte',
+    'paper-sage',
+    'apricot-noon',
+    'nord',
+    'synthwave-84',
+    'solarized-dark',
+  ] as const)('accepts valid builtin theme %s in schema v6', (theme) => {
     const config = createDefaultDashboardConfig();
     const result = migrateDashboardConfig({
       ...config,
       appearance: {
         ...config.appearance,
-        theme,
+        theme: { type: 'builtin', id: theme },
       },
     });
-    expect(result.appearance.theme).toBe(theme);
+    expect(result.appearance.theme).toEqual({ type: 'builtin', id: theme });
   });
 
   it('rejects malformed current-version data', () => {

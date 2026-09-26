@@ -38,6 +38,7 @@ import type {
   DashboardConfig,
   WidgetConfig,
 } from '../storage/schema';
+import type { CustomTheme, ThemeRef } from '../themes/types';
 import {
   applyWidgetHistoryEntry,
   collectHistoryWidgets,
@@ -48,6 +49,7 @@ import {
 import {
   placeWidgetGroup,
   moveWidgetGroup,
+  moveWidgetGroupToEdge,
 } from '../components/dashboard/dashboard-layout';
 import {
   createWidgetClipboardPayload,
@@ -78,7 +80,13 @@ interface UseDashboardConfigResult {
   copyWidgets: (ids: readonly string[]) => Promise<string>;
   duplicateWidgets: (ids: readonly string[]) => Promise<string[]>;
   pasteWidgets: (source: string) => Promise<string[]>;
-  moveWidgets: (ids: readonly string[], deltaX: number, deltaY: number) => void;
+  moveWidgets: (
+    ids: readonly string[],
+    deltaX: number,
+    deltaY: number,
+    toEdge?: boolean,
+    visibleBottomRow?: number,
+  ) => void;
   finishNudge: () => void;
   removeWidgets: (ids: readonly string[]) => void;
   undo: () => void;
@@ -101,6 +109,13 @@ interface UseDashboardConfigResult {
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
   updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
+  saveCustomTheme: (
+    theme: CustomTheme,
+    options?: { makeActive?: boolean },
+  ) => void;
+  deleteCustomTheme: (id: string) => void;
+  duplicateCustomTheme: (id: string) => Promise<CustomTheme>;
+  selectTheme: (themeRef: ThemeRef) => void;
 }
 
 export const MAX_BACKUP_FILE_BYTES = 32 * 1024 * 1024;
@@ -136,6 +151,31 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
     : 'Не удалось загрузить настройки';
+}
+
+function generateUniqueThemeName(
+  baseName: string,
+  existingThemes: readonly CustomTheme[],
+): string {
+  const isTaken = (name: string) =>
+    existingThemes.some(
+      (t) => t.name.trim().toLowerCase() === name.trim().toLowerCase(),
+    );
+
+  let candidate = `${baseName} (копия)`.slice(0, 64);
+  if (!isTaken(candidate)) {
+    return candidate;
+  }
+
+  let counter = 2;
+  while (counter < 1000) {
+    candidate = `${baseName} (копия ${counter})`.slice(0, 64);
+    if (!isTaken(candidate)) {
+      return candidate;
+    }
+    counter++;
+  }
+  return `${baseName} ${Date.now()}`.slice(0, 64);
 }
 
 async function readBackupFile(file: File): Promise<string> {
@@ -812,6 +852,121 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     [],
   );
 
+  const selectTheme = useCallback(
+    (themeRef: ThemeRef) => {
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        appearance: {
+          ...currentConfig.appearance,
+          theme: themeRef,
+          backgroundColor: { type: 'theme' },
+        },
+      }));
+    },
+    [commitConfig],
+  );
+
+  const saveCustomTheme = useCallback(
+    (theme: CustomTheme, options?: { makeActive?: boolean }) => {
+      commitConfig((currentConfig) => {
+        const existingIndex = currentConfig.customThemes.findIndex(
+          (t) => t.id === theme.id,
+        );
+        let nextThemes: CustomTheme[];
+        if (existingIndex >= 0) {
+          nextThemes = currentConfig.customThemes.map((t, idx) =>
+            idx === existingIndex ? theme : t,
+          );
+        } else {
+          nextThemes = [...currentConfig.customThemes, theme];
+        }
+
+        const shouldActivate = options?.makeActive ?? false;
+        return {
+          ...currentConfig,
+          customThemes: nextThemes,
+          ...(shouldActivate
+            ? {
+                appearance: {
+                  ...currentConfig.appearance,
+                  theme: { type: 'custom', id: theme.id },
+                  backgroundColor: { type: 'theme' },
+                },
+              }
+            : {}),
+        };
+      });
+    },
+    [commitConfig],
+  );
+
+  const deleteCustomTheme = useCallback(
+    (id: string) => {
+      commitConfig((currentConfig) => {
+        const nextThemes = currentConfig.customThemes.filter(
+          (t) => t.id !== id,
+        );
+        const isActive =
+          currentConfig.appearance.theme.type === 'custom' &&
+          currentConfig.appearance.theme.id === id;
+
+        return {
+          ...currentConfig,
+          customThemes: nextThemes,
+          ...(isActive
+            ? {
+                appearance: {
+                  ...currentConfig.appearance,
+                  theme: { type: 'builtin', id: 'system' },
+                  backgroundColor: { type: 'theme' },
+                },
+              }
+            : {}),
+        };
+      });
+    },
+    [commitConfig],
+  );
+
+  const duplicateCustomTheme = useCallback(
+    async (id: string): Promise<CustomTheme> => {
+      const currentConfig = configRef.current;
+      if (!currentConfig) {
+        throw new Error('Настройки дашборда ещё не загружены');
+      }
+      const original = currentConfig.customThemes.find((t) => t.id === id);
+      if (!original) {
+        throw new Error('Тема для копирования не найдена');
+      }
+
+      const newId = crypto.randomUUID();
+      const newName = generateUniqueThemeName(
+        original.name,
+        currentConfig.customThemes,
+      );
+      const copy: CustomTheme = {
+        ...original,
+        id: newId,
+        name: newName,
+        colors: { ...original.colors },
+        manualOverrides: [...original.manualOverrides],
+      };
+
+      commitConfig((config) => ({
+        ...config,
+        customThemes: [...config.customThemes, copy],
+        appearance: {
+          ...config.appearance,
+          theme: { type: 'custom', id: newId },
+          backgroundColor: { type: 'theme' },
+        },
+      }));
+
+      return copy;
+    },
+    [commitConfig],
+  );
+
   const addWidget = useCallback(
     (widget: WidgetConfig) => {
       const currentConfig = configRef.current;
@@ -897,16 +1052,26 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   );
 
   const moveWidgets = useCallback(
-    (ids: readonly string[], deltaX: number, deltaY: number) => {
+    (
+      ids: readonly string[],
+      deltaX: number,
+      deltaY: number,
+      toEdge = false,
+      visibleBottomRow?: number,
+    ) => {
       const currentConfig = configRef.current;
       if (!currentConfig || conflictRef.current || widgetActionRef.current)
         return;
-      const nextWidgets = moveWidgetGroup(
-        currentConfig.widgets,
-        new Set(ids),
-        deltaX,
-        deltaY,
-      );
+      const selectedIds = new Set(ids);
+      const nextWidgets = toEdge
+        ? moveWidgetGroupToEdge(
+            currentConfig.widgets,
+            selectedIds,
+            deltaX,
+            deltaY,
+            visibleBottomRow,
+          )
+        : moveWidgetGroup(currentConfig.widgets, selectedIds, deltaX, deltaY);
       if (nextWidgets === currentConfig.widgets) return;
       const entry = createLayoutHistoryEntry(
         currentConfig.widgets,
@@ -1161,5 +1326,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     updateAppearance,
     updateWidget,
     updateWidgetLayouts,
+    saveCustomTheme,
+    deleteCustomTheme,
+    duplicateCustomTheme,
+    selectTheme,
   };
 }

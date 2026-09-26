@@ -4,7 +4,7 @@
 
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `5`; current widget types:
+Russian-language. Current persisted schema version: `6`; current widget types:
 `markdown`, `search`, `pomodoro`, `image`, `clock`, and `weather`.
 
 Source code and configuration are the source of truth for implementation state.
@@ -80,9 +80,11 @@ specification.
 - `MarkdownWidget` is a card with a prominent fixed title and scrollable body.
   `SearchWidget` is bare, has no visible title/card, and remains one grid row
   high with horizontal resizing only.
-- Liquid Glass is enabled by default for Markdown and Search surfaces only. It
-  is static, theme-aware, and can be configured or disabled from the collapsed
-  «Виджеты» appearance section; controls and dialogs remain opaque.
+- Liquid Glass is enabled by default for card surfaces and Search. Weather
+  scenes and loaded images receive only the edge and shadow, without an overlay.
+  The effect is static, theme-aware, and can be configured or disabled from the
+  collapsed «Виджеты» appearance section. The top dashboard toolbar uses the
+  same glass tint as widget cards when enabled; dialogs remain opaque.
 - Escape closes the active dialog; with no dialog open, Escape exits global edit
   mode. Preserve focus restoration and accessible names.
 
@@ -96,10 +98,10 @@ specification.
   memory and flush after input completion, dialog close, `pagehide`, or
   unmount. Widget editor changes are debounced and must flush on finish,
   Escape, `pagehide`, and unmount. Preserve queued write ordering.
-- Schema v5 supports `markdown`, `search`, wallpaper references, and grouped
-  `appearance.liquidGlass` settings. V1/v2/v3 gain defaults; v4 preserves its
-  boolean enabled state while gaining numeric defaults. V1 `links` widgets
-  migrate to `markdown` without losing ID, title, content, or layout.
+- Schema v6 supports custom user themes (`customThemes`), typed theme references
+  (`appearance.theme: ThemeRef`), background override modes (`backgroundColor: BackgroundColorConfig`),
+  and auto-migrates v1–v5 configs. V5 introduced grouped `appearance.liquidGlass` settings.
+  V1 `links` widgets migrate to `markdown` without losing ID, title, content, or layout.
 - Search widget height is normalized to `1` during load/save.
 
 ## Error Handling and Security

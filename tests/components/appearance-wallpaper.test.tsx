@@ -6,8 +6,8 @@ import { AppearanceDialog } from '../../components/dashboard/AppearanceDialog';
 import type { AppearanceConfig } from '../../storage/schema';
 
 const appearance: AppearanceConfig = {
-  theme: 'system',
-  backgroundColor: '#f4f4f5',
+  theme: { type: 'builtin', id: 'system' },
+  backgroundColor: { type: 'custom', color: '#f4f4f5' },
   wallpaper: { type: 'none' },
   liquidGlass: {
     enabled: true,
