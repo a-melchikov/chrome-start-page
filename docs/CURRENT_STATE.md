@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-09-25
+Last updated: 2026-09-26
 
 ## Implemented
 
@@ -20,6 +20,11 @@ Last updated: 2026-09-25
   background color synchronization and optional manual color picker override.
 - Global edit mode with Escape exit, add/delete dialogs, appearance controls,
   drag/resize, per-widget constraints, and placement below the current grid.
+- Выделение виджетов по одному и группой, групповой drag и удаление, сдвиг
+  стрелками, Undo/Redo для компоновки и состава, копирование/вставка между
+  вкладками с локальными изображениями и дублирование. Действия доступны на
+  панели и через горячие клавиши; история ограничена 50 шагами в текущей
+  вкладке. Конкурирующие правки вкладок требуют выбора версии.
 - Top-centered command search opened with `Ctrl+K`, `/` outside text fields, or
   the toolbar magnifier. It shows results below the field over a subtly dimmed
   dashboard, closes on Escape or outside click, and searches add/focus actions,
@@ -94,6 +99,8 @@ Last updated: 2026-09-25
 - A malformed or unsupported stored config shows an error and blocks the
   dashboard; there is no user-facing repair path.
 - Narrow windows use horizontal scrolling rather than responsive grid reflow.
+- История Undo не переживает закрытие вкладки; состояние таймера Помодоро и
+  кэши не входят в копию виджета.
 
 ## Known Issues
 

@@ -163,6 +163,21 @@ describe('useDashboardShortcuts', () => {
   });
 
   describe('escape key', () => {
+    it('clears selection before exiting edit mode', () => {
+      const onClearSelection = vi.fn();
+      renderHook(() =>
+        useDashboardShortcuts({
+          ...defaultOptions,
+          isEditing: true,
+          selectedCount: 2,
+          onClearSelection,
+        }),
+      );
+
+      fireKey('Escape');
+      expect(onClearSelection).toHaveBeenCalledTimes(1);
+      expect(onToggleEditing).not.toHaveBeenCalled();
+    });
     it('exits editing on Escape when editing is active and no dialog is open', () => {
       renderHook(() =>
         useDashboardShortcuts({ ...defaultOptions, isEditing: true }),
@@ -193,6 +208,92 @@ describe('useDashboardShortcuts', () => {
 
       fireKey('Escape');
       expect(onToggleEditing).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('widget editing shortcuts', () => {
+    it('handles undo, redo, selection, copy, duplicate, delete, and movement', () => {
+      const callbacks = {
+        onUndo: vi.fn(),
+        onRedo: vi.fn(),
+        onSelectAll: vi.fn(),
+        onCopySelection: vi.fn(),
+        onDuplicateSelection: vi.fn(),
+        onRequestDeleteSelection: vi.fn(),
+        onMoveSelection: vi.fn(),
+        onFinishNudge: vi.fn(),
+      };
+      renderHook(() =>
+        useDashboardShortcuts({
+          ...defaultOptions,
+          isEditing: true,
+          selectedCount: 2,
+          canUndo: true,
+          canRedo: true,
+          ...callbacks,
+        }),
+      );
+
+      fireKey('KeyZ', { key: 'z', ctrlKey: true });
+      fireKey('KeyZ', { key: 'Z', ctrlKey: true, shiftKey: true });
+      fireKey('KeyA', { key: 'a', ctrlKey: true });
+      fireKey('KeyC', { key: 'c', ctrlKey: true });
+      fireKey('KeyD', { key: 'd', ctrlKey: true });
+      fireKey('KeyD', { key: 'd' });
+      fireKey('Delete', { key: 'Delete' });
+      fireKey('ArrowRight', { key: 'ArrowRight', shiftKey: true });
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowRight' }));
+
+      expect(callbacks.onUndo).toHaveBeenCalledTimes(1);
+      expect(callbacks.onRedo).toHaveBeenCalledTimes(1);
+      expect(callbacks.onSelectAll).toHaveBeenCalledTimes(1);
+      expect(callbacks.onCopySelection).toHaveBeenCalledTimes(1);
+      expect(callbacks.onDuplicateSelection).toHaveBeenCalledTimes(2);
+      expect(callbacks.onRequestDeleteSelection).toHaveBeenCalledTimes(1);
+      expect(callbacks.onMoveSelection).toHaveBeenCalledWith(5, 0);
+      expect(callbacks.onFinishNudge).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not take shortcuts from an input or an open dialog', () => {
+      const onUndo = vi.fn();
+      renderHook(() =>
+        useDashboardShortcuts({
+          ...defaultOptions,
+          isEditing: true,
+          selectedCount: 1,
+          canUndo: true,
+          onUndo,
+        }),
+      );
+      const input = document.createElement('input');
+      document.body.appendChild(input);
+      fireKey('KeyZ', { key: 'z', ctrlKey: true, target: input });
+      const dialog = document.createElement('dialog');
+      dialog.open = true;
+      document.body.appendChild(dialog);
+      fireKey('KeyZ', { key: 'z', ctrlKey: true });
+      expect(onUndo).not.toHaveBeenCalled();
+    });
+
+    it('accepts only widget clipboard payloads on paste', () => {
+      const onPasteSelection = vi.fn();
+      renderHook(() =>
+        useDashboardShortcuts({
+          ...defaultOptions,
+          isEditing: true,
+          onPasteSelection,
+        }),
+      );
+      const paste = (source: string) => {
+        const event = new Event('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(event, 'clipboardData', {
+          value: { getData: () => source },
+        });
+        window.dispatchEvent(event);
+      };
+      paste('plain text');
+      paste('{"format":"chrome-start-page-widgets"}');
+      expect(onPasteSelection).toHaveBeenCalledTimes(1);
     });
   });
 

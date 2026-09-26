@@ -12,11 +12,16 @@ import type {
 } from '../../storage/schema';
 import { THEMES } from '../../themes/registry';
 import {
+  CopyIcon,
+  DuplicateIcon,
   HelpCircleIcon,
   PaletteIcon,
   PencilIcon,
   PlusIcon,
+  RotateCcwIcon,
+  RotateCwIcon,
   SearchIcon,
+  TrashIcon,
   TransferIcon,
 } from '../icons';
 import { Button, IconButton } from '../ui';
@@ -47,24 +52,38 @@ interface DashboardControlsProps {
   config: DashboardConfig | null;
   backupError: string | null;
   canManageWidgets: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   isBackupProcessing: boolean;
   isEditing: boolean;
   isWallpaperUpdating: boolean;
+  selectedCount: number;
   wallpaperError: string | null;
   wallpaperPreviewSrc: string | null;
   onAddWidget: (type: WidgetType) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
   onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
   onClearBackupError: () => void;
+  onClearSelection: () => void;
   onClearWallpaperError: () => void;
+  onCopySelection: () => void;
+  onDuplicateSelection: () => void;
   onEditingChange: (isEditing: boolean) => void;
   onExportDashboard: () => Promise<DashboardBackupDownload>;
+  onFinishNudge: () => void;
   onFlushAppearancePreview: () => void;
   onImportDashboard: (
     file: File,
     signal?: AbortSignal,
   ) => Promise<DashboardImportResult>;
   onRemoveWallpaper: () => Promise<void>;
+  onMoveSelection: (deltaX: number, deltaY: number) => void;
+  onPasteSelection: (source: string) => void;
+  onRedo: () => void;
+  onRequestDeleteSelection: () => void;
+  onSelectAll: () => void;
+  onToggleFocusedSelection: (widgetId: string) => void;
+  onUndo: () => void;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
 }
@@ -74,21 +93,35 @@ export function DashboardControls({
   config,
   backupError,
   canManageWidgets,
+  canUndo,
+  canRedo,
   isBackupProcessing,
   isEditing,
   isWallpaperUpdating,
+  selectedCount,
   wallpaperError,
   wallpaperPreviewSrc,
   onAddWidget,
   onAppearanceChange,
   onAppearancePreview,
   onClearBackupError,
+  onClearSelection,
   onClearWallpaperError,
+  onCopySelection,
+  onDuplicateSelection,
   onEditingChange,
   onExportDashboard,
+  onFinishNudge,
   onFlushAppearancePreview,
   onImportDashboard,
   onRemoveWallpaper,
+  onMoveSelection,
+  onPasteSelection,
+  onRedo,
+  onRequestDeleteSelection,
+  onSelectAll,
+  onToggleFocusedSelection,
+  onUndo,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
 }: DashboardControlsProps) {
@@ -146,6 +179,20 @@ export function DashboardControls({
       setIsBackupOpen(true);
     },
     onOpenPalette: openPalette,
+    selectedCount,
+    onClearSelection,
+    onCopySelection,
+    onPasteSelection,
+    onDuplicateSelection,
+    onSelectAll,
+    onToggleFocusedSelection,
+    onRequestDeleteSelection,
+    onMoveSelection,
+    onFinishNudge,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
   });
 
   const executeCommand = (command: PaletteCommand) => {
@@ -218,6 +265,63 @@ export function DashboardControls({
           data-visible={isEditing}
           inert={!isEditing}
         >
+          <IconButton
+            aria-label="Отменить изменение"
+            disabled={!canManageWidgets || !canUndo}
+            size="small"
+            title="Отменить изменение (Ctrl+Z)"
+            variant="ghost"
+            onClick={onUndo}
+          >
+            <RotateCcwIcon className="size-6" />
+          </IconButton>
+          <IconButton
+            aria-label="Повторить изменение"
+            disabled={!canManageWidgets || !canRedo}
+            size="small"
+            title="Повторить изменение (Ctrl+Shift+Z)"
+            variant="ghost"
+            onClick={onRedo}
+          >
+            <RotateCwIcon className="size-6" />
+          </IconButton>
+          {selectedCount > 0 ? (
+            <div className="flex items-center gap-1 rounded-lg border border-theme-border px-2 py-0.5">
+              <span className="whitespace-nowrap text-xs text-theme-text-secondary">
+                Выбрано: {selectedCount}
+              </span>
+              <IconButton
+                aria-label="Копировать выбранные виджеты"
+                disabled={!canManageWidgets}
+                size="xs"
+                title="Копировать (Ctrl+C)"
+                variant="ghost"
+                onClick={onCopySelection}
+              >
+                <CopyIcon className="size-5" />
+              </IconButton>
+              <IconButton
+                aria-label="Дублировать выбранные виджеты"
+                disabled={!canManageWidgets}
+                size="xs"
+                title="Дублировать (Ctrl+D или D)"
+                variant="ghost"
+                onClick={onDuplicateSelection}
+              >
+                <DuplicateIcon className="size-5" />
+              </IconButton>
+              <IconButton
+                aria-label="Удалить выбранные виджеты"
+                disabled={!canManageWidgets}
+                size="xs"
+                title="Удалить (Delete)"
+                variant="danger-ghost"
+                onClick={onRequestDeleteSelection}
+              >
+                <TrashIcon className="size-5" />
+              </IconButton>
+            </div>
+          ) : null}
           <Button
             disabled={!canManageWidgets}
             size="small"

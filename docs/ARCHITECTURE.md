@@ -122,6 +122,20 @@ preview and persist after pointer/keyboard completion, blur, dialog close,
 queued to prevent an older slow write from overwriting newer state; pending
 widget changes flush on editor finish, Escape, `pagehide`, and unmount.
 
+Структурные действия с виджетами записываются в память вкладки как история из
+50 шагов. Для drag/resize хранятся только координаты, поэтому Undo не откатывает
+позднейшие правки содержимого. Для добавления и удаления сохраняются
+конфигурации и порядок виджетов; новый шаг очищает Redo. Импорт и принятие
+внешнего состояния очищают историю.
+
+Записи конфигурации проходят через общий Web Lock и перед записью сверяют
+`local:dashboard-config` с последней принятой версией. WXT watcher обновляет
+вкладки без локальных правок. При конфликте локальная запись приостанавливается
+до выбора версии в диалоге. Временные ссылки на изображения для Undo и локальных
+несохранённых изменений хранятся
+через WXT `storage.session` по ID вкладки; очистка учитывает ссылки всех
+открытых вкладок, а background удаляет ссылку при закрытии вкладки.
+
 Backup export and import use the same serialized operation queue. Export first
 flushes pending widget and appearance changes, then snapshots the current
 validated config and referenced local wallpaper. Import validates and prepares
@@ -187,6 +201,18 @@ unbounded vertically so empty rows below the current content remain reachable
 and the canvas can grow. Interactive controls are excluded from the drag
 gesture. At viewport widths below 960 px, the canvas scrolls horizontally
 instead of transforming persisted layouts.
+
+В режиме редактирования виджеты выделяются по одному или группой. Для
+группового drag `WidgetCanvas` вычисляет единый сдвиг и показывает его локально,
+проверяя всю группу на выход за 12 колонок и пересечения; запись происходит
+после отпускания. Одиночный drag/resize остаётся в `react-grid-layout`.
+Клавиатурный сдвиг использует ту же проверку геометрии.
+
+Буфер виджетов — отдельный версионированный JSON с конфигурациями и локальными
+изображениями, без состояния таймеров и кэшей. Входные данные проверяются через
+текущую схему и декодирование изображений. Вставка назначает новые UUID и
+сохраняет относительное расположение; локальные ресурсы записываются до
+конфигурации и удаляются при ошибке транзакции.
 
 ## Markdown Widget
 

@@ -57,6 +57,39 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
         keys: ['B'],
         description: 'Импорт и экспорт (резервная копия)',
       },
+      {
+        keys: ['Ctrl+Z', 'Ctrl+Shift+Z'],
+        separator: 'и',
+        description: 'Отменить и повторить изменение',
+      },
+      {
+        keys: ['Ctrl+A'],
+        description: 'Выбрать все виджеты',
+      },
+      {
+        keys: ['Ctrl/Shift+клик', 'Space'],
+        separator: 'или',
+        description: 'Добавить виджет к выделению',
+      },
+      {
+        keys: ['Ctrl+C', 'Ctrl+V'],
+        separator: 'и',
+        description: 'Копировать и вставить виджеты',
+      },
+      {
+        keys: ['Ctrl+D', 'D'],
+        separator: 'или',
+        description: 'Дублировать выделенные виджеты',
+      },
+      {
+        keys: ['Delete'],
+        description: 'Удалить выделенные виджеты',
+      },
+      {
+        keys: ['← ↑ → ↓', 'Shift+стрелка'],
+        separator: 'или',
+        description: 'Переместить выделение на 1 или 5 клеток',
+      },
     ],
   },
 ];

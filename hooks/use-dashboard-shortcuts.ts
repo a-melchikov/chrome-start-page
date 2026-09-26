@@ -11,6 +11,20 @@ export interface DashboardShortcutsOptions {
   onOpenAppearance: () => void;
   onOpenBackup: () => void;
   onOpenPalette: () => void;
+  selectedCount?: number;
+  onClearSelection?: () => void;
+  onCopySelection?: () => void;
+  onPasteSelection?: (source: string) => void;
+  onDuplicateSelection?: () => void;
+  onSelectAll?: () => void;
+  onToggleFocusedSelection?: (widgetId: string) => void;
+  onRequestDeleteSelection?: () => void;
+  onMoveSelection?: (deltaX: number, deltaY: number) => void;
+  onFinishNudge?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 function isEditableElement(target: EventTarget | null): boolean {
@@ -40,6 +54,20 @@ export function useDashboardShortcuts({
   onOpenAppearance,
   onOpenBackup,
   onOpenPalette,
+  selectedCount = 0,
+  onClearSelection,
+  onCopySelection,
+  onPasteSelection,
+  onDuplicateSelection,
+  onSelectAll,
+  onToggleFocusedSelection,
+  onRequestDeleteSelection,
+  onMoveSelection,
+  onFinishNudge,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
 }: DashboardShortcutsOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -49,7 +77,14 @@ export function useDashboardShortcuts({
 
       // Allow Escape to close help dialog or exit editing
       if (event.key === 'Escape') {
-        if (!document.querySelector('dialog[open]') && isEditing) {
+        if (
+          !document.querySelector('dialog[open]') &&
+          isEditing &&
+          selectedCount > 0
+        ) {
+          event.preventDefault();
+          onClearSelection?.();
+        } else if (!document.querySelector('dialog[open]') && isEditing) {
           event.preventDefault();
           onToggleEditing();
         }
@@ -73,6 +108,39 @@ export function useDashboardShortcuts({
 
       // Ignore single-key shortcuts when typing in editable elements
       if (isEditableElement(event.target)) return;
+
+      if (
+        isEditing &&
+        canManageWidgets &&
+        !hasOpenDialog &&
+        event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        if (event.code === 'KeyZ') {
+          if (event.shiftKey ? canRedo : canUndo) {
+            event.preventDefault();
+            if (event.shiftKey) onRedo?.();
+            else onUndo?.();
+          }
+          return;
+        }
+        if (!event.shiftKey && event.code === 'KeyA') {
+          event.preventDefault();
+          onSelectAll?.();
+          return;
+        }
+        if (!event.shiftKey && event.code === 'KeyC' && selectedCount > 0) {
+          event.preventDefault();
+          onCopySelection?.();
+          return;
+        }
+        if (!event.shiftKey && event.code === 'KeyD' && selectedCount > 0) {
+          event.preventDefault();
+          onDuplicateSelection?.();
+          return;
+        }
+      }
 
       // Modifiers check: standard single-key shortcuts shouldn't fire with Ctrl, Alt, Meta
       const hasModifiers = event.ctrlKey || event.metaKey || event.altKey;
@@ -129,6 +197,51 @@ export function useDashboardShortcuts({
 
       // Edit-mode only shortcuts
       if (isEditing) {
+        if (selectedCount > 0 && event.code === 'KeyD' && !event.shiftKey) {
+          event.preventDefault();
+          onDuplicateSelection?.();
+          return;
+        }
+
+        if (
+          selectedCount > 0 &&
+          (event.code === 'Delete' || event.code === 'Backspace')
+        ) {
+          event.preventDefault();
+          onRequestDeleteSelection?.();
+          return;
+        }
+
+        const directions: Record<string, readonly [number, number]> = {
+          ArrowLeft: [-1, 0],
+          ArrowRight: [1, 0],
+          ArrowUp: [0, -1],
+          ArrowDown: [0, 1],
+        };
+        const direction = directions[event.code];
+        if (selectedCount > 0 && direction) {
+          event.preventDefault();
+          const step = event.shiftKey ? 5 : 1;
+          onMoveSelection?.(direction[0] * step, direction[1] * step);
+          return;
+        }
+
+        if (event.code === 'Space' && onToggleFocusedSelection) {
+          const target = event.target;
+          if (
+            target instanceof HTMLElement &&
+            !target.closest('button, a, [role="button"], [data-no-drag]')
+          ) {
+            const widgetId =
+              target.closest<HTMLElement>('[data-widget-id]')?.dataset.widgetId;
+            if (widgetId) {
+              event.preventDefault();
+              onToggleFocusedSelection(widgetId);
+              return;
+            }
+          }
+        }
+
         if (event.code === 'KeyA') {
           event.preventDefault();
           onOpenAddWidget();
@@ -149,8 +262,34 @@ export function useDashboardShortcuts({
       }
     };
 
+    const handlePaste = (event: ClipboardEvent) => {
+      if (
+        !isEditing ||
+        !canManageWidgets ||
+        document.querySelector('dialog[open]') ||
+        isEditableElement(event.target)
+      )
+        return;
+      const source = event.clipboardData?.getData('text/plain') ?? '';
+      if (!source.includes('chrome-start-page-widgets')) return;
+      event.preventDefault();
+      onPasteSelection?.(source);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code.startsWith('Arrow')) onFinishNudge?.();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('paste', handlePaste);
+    if (onFinishNudge) window.addEventListener('blur', onFinishNudge);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('paste', handlePaste);
+      if (onFinishNudge) window.removeEventListener('blur', onFinishNudge);
+    };
   }, [
     canManageWidgets,
     isEditing,
@@ -162,5 +301,19 @@ export function useDashboardShortcuts({
     onOpenAppearance,
     onOpenBackup,
     onOpenPalette,
+    selectedCount,
+    onClearSelection,
+    onCopySelection,
+    onPasteSelection,
+    onDuplicateSelection,
+    onSelectAll,
+    onToggleFocusedSelection,
+    onRequestDeleteSelection,
+    onMoveSelection,
+    onFinishNudge,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
   ]);
 }

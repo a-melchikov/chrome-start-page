@@ -2,6 +2,7 @@ import { defineBackground, storage } from '#imports';
 import { browser } from 'wxt/browser';
 
 import { loadDashboardConfig } from '../storage/dashboard-storage';
+import { releaseClosedTabImageLease } from '../storage/image-assets';
 import {
   getPhaseDurationSeconds,
   getPomodoroStorageKey,
@@ -195,6 +196,12 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 }
 
 export default defineBackground(() => {
+  browser.tabs.onRemoved.addListener((tabId) => {
+    void releaseClosedTabImageLease(tabId).catch((error: unknown) => {
+      console.warn('Failed to release dashboard image lease:', error);
+    });
+  });
+
   browser.alarms.onAlarm.addListener(async (alarm) => {
     await handlePomodoroAlarm(alarm.name);
   });

@@ -10,9 +10,13 @@ import {
   deleteImageAssets,
   getImageAssetKey,
   loadImageAsset,
+  releaseClosedTabImageLease,
   saveImageAsset,
+  saveHistoryImageLease,
   type LocalImageAssetV1,
 } from '../../storage/image-assets';
+import { saveDashboardConfig } from '../../storage/dashboard-storage';
+import { createDefaultDashboardConfig } from '../../storage/defaults';
 
 const ACTIVE_ID_1 = '8dc04e26-6465-4e84-bc05-633c0e28415b';
 const ACTIVE_ID_2 = '3e5f29d1-817e-4f24-9b55-d3c2a6bf9971';
@@ -75,6 +79,27 @@ describe('image asset storage', () => {
       createAsset(ACTIVE_ID_2),
     );
     await expect(loadImageAsset(ORPHAN_ID)).resolves.toBeNull();
+  });
+
+  it('preserves assets leased by an open undo history', async () => {
+    await saveImageAsset(createAsset(ACTIVE_ID_1));
+    await saveHistoryImageLease('tab-one', [ACTIVE_ID_1]);
+    await cleanupOrphanedImageAssets(new Set());
+    await expect(loadImageAsset(ACTIVE_ID_1)).resolves.not.toBeNull();
+
+    await saveHistoryImageLease('tab-one', []);
+    await cleanupOrphanedImageAssets(new Set());
+    await expect(loadImageAsset(ACTIVE_ID_1)).resolves.toBeNull();
+  });
+
+  it('releases a closed tab lease and removes the orphaned image', async () => {
+    await saveDashboardConfig(createDefaultDashboardConfig());
+    await saveImageAsset(createAsset(ACTIVE_ID_1));
+    await saveHistoryImageLease('42', [ACTIVE_ID_1]);
+
+    await releaseClosedTabImageLease(42);
+
+    await expect(loadImageAsset(ACTIVE_ID_1)).resolves.toBeNull();
   });
 
   it('collects local image asset IDs and cleans up unused assets on config transition', async () => {

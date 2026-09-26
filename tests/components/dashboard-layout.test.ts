@@ -7,6 +7,8 @@ import {
   DASHBOARD_GRID_COLUMNS,
   getDashboardGridWidth,
   normalizeWidgetLayout,
+  moveWidgetGroup,
+  placeWidgetGroup,
   WIDGET_MIN_HEIGHT,
   WIDGET_MIN_WIDTH,
 } from '../../components/dashboard/dashboard-layout';
@@ -40,6 +42,45 @@ function createSearchWidget(
 }
 
 describe('dashboard layout', () => {
+  it('moves a selected group together and rejects collisions or grid overflow', () => {
+    const widgets = [
+      createWidget('first', { x: 0, y: 0, w: 3, h: 3 }),
+      createWidget('second', { x: 3, y: 0, w: 3, h: 3 }),
+      createWidget('blocked', { x: 6, y: 0, w: 3, h: 3 }),
+    ];
+    const selected = new Set(['first', 'second']);
+
+    expect(
+      moveWidgetGroup(widgets, selected, 0, 3).map((widget) => widget.layout),
+    ).toEqual([
+      { x: 0, y: 3, w: 3, h: 3 },
+      { x: 3, y: 3, w: 3, h: 3 },
+      { x: 6, y: 0, w: 3, h: 3 },
+    ]);
+    expect(moveWidgetGroup(widgets, selected, 3, 0)).toBe(widgets);
+    expect(moveWidgetGroup(widgets, selected, -1, 0)).toBe(widgets);
+    expect(moveWidgetGroup(widgets, selected, 7, 0)).toBe(widgets);
+  });
+
+  it('places copied groups at the nearest free anchor while preserving shape', () => {
+    const source = [
+      createWidget('first', { x: 0, y: 0, w: 3, h: 3 }),
+      createWidget('second', { x: 3, y: 0, w: 3, h: 3 }),
+    ];
+    const placed = placeWidgetGroup(source, source);
+    expect(placed[1]!.layout.x - placed[0]!.layout.x).toBe(3);
+    expect(placed[1]!.layout.y - placed[0]!.layout.y).toBe(0);
+    expect(
+      placed.every((widget) =>
+        source.every(
+          (old) =>
+            widget.layout.y >= old.layout.y + old.layout.h ||
+            widget.layout.x >= old.layout.x + old.layout.w ||
+            widget.layout.x + widget.layout.w <= old.layout.x,
+        ),
+      ),
+    ).toBe(true);
+  });
   it('allows dragging into empty rows below the current grid', () => {
     expect(createDashboardDragConfig(true)).toMatchObject({
       enabled: true,

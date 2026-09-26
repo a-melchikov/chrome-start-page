@@ -354,6 +354,11 @@
       );
   }
 
+  .dashboard-grid--editing .widget-selected {
+    outline: 3px solid var(--theme-accent, #3b82f6);
+    outline-offset: 2px;
+  }
+
   .react-grid-layout:not(.dashboard-grid--editing)
     > .react-grid-item
     > .react-resizable-handle {

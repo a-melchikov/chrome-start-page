@@ -131,6 +131,41 @@ export function RotateCcwIcon(props: IconProps) {
   );
 }
 
+export function RotateCwIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+    </BaseIcon>
+  );
+}
+
+export function CopyIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </BaseIcon>
+  );
+}
+
+export function DuplicateIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M14 11v6m-3-3h6" />
+    </BaseIcon>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v6m4-6v6" />
+    </BaseIcon>
+  );
+}
+
 export function ForwardIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

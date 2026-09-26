@@ -20,6 +20,7 @@ import {
 interface WidgetHostProps {
   isEditing: boolean;
   isNew?: boolean;
+  isSelected?: boolean;
   isWidgetEditing?: boolean;
   widget: RenderableWidgetConfig;
   onRequestEdit?: () => void;
@@ -32,6 +33,7 @@ interface WidgetHostProps {
 export function WidgetHost({
   isEditing,
   isNew = false,
+  isSelected = false,
   isWidgetEditing = false,
   widget,
   onRequestEdit,
@@ -138,7 +140,15 @@ export function WidgetHost({
       <article
         data-widget-id={widget.id}
         data-new-widget={isNew || undefined}
-        tabIndex={-1}
+        data-selected={isEditing && isSelected ? 'true' : undefined}
+        tabIndex={isEditing ? 0 : -1}
+        aria-description={
+          isEditing
+            ? isSelected
+              ? 'Выбран. Пробел снимает выделение.'
+              : 'Пробел выбирает виджет.'
+            : undefined
+        }
         aria-label={isBare || isTitleHidden ? displayName : undefined}
         aria-labelledby={isBare || isTitleHidden ? undefined : titleId}
         className={classNames(
@@ -153,6 +163,7 @@ export function WidgetHost({
                 isFullBleedCard ? 'widget-card-surface--full-bleed' : 'p-4',
               ),
           isEditing && 'cursor-move',
+          isEditing && isSelected && 'widget-selected',
         )}
         onAnimationEnd={(event) => {
           if (event.target === event.currentTarget && isNew) {

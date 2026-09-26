@@ -26,7 +26,21 @@ export function App() {
     isLoading,
     isWallpaperUpdating,
     wallpaperError,
+    canUndo,
+    canRedo,
+    conflict,
+    historyEpoch,
+    isWidgetActionProcessing,
     addWidget,
+    copyWidgets,
+    duplicateWidgets,
+    pasteWidgets,
+    moveWidgets,
+    finishNudge,
+    removeWidgets,
+    undo,
+    redo,
+    resolveConflict,
     clearBackupError,
     clearWallpaperError,
     exportDashboardBackup,
@@ -124,12 +138,26 @@ export function App() {
           appearance={appearance}
           backupError={backupError}
           config={config}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          conflict={conflict}
+          historyEpoch={historyEpoch}
+          isWidgetActionProcessing={isWidgetActionProcessing}
           isBackupProcessing={isBackupProcessing}
           isLoading={isLoading}
           isWallpaperUpdating={isWallpaperUpdating}
           wallpaperError={dialogWallpaperError}
           wallpaperPreviewSrc={wallpaperImage.src}
           onAddWidget={addWidget}
+          onCopyWidgets={copyWidgets}
+          onDuplicateWidgets={duplicateWidgets}
+          onPasteWidgets={pasteWidgets}
+          onMoveWidgets={moveWidgets}
+          onFinishNudge={finishNudge}
+          onRemoveWidgets={removeWidgets}
+          onUndo={undo}
+          onRedo={redo}
+          onResolveConflict={resolveConflict}
           onAppearanceChange={updateAppearance}
           onAppearancePreview={previewAppearance}
           onClearBackupError={clearBackupError}

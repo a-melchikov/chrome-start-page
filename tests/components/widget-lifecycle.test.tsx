@@ -358,6 +358,66 @@ describe('widget lifecycle', () => {
     );
   });
 
+  it('selects a group, confirms one deletion, and restores it with Undo', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+    await addMarkdownWidget(user);
+    await addMarkdownWidget(user);
+
+    const widgets = screen.getAllByRole('article', { name: 'Markdown' });
+    await user.click(widgets[0]!);
+    await user.keyboard('{Control>}a{/Control}');
+    expect(screen.getByText('Выбрано: 2')).toBeVisible();
+
+    await user.keyboard('{Delete}');
+    expect(
+      screen.getByRole('dialog', { name: 'Удалить выбранные виджеты?' }),
+    ).toHaveTextContent('2 виджета');
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    await waitFor(() =>
+      expect(
+        screen.queryAllByRole('article', { name: 'Markdown' }),
+      ).toHaveLength(0),
+    );
+
+    await user.keyboard('{Control>}z{/Control}');
+    await waitFor(() =>
+      expect(screen.getAllByRole('article', { name: 'Markdown' })).toHaveLength(
+        2,
+      ),
+    );
+  });
+
+  it('supports additive selection, Space, and two consecutive Escapes', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await enableEditMode(user);
+    await addMarkdownWidget(user);
+    await addMarkdownWidget(user);
+
+    const widgets = screen.getAllByRole('article', { name: 'Markdown' });
+    await user.click(widgets[0]!);
+    await user.keyboard('{Control>}');
+    await user.click(widgets[1]!);
+    await user.keyboard('{/Control}');
+    expect(screen.getByText('Выбрано: 2')).toBeVisible();
+
+    widgets[0]!.focus();
+    await user.keyboard(' ');
+    expect(screen.getByText('Выбрано: 1')).toBeVisible();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByText('Выбрано: 1')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Выключить режим редактирования' }),
+    ).toBeVisible();
+    await user.keyboard('{Escape}');
+    expect(
+      screen.getByRole('button', { name: 'Включить режим редактирования' }),
+    ).toBeVisible();
+  });
+
   it('creates an ImageWidget, uses edit button in edit mode, and opens editor by clicking empty placeholder in view mode', async () => {
     const user = userEvent.setup();
     render(<App />);

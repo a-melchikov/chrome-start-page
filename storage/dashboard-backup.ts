@@ -518,8 +518,8 @@ export async function replaceDashboardFromBackup(
       activeImageAssetIds.add(widget.source.assetId);
     }
   }
-  void cleanupOrphanedImageAssets(activeImageAssetIds).catch(() => undefined);
-  void clearWeatherCaches().catch(() => undefined);
+  await cleanupOrphanedImageAssets(activeImageAssetIds).catch(() => undefined);
+  await clearWeatherCaches().catch(() => undefined);
 
   return {
     config,

@@ -1,5 +1,9 @@
 import { storage } from '#imports';
 
+import {
+  readStoredDashboardConfig,
+  withDashboardWriteLock,
+} from './dashboard-storage';
 import { isImageAssetId } from './schema';
 import {
   InvalidWallpaperAssetError,
@@ -10,6 +14,7 @@ import {
 export type LocalImageAssetV1 = LocalWallpaperAssetV1;
 
 export const IMAGE_ASSET_KEY_PREFIX = 'local:dashboard-image-asset:';
+export const HISTORY_IMAGE_LEASE_PREFIX = 'session:dashboard-history-images:';
 
 const LOCAL_KEY_PREFIX_LENGTH = 'local:'.length;
 const IMAGE_SNAPSHOT_KEY_PREFIX = IMAGE_ASSET_KEY_PREFIX.slice(
@@ -63,11 +68,55 @@ export async function deleteImageAssets(
   await storage.removeItems(keys);
 }
 
+export async function saveHistoryImageLease(
+  tabId: string,
+  assetIds: readonly string[],
+): Promise<void> {
+  const key = `${HISTORY_IMAGE_LEASE_PREFIX}${tabId}` as const;
+  if (assetIds.length === 0) {
+    await storage.removeItem(key);
+  } else {
+    await storage.setItem(key, [...new Set(assetIds)]);
+  }
+}
+
+export async function releaseClosedTabImageLease(tabId: number): Promise<void> {
+  const lease = await storage.getItem<unknown>(
+    `${HISTORY_IMAGE_LEASE_PREFIX}${tabId}`,
+  );
+  if (lease === null) return;
+  await saveHistoryImageLease(String(tabId), []);
+  await withDashboardWriteLock(async () => {
+    const config = await readStoredDashboardConfig();
+    if (config) {
+      await cleanupOrphanedImageAssets(
+        collectLocalImageAssetIds(config.widgets),
+      );
+    }
+  });
+}
+
+async function collectLeasedImageAssetIds(): Promise<Set<string>> {
+  const snapshot = await storage.snapshot('session');
+  const ids = new Set<string>();
+  for (const [key, value] of Object.entries(snapshot)) {
+    if (!key.startsWith(HISTORY_IMAGE_LEASE_PREFIX.slice('session:'.length)))
+      continue;
+    if (!Array.isArray(value)) continue;
+    for (const id of value) {
+      if (isImageAssetId(id)) ids.add(id);
+    }
+  }
+  return ids;
+}
+
 export async function cleanupOrphanedImageAssets(
   activeAssetIds: ReadonlySet<string> | readonly string[],
 ): Promise<void> {
   const activeSet =
     activeAssetIds instanceof Set ? activeAssetIds : new Set(activeAssetIds);
+
+  for (const id of await collectLeasedImageAssetIds()) activeSet.add(id);
 
   for (const id of activeSet) {
     if (!isImageAssetId(id)) {
@@ -119,6 +168,7 @@ export async function cleanupUnusedImageAssets(
 ): Promise<void> {
   const previousIds = collectLocalImageAssetIds(previousWidgets);
   const nextIds = collectLocalImageAssetIds(nextWidgets);
+  for (const id of await collectLeasedImageAssetIds()) nextIds.add(id);
 
   const unusedIds: string[] = [];
   for (const id of previousIds) {

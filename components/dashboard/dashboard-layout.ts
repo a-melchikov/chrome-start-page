@@ -121,6 +121,108 @@ export function applyGridLayout(
   return hasChanges ? nextWidgets : widgets;
 }
 
+function intersects(left: WidgetLayout, right: WidgetLayout): boolean {
+  return (
+    left.x < right.x + right.w &&
+    left.x + left.w > right.x &&
+    left.y < right.y + right.h &&
+    left.y + left.h > right.y
+  );
+}
+
+export function moveWidgetGroup(
+  widgets: readonly WidgetConfig[],
+  selectedIds: ReadonlySet<string>,
+  deltaX: number,
+  deltaY: number,
+): readonly WidgetConfig[] {
+  if (selectedIds.size === 0 || (deltaX === 0 && deltaY === 0)) {
+    return widgets;
+  }
+
+  const selected = widgets.filter((widget) => selectedIds.has(widget.id));
+  if (selected.length === 0) return widgets;
+
+  const occupied = widgets.filter((widget) => !selectedIds.has(widget.id));
+  const moved = selected.map((widget) => ({
+    ...widget.layout,
+    x: widget.layout.x + deltaX,
+    y: widget.layout.y + deltaY,
+  }));
+  if (
+    moved.some(
+      (layout) =>
+        layout.x < 0 ||
+        layout.y < 0 ||
+        layout.x + layout.w > DASHBOARD_GRID_COLUMNS ||
+        occupied.some((widget) => intersects(layout, widget.layout)),
+    )
+  ) {
+    return widgets;
+  }
+
+  const movedById = new Map(
+    selected.map((widget, index) => [widget.id, moved[index]]),
+  );
+  return widgets.map((widget) => {
+    const layout = movedById.get(widget.id);
+    return layout ? { ...widget, layout } : widget;
+  });
+}
+
+export function placeWidgetGroup(
+  existing: readonly WidgetConfig[],
+  source: readonly WidgetConfig[],
+): WidgetConfig[] {
+  if (source.length === 0) return [];
+
+  const minX = Math.min(...source.map((widget) => widget.layout.x));
+  const minY = Math.min(...source.map((widget) => widget.layout.y));
+  const maxX = Math.max(
+    ...source.map((widget) => widget.layout.x + widget.layout.w),
+  );
+  const groupWidth = maxX - minX;
+  const preferredX = Math.min(DASHBOARD_GRID_COLUMNS - groupWidth, minX + 1);
+  const preferredY = minY + 1;
+
+  // Search by Manhattan distance. Within a distance prefer the upper row,
+  // then the left column, for stable results across tabs and reloads.
+  for (let distance = 0; ; distance += 1) {
+    const candidates: Array<{ x: number; y: number }> = [];
+    for (let x = 0; x <= DASHBOARD_GRID_COLUMNS - groupWidth; x += 1) {
+      const vertical = distance - Math.abs(x - preferredX);
+      if (vertical < 0) continue;
+      for (const y of [preferredY - vertical, preferredY + vertical]) {
+        if (
+          y >= 0 &&
+          !candidates.some((item) => item.x === x && item.y === y)
+        ) {
+          candidates.push({ x, y });
+        }
+      }
+    }
+
+    candidates.sort((a, b) => a.y - b.y || a.x - b.x);
+    for (const candidate of candidates) {
+      const placed = source.map((widget) => ({
+        ...widget,
+        layout: {
+          ...widget.layout,
+          x: candidate.x + widget.layout.x - minX,
+          y: candidate.y + widget.layout.y - minY,
+        },
+      }));
+      if (
+        placed.every((widget) =>
+          existing.every((other) => !intersects(widget.layout, other.layout)),
+        )
+      ) {
+        return placed;
+      }
+    }
+  }
+}
+
 export interface NewWidgetPositionOptions {
   w: number;
   x?: number;

@@ -79,6 +79,9 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Multiple independent widget instances with UUIDs and persisted layouts.
 - Global edit mode controls add, delete, drag, resize, widget settings, and
   appearance. Escape exits edit mode when no dialog is active.
+- В режиме редактирования доступны выделение нескольких виджетов, групповое
+  перемещение и удаление, Undo/Redo для состава и компоновки, копирование и
+  вставка через системный буфер, дублирование и клавиатурный сдвиг.
 - User edits appear immediately in React state; editor writes are debounced but
   flushed when editing ends or the page is hidden.
 - Search opens results in the current tab only after Enter/button submission;
@@ -114,6 +117,10 @@ Liquid Glass: полупрозрачный tint, размытие и насыщ�
 - Local wallpaper and image bytes live under UUID asset keys. Files above 6 MiB
   are losslessly compressed only when that reaches the 6 MiB target; otherwise
   the original remains available through `unlimitedStorage`.
+- История виджетов ограничена 50 действиями и живёт только до закрытия вкладки.
+  Данные изображений для Undo удерживаются временными ссылками в WXT
+  `storage.session`; входящий JSON буфера проходит проверку, а вставка получает
+  новые ID. При конкурирующих правках вкладок пользователь выбирает версию.
 - Backup files use their own versioned envelope. Restored local assets receive a
   fresh UUID, while widget IDs are preserved; HTTPS wallpaper remains a URL and
   is revalidated before import commits.
