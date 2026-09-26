@@ -1,7 +1,7 @@
-import { type FormEvent, useId, useState } from 'react';
+import { type FormEvent, useId, useRef, useState } from 'react';
 import { browser, type PublicPath } from 'wxt/browser';
 
-import { SearchIcon } from '../../components/icons';
+import { CloseIcon, SearchIcon } from '../../components/icons';
 import { IconButton, Input } from '../../components/ui';
 import { getSearchEngineDefinition } from './engines';
 import type { SearchWidgetConfig } from './types';
@@ -30,33 +30,39 @@ interface SearchEngineIconImageProps {
 
 function SearchEngineIconImage({ engineId, src }: SearchEngineIconImageProps) {
   const [hasError, setHasError] = useState(false);
-
-  if (hasError) {
-    return (
-      <SearchIcon
-        className="size-6"
-        data-testid="search-engine-icon-fallback"
-      />
-    );
-  }
+  const iconSize = engineId === 'google' ? 24 : 28;
 
   return (
-    <img
-      alt=""
+    <span
       aria-hidden="true"
-      className="size-6 shrink-0"
-      data-testid={`search-engine-icon-${engineId}`}
-      draggable={false}
-      height="24"
-      src={src}
-      width="24"
-      onError={() => setHasError(true)}
-    />
+      className="widget-search-engine-icon"
+      data-engine={engineId}
+    >
+      {hasError ? (
+        <SearchIcon
+          className="size-5"
+          data-testid="search-engine-icon-fallback"
+        />
+      ) : (
+        <img
+          alt=""
+          className={iconSize === 28 ? 'size-7 shrink-0' : 'size-6 shrink-0'}
+          data-testid={`search-engine-icon-${engineId}`}
+          draggable={false}
+          height={iconSize}
+          src={src}
+          width={iconSize}
+          onError={() => setHasError(true)}
+        />
+      )}
+    </span>
   );
 }
 
 export function SearchWidget({ config }: SearchWidgetProps) {
   const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [hasQuery, setHasQuery] = useState(false);
   const engine = getSearchEngineDefinition(config.engine);
   const label = `Поиск в ${engine.name}`;
 
@@ -83,11 +89,12 @@ export function SearchWidget({ config }: SearchWidgetProps) {
       <form
         aria-label={label}
         action={engine.action}
-        className="widget-search-surface liquid-glass-surface flex w-full items-center gap-2"
+        className="widget-search-surface liquid-glass-surface flex w-full items-center"
         method="get"
         role="search"
         onSubmit={handleSubmit}
       >
+        <SearchEngineIcon engineId={engine.id} iconPath={engine.iconPath} />
         <label className="sr-only" htmlFor={inputId}>
           {label}
         </label>
@@ -96,18 +103,42 @@ export function SearchWidget({ config }: SearchWidgetProps) {
           className="widget-search-field"
           id={inputId}
           name={engine.queryParameter}
-          placeholder={label}
+          placeholder={`Найти в ${engine.name}…`}
+          ref={inputRef}
           spellCheck={false}
           type="search"
+          onChange={(event) =>
+            setHasQuery(event.currentTarget.value.length > 0)
+          }
         />
+        {hasQuery && (
+          <IconButton
+            aria-label="Очистить поиск"
+            className="widget-search-clear"
+            size="small"
+            title="Очистить поиск"
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              const input = inputRef.current;
+              if (!input) return;
+              input.value = '';
+              setHasQuery(false);
+              input.focus();
+            }}
+          >
+            <CloseIcon className="size-[22px]" />
+          </IconButton>
+        )}
         <IconButton
           aria-label={`Искать в ${engine.name}`}
+          className="widget-search-submit"
           size="small"
           title={`Искать в ${engine.name}`}
           type="submit"
-          variant="brand"
+          variant="ghost"
         >
-          <SearchEngineIcon engineId={engine.id} iconPath={engine.iconPath} />
+          <SearchIcon className="size-[22px]" />
         </IconButton>
       </form>
     </div>

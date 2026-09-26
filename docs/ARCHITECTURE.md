@@ -253,10 +253,16 @@ parameter (`q`, or Yandex `text`), label, and bundled icon path. The native GET
 form has no target, so explicit submission replaces the current new tab. Empty
 queries are prevented; trimmed query text remains form-only and is never stored.
 
-The icon URL is resolved with `browser.runtime.getURL`. Each local 32×32 CoreUI
-Brands SVG renders at 24×24 inside a white 40×40 button; a black outline
-magnifier is the load-error fallback. Chrome `_favicon` is not used for search
-brands and remains enabled only for user Markdown links.
+The icon URL is resolved with `browser.runtime.getURL`. Local vector marks from
+CoreUI Brands and DuckDuckGo's press kit render at optically balanced 24–28 px
+sizes in decorative, theme-independent glass badges on the left. A theme-colored
+outline magnifier replaces a missing asset. The submit button on the right uses
+the shared outline magnifier. A matching outline close button clears typed text
+and restores focus; Chrome's native search cancel control is hidden. One search
+surface contains both controls and shows focus on the whole row; its glass effect
+follows the existing appearance settings with a minimum tint for text contrast
+over arbitrary wallpapers. Chrome `_favicon` is not used for search brands and
+remains enabled only for user Markdown links.
 
 ## Liquid Glass
 

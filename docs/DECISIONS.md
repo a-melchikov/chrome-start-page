@@ -85,7 +85,8 @@ Status: Accepted
 ### Decision
 
 SearchWidget is a bare, fixed-height `6×1` native GET form with four fixed HTTPS
-engines. It uses bundled CoreUI Brands SVGs and a local magnifier fallback.
+engines. It uses bundled vector brand marks in decorative glass badges and a
+local magnifier fallback. The submit action has a separate outline magnifier.
 
 ### Why
 
@@ -96,7 +97,8 @@ are consistent, offline, and independent of favicon cache quality.
 
 Only width and engine are configurable. Query text is neither persisted nor
 sent before submit. Search-engine SVG source/license metadata stays in
-`public/search-engines/SOURCE.md`.
+`public/search-engines/SOURCE.md`. The generated image concepts informed the
+badge treatment; final marks remain vector assets for small-size clarity.
 
 ### Rejected Alternatives
 

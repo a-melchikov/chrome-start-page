@@ -44,29 +44,32 @@ describe('SearchWidget', () => {
       expect(form).toHaveAttribute('method', 'get');
       expect(form).not.toHaveAttribute('target');
       expect(input).toHaveAttribute('name', queryParameter);
-      expect(input).toHaveAttribute('placeholder', label);
+      expect(input).toHaveAttribute('placeholder', `Найти в ${name}…`);
       expect(input).not.toHaveFocus();
       expect(submitButton).toHaveAttribute('type', 'submit');
-      expect(submitButton).toHaveClass('bg-white', 'dark:bg-white');
+      expect(submitButton).toHaveClass('widget-search-submit');
 
       const icon = screen.getByTestId(`search-engine-icon-${id}`);
+      const iconSize = id === 'google' ? '24' : '28';
       expect(iconPath).toBe(`/search-engines/${id}.svg`);
       expect(icon).toHaveAttribute('src', expect.stringContaining(iconPath));
-      expect(icon).toHaveAttribute('width', '24');
-      expect(icon).toHaveAttribute('height', '24');
-      expect(icon).toHaveClass('size-6');
-      expect(submitButton.querySelector('svg')).toBeNull();
+      expect(icon).toHaveAttribute('width', iconSize);
+      expect(icon).toHaveAttribute('height', iconSize);
+      expect(icon).toHaveClass(iconSize === '28' ? 'size-7' : 'size-6');
+      expect(icon.parentElement).toHaveAttribute('data-engine', id);
+      expect(submitButton.querySelector('svg')).toBeInTheDocument();
+      expect(submitButton).not.toContainElement(icon);
     },
   );
 
-  it('shows a black magnifier when the local engine icon fails', () => {
+  it('shows a local magnifier when the engine icon fails', () => {
     render(<SearchWidget config={baseConfig} />);
 
     fireEvent.error(screen.getByTestId('search-engine-icon-google'));
 
     const fallback = screen.getByTestId('search-engine-icon-fallback');
     expect(fallback).toBeVisible();
-    expect(fallback).toHaveClass('size-6');
+    expect(fallback).toHaveClass('size-5');
     expect(
       screen.queryByTestId('search-engine-icon-google'),
     ).not.toBeInTheDocument();
@@ -94,6 +97,27 @@ describe('SearchWidget', () => {
     act(() => form.dispatchEvent(validSubmit));
     expect(validSubmit.defaultPrevented).toBe(false);
     expect(input).toHaveValue('chrome extensions');
+  });
+
+  it('clears the query with an outline button and restores input focus', async () => {
+    const user = userEvent.setup();
+    render(<SearchWidget config={baseConfig} />);
+
+    const input = screen.getByRole('searchbox', { name: 'Поиск в Google' });
+    expect(
+      screen.queryByRole('button', { name: 'Очистить поиск' }),
+    ).not.toBeInTheDocument();
+
+    await user.type(input, 'пример');
+    const clearButton = screen.getByRole('button', { name: 'Очистить поиск' });
+    expect(clearButton).toHaveAttribute('type', 'button');
+    expect(clearButton).toHaveClass('widget-search-clear');
+    expect(clearButton.querySelector('svg')).toBeInTheDocument();
+
+    await user.click(clearButton);
+    expect(input).toHaveValue('');
+    expect(input).toHaveFocus();
+    expect(clearButton).not.toBeInTheDocument();
   });
 });
 

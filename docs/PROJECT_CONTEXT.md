@@ -15,8 +15,10 @@ Version 0.1.0 implements six repeatable widget types:
   sanitized CommonMark/GFM rendering, interactive task lists, safe links and
   HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog.
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and
-  DuckDuckGo use fixed GET endpoints and bundled brand icons. Its height is
-  fixed; only width and engine are configurable.
+  DuckDuckGo use fixed GET endpoints and bundled brand icons. One surface places
+  the colored glass-framed engine mark on the left and the magnifier submit
+  button on the right. Its height is fixed; only width and engine are
+  configurable.
 - **Image** — a bare resizable widget (default `4×4`, minimum `2×2`) with
   rounded corners, offline local file storage or HTTPS URL, display modes (fill/cover
   with interactive drag-and-pan and zoom vs contain), quick ratio presets (`1:1`, `4:3`,
