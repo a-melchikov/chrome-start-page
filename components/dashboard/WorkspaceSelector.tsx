@@ -151,7 +151,7 @@ export function WorkspaceSelector({
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="workspace-selector-trigger"
-          className="liquid-glass-surface absolute top-full right-0 mt-1.5 z-50 min-w-[240px] max-w-[280px] rounded-xl border border-theme-border bg-theme-surface/95 p-1.5 shadow-xl backdrop-blur-md"
+          className="dashboard-popover-surface liquid-glass-surface absolute top-full right-0 mt-1.5 z-50 min-w-[240px] max-w-[280px] rounded-xl p-1.5"
         >
           <div
             role="heading"
@@ -180,7 +180,7 @@ export function WorkspaceSelector({
                       onChange={(e) => setRenameText(e.target.value)}
                       onBlur={finishRename}
                       onKeyDown={handleRenameKeyDown}
-                      className="w-full rounded border border-theme-accent bg-theme-surface-muted px-2 py-0.5 text-xs text-theme-text-primary focus:outline-none"
+                      className="w-full rounded border border-theme-accent bg-theme-surface-muted/80 px-2 py-0.5 text-xs text-theme-text-primary focus:outline-none"
                     />
                   </div>
                 );
@@ -192,8 +192,8 @@ export function WorkspaceSelector({
                   className={classNames(
                     'group flex items-center justify-between rounded-lg px-2 py-1 text-xs transition-colors',
                     isActive
-                      ? 'bg-theme-surface-muted font-medium text-theme-text-primary'
-                      : 'text-theme-text-secondary hover:bg-theme-surface-hover hover:text-theme-text-primary',
+                      ? 'bg-theme-surface-muted/60 font-medium text-theme-text-primary'
+                      : 'text-theme-text-secondary hover:bg-theme-surface-hover/60 hover:text-theme-text-primary',
                   )}
                 >
                   <button
@@ -258,7 +258,7 @@ export function WorkspaceSelector({
             })}
           </div>
 
-          <div className="my-1 border-t border-theme-border/60" />
+          <div className="my-1 border-t border-theme-border/40" />
 
           <button
             type="button"
@@ -267,7 +267,7 @@ export function WorkspaceSelector({
               onAddWorkspace();
               closeMenu();
             }}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-hover hover:text-theme-text-primary cursor-pointer"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
           >
             <PlusIcon className="size-3.5 shrink-0" />
             <span>Создать пространство</span>
@@ -280,7 +280,7 @@ export function WorkspaceSelector({
               closeMenu();
               onOpenManager();
             }}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-hover hover:text-theme-text-primary cursor-pointer"
+            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
           >
             <LayersIcon className="size-3.5 shrink-0" />
             <span>Управление пространствами...</span>
