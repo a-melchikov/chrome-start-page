@@ -11,6 +11,7 @@ export interface DashboardShortcutsOptions {
   onOpenAppearance: () => void;
   onOpenBackup: () => void;
   onOpenPalette: () => void;
+  onOpenWorkspaceMenu?: () => void;
   selectedCount?: number;
   onClearSelection?: () => void;
   onCopySelection?: () => void;
@@ -54,6 +55,7 @@ export function useDashboardShortcuts({
   onOpenAppearance,
   onOpenBackup,
   onOpenPalette,
+  onOpenWorkspaceMenu,
   selectedCount = 0,
   onClearSelection,
   onCopySelection,
@@ -195,6 +197,13 @@ export function useDashboardShortcuts({
         return;
       }
 
+      // Open workspace menu in view mode: 'W'
+      if (!isEditing && event.code === 'KeyW') {
+        event.preventDefault();
+        onOpenWorkspaceMenu?.();
+        return;
+      }
+
       // Edit-mode only shortcuts
       if (isEditing) {
         if (selectedCount > 0 && event.code === 'KeyD' && !event.shiftKey) {
@@ -300,6 +309,7 @@ export function useDashboardShortcuts({
     onOpenAppearance,
     onOpenBackup,
     onOpenPalette,
+    onOpenWorkspaceMenu,
     selectedCount,
     onClearSelection,
     onCopySelection,

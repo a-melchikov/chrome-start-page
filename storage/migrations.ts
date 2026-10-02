@@ -5,6 +5,7 @@ import {
   type LiquidGlassConfig,
   type WallpaperConfig,
   type WidgetConfig,
+  type WorkspaceConfig,
   isImageAssetId,
   isWallpaperAssetId,
 } from './schema';
@@ -16,8 +17,9 @@ import {
   type ImageWidgetSource,
 } from '../widgets/image/types';
 import { isSearchEngine } from '../widgets/search/engines';
+import { isMarkdownTemplateId } from '../widgets/markdown/templates';
 import type { WeatherLocation } from '../widgets/weather/types';
-import { DEFAULT_LIQUID_GLASS } from './defaults';
+import { DEFAULT_LIQUID_GLASS, createDefaultWorkWorkspace } from './defaults';
 import {
   ALL_CUSTOM_THEME_COLOR_KEYS,
   type BuiltinThemeId,
@@ -209,7 +211,7 @@ function isWeatherLocation(value: unknown): value is WeatherLocation {
   );
 }
 
-function isWidgetConfig(value: unknown): value is WidgetConfig {
+function isWidgetConfigV6(value: unknown): boolean {
   if (
     !isRecord(value) ||
     !isValidWidgetId(value.id) ||
@@ -268,6 +270,24 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
   }
 
   return false;
+}
+
+function isWidgetConfig(value: unknown): value is WidgetConfig {
+  if (!isWidgetConfigV6(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  if (candidate.type === 'markdown') {
+    return (
+      typeof candidate.content === 'string' &&
+      isMarkdownTemplateId(candidate.template) &&
+      typeof candidate.quickAddEnabled === 'boolean' &&
+      typeof candidate.hideCompletedTasks === 'boolean'
+    );
+  }
+
+  return true;
 }
 
 interface RetiredGoogleCalendarWidgetConfig {
@@ -348,7 +368,7 @@ function isDashboardConfigV2(value: unknown): value is Record<
     value.version === 2 &&
     value.widgets.every(
       (widget) =>
-        isWidgetConfig(widget) || isRetiredGoogleCalendarWidgetConfig(widget),
+        isWidgetConfigV6(widget) || isRetiredGoogleCalendarWidgetConfig(widget),
     )
   );
 }
@@ -365,7 +385,7 @@ function isDashboardConfigV3(value: unknown): value is Record<
     hasValidLegacyDashboardEnvelope(value) &&
     value.version === 3 &&
     isWallpaperConfig(value.appearance.wallpaper) &&
-    value.widgets.every(isWidgetConfig)
+    value.widgets.every(isWidgetConfigV6)
   );
 }
 
@@ -382,7 +402,7 @@ function isDashboardConfigV4(value: unknown): value is Record<
     value.version === 4 &&
     isWallpaperConfig(value.appearance.wallpaper) &&
     typeof value.appearance.liquidGlassEnabled === 'boolean' &&
-    value.widgets.every(isWidgetConfig)
+    value.widgets.every(isWidgetConfigV6)
   );
 }
 
@@ -409,7 +429,7 @@ function isDashboardConfigV5(value: unknown): value is Record<
     value.version === 5 &&
     isWallpaperConfig(value.appearance.wallpaper) &&
     isLiquidGlassConfig(value.appearance.liquidGlass) &&
-    value.widgets.every(isWidgetConfig)
+    value.widgets.every(isWidgetConfigV6)
   );
 }
 
@@ -493,9 +513,55 @@ function isBackgroundColorConfig(
   return false;
 }
 
-function isDashboardConfigV6(value: unknown): value is DashboardConfig {
+interface DashboardConfigV6Envelope {
+  version: 6;
+  widgets: Array<
+    | WidgetConfig
+    | (Record<string, unknown> & { type: string; id: string; layout: unknown })
+  >;
+  appearance: {
+    theme: ThemeRef;
+    backgroundColor: BackgroundColorConfig;
+    wallpaper: WallpaperConfig;
+    liquidGlass: LiquidGlassConfig;
+  };
+  customThemes: CustomTheme[];
+}
+
+function isDashboardConfigV6(
+  value: unknown,
+): value is DashboardConfigV6Envelope {
   if (!isRecord(value)) return false;
-  if (value.version !== DASHBOARD_CONFIG_VERSION) return false;
+  if (value.version !== 6) return false;
+  if (!Array.isArray(value.widgets) || !value.widgets.every(isWidgetConfigV6)) {
+    return false;
+  }
+  if (!isValidCustomThemesList(value.customThemes)) return false;
+  if (!isRecord(value.appearance)) return false;
+  if (!isThemeRef(value.appearance.theme, value.customThemes)) return false;
+  if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
+  if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
+  if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  return true;
+}
+
+interface DashboardConfigV7Envelope {
+  version: 7;
+  widgets: WidgetConfig[];
+  appearance: {
+    theme: ThemeRef;
+    backgroundColor: BackgroundColorConfig;
+    wallpaper: WallpaperConfig;
+    liquidGlass: LiquidGlassConfig;
+  };
+  customThemes: CustomTheme[];
+}
+
+function isDashboardConfigV7(
+  value: unknown,
+): value is DashboardConfigV7Envelope {
+  if (!isRecord(value)) return false;
+  if (value.version !== 7) return false;
   if (!Array.isArray(value.widgets) || !value.widgets.every(isWidgetConfig)) {
     return false;
   }
@@ -505,6 +571,54 @@ function isDashboardConfigV6(value: unknown): value is DashboardConfig {
   if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
   if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
   if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  return true;
+}
+
+export function isWorkspaceConfig(
+  value: unknown,
+  customThemes: readonly CustomTheme[] = [],
+): value is WorkspaceConfig {
+  if (!isRecord(value)) return false;
+  if (typeof value.id !== 'string' || !isValidUuid(value.id)) return false;
+  if (
+    typeof value.name !== 'string' ||
+    value.name.trim().length === 0 ||
+    value.name.length > 64
+  ) {
+    return false;
+  }
+  if (!Array.isArray(value.widgets) || !value.widgets.every(isWidgetConfig)) {
+    return false;
+  }
+  if (!isRecord(value.appearance)) return false;
+  if (!isThemeRef(value.appearance.theme, customThemes)) return false;
+  if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
+  if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
+  if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  return true;
+}
+
+export function isDashboardConfigV8(value: unknown): value is DashboardConfig {
+  if (!isRecord(value)) return false;
+  if (value.version !== DASHBOARD_CONFIG_VERSION) return false;
+  const customThemes = value.customThemes;
+  if (!isValidCustomThemesList(customThemes)) return false;
+  if (
+    typeof value.activeWorkspaceId !== 'string' ||
+    !isValidUuid(value.activeWorkspaceId)
+  ) {
+    return false;
+  }
+  if (
+    !Array.isArray(value.workspaces) ||
+    value.workspaces.length === 0 ||
+    !value.workspaces.every((w) => isWorkspaceConfig(w, customThemes))
+  ) {
+    return false;
+  }
+  if (!value.workspaces.some((w) => w.id === value.activeWorkspaceId)) {
+    return false;
+  }
   return true;
 }
 
@@ -554,37 +668,130 @@ function readVersion(value: unknown): number {
   return value.version as number;
 }
 
+function normalizeLegacyWidgets(widgets: readonly unknown[]): WidgetConfig[] {
+  return widgets.map((widget) => {
+    const w = widget as Record<string, unknown>;
+    if (w.type === 'markdown' || w.type === 'links') {
+      return {
+        ...w,
+        type: 'markdown',
+        template: isMarkdownTemplateId(w.template) ? w.template : 'blank',
+        quickAddEnabled:
+          typeof w.quickAddEnabled === 'boolean' ? w.quickAddEnabled : false,
+        hideCompletedTasks:
+          typeof w.hideCompletedTasks === 'boolean'
+            ? w.hideCompletedTasks
+            : false,
+      } as WidgetConfig;
+    }
+    return w as unknown as WidgetConfig;
+  });
+}
+
+function wrapLegacyToDashboardConfigV8(
+  widgets: WidgetConfig[],
+  appearance: {
+    theme: ThemeRef;
+    backgroundColor: BackgroundColorConfig;
+    wallpaper: WallpaperConfig;
+    liquidGlass: LiquidGlassConfig;
+  },
+  customThemes: CustomTheme[] = [],
+): DashboardConfig {
+  const primaryWorkspaceId = crypto.randomUUID();
+  const workWorkspaceId = crypto.randomUUID();
+  const primaryWorkspace: WorkspaceConfig = {
+    id: primaryWorkspaceId,
+    name: 'Основной',
+    widgets,
+    appearance,
+  };
+  const workWorkspace = createDefaultWorkWorkspace(workWorkspaceId);
+  return normalizeDashboardConfig({
+    version: DASHBOARD_CONFIG_VERSION,
+    activeWorkspaceId: primaryWorkspaceId,
+    workspaces: [primaryWorkspace, workWorkspace],
+    customThemes,
+  });
+}
+
 function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
   let hasChanges = false;
-  const widgets = config.widgets.map((widget) => {
-    let normalized = widget;
+  let activeWorkspaceId = config.activeWorkspaceId;
+  if (!config.workspaces.some((w) => w.id === activeWorkspaceId)) {
+    hasChanges = true;
+    activeWorkspaceId = config.workspaces[0]?.id ?? crypto.randomUUID();
+  }
 
-    if (widget.type === 'search' && widget.layout.h !== 1) {
+  const workspaces = config.workspaces.map((workspace) => {
+    let workspaceChanged = false;
+    const widgets = workspace.widgets.map((widget) => {
+      let normalized = widget;
+
+      if (widget.type === 'markdown') {
+        const template = isMarkdownTemplateId(widget.template)
+          ? widget.template
+          : 'blank';
+        const quickAddEnabled =
+          typeof widget.quickAddEnabled === 'boolean'
+            ? widget.quickAddEnabled
+            : false;
+        const hideCompletedTasks =
+          typeof widget.hideCompletedTasks === 'boolean'
+            ? widget.hideCompletedTasks
+            : false;
+
+        if (
+          template !== widget.template ||
+          quickAddEnabled !== widget.quickAddEnabled ||
+          hideCompletedTasks !== widget.hideCompletedTasks
+        ) {
+          workspaceChanged = true;
+          normalized = {
+            ...widget,
+            template,
+            quickAddEnabled,
+            hideCompletedTasks,
+          } as WidgetConfig;
+        }
+      }
+
+      if (widget.type === 'search' && widget.layout.h !== 1) {
+        workspaceChanged = true;
+        normalized = {
+          ...normalized,
+          layout: {
+            ...normalized.layout,
+            h: 1,
+          },
+        };
+      }
+
+      if (
+        normalized.type === 'weather' &&
+        (normalized.location as { type: string }).type === 'auto'
+      ) {
+        workspaceChanged = true;
+        normalized = {
+          ...normalized,
+          location: { type: 'unset' },
+        };
+      }
+
+      return normalized;
+    });
+
+    if (workspaceChanged) {
       hasChanges = true;
-      normalized = {
-        ...normalized,
-        layout: {
-          ...normalized.layout,
-          h: 1,
-        },
+      return {
+        ...workspace,
+        widgets,
       };
     }
-
-    if (
-      normalized.type === 'weather' &&
-      (normalized.location as { type: string }).type === 'auto'
-    ) {
-      hasChanges = true;
-      normalized = {
-        ...normalized,
-        location: { type: 'unset' },
-      };
-    }
-
-    return normalized;
+    return workspace;
   });
 
-  return hasChanges ? { ...config, widgets } : config;
+  return hasChanges ? { ...config, activeWorkspaceId, workspaces } : config;
 }
 
 export function migrateDashboardConfig(value: unknown): DashboardConfig {
@@ -595,9 +802,9 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return normalizeDashboardConfig({
-      version: DASHBOARD_CONFIG_VERSION,
-      appearance: {
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets),
+      {
         theme: {
           type: 'builtin',
           id: value.appearance.theme as BuiltinThemeId,
@@ -609,13 +816,8 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
         wallpaper: { type: 'none' },
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
-      widgets: value.widgets.map((widget) =>
-        widget.type === 'links'
-          ? ({ ...widget, type: 'markdown' } as WidgetConfig)
-          : (widget as unknown as WidgetConfig),
-      ),
-      customThemes: [],
-    });
+      [],
+    );
   }
 
   if (version === 2) {
@@ -623,9 +825,9 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return normalizeDashboardConfig({
-      version: DASHBOARD_CONFIG_VERSION,
-      appearance: {
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets.filter(isWidgetConfigV6)),
+      {
         theme: {
           type: 'builtin',
           id: value.appearance.theme as BuiltinThemeId,
@@ -637,9 +839,8 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
         wallpaper: { type: 'none' },
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
-      widgets: value.widgets.filter(isWidgetConfig),
-      customThemes: [],
-    });
+      [],
+    );
   }
 
   if (version === 3) {
@@ -647,10 +848,9 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return normalizeDashboardConfig({
-      version: DASHBOARD_CONFIG_VERSION,
-      widgets: value.widgets,
-      appearance: {
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets),
+      {
         theme: {
           type: 'builtin',
           id: value.appearance.theme as BuiltinThemeId,
@@ -662,8 +862,8 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
         wallpaper: value.appearance.wallpaper,
         liquidGlass: { ...DEFAULT_LIQUID_GLASS },
       },
-      customThemes: [],
-    });
+      [],
+    );
   }
 
   if (version === 4) {
@@ -673,10 +873,9 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
 
     const { liquidGlassEnabled, ...appearance } = value.appearance;
 
-    return normalizeDashboardConfig({
-      version: DASHBOARD_CONFIG_VERSION,
-      widgets: value.widgets,
-      appearance: {
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets),
+      {
         theme: { type: 'builtin', id: appearance.theme as BuiltinThemeId },
         backgroundColor: { type: 'custom', color: appearance.backgroundColor },
         wallpaper: appearance.wallpaper,
@@ -685,8 +884,8 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
           enabled: liquidGlassEnabled,
         },
       },
-      customThemes: [],
-    });
+      [],
+    );
   }
 
   if (version === 5) {
@@ -694,10 +893,9 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return normalizeDashboardConfig({
-      version: DASHBOARD_CONFIG_VERSION,
-      widgets: value.widgets,
-      appearance: {
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets),
+      {
         theme: {
           type: 'builtin',
           id: value.appearance.theme as BuiltinThemeId,
@@ -709,12 +907,36 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
         wallpaper: value.appearance.wallpaper,
         liquidGlass: value.appearance.liquidGlass,
       },
-      customThemes: [],
-    });
+      [],
+    );
+  }
+
+  if (version === 6) {
+    if (!isDashboardConfigV6(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return wrapLegacyToDashboardConfigV8(
+      normalizeLegacyWidgets(value.widgets),
+      value.appearance,
+      value.customThemes,
+    );
+  }
+
+  if (version === 7) {
+    if (!isDashboardConfigV7(value)) {
+      throw new InvalidDashboardConfigError();
+    }
+
+    return wrapLegacyToDashboardConfigV8(
+      value.widgets,
+      value.appearance,
+      value.customThemes,
+    );
   }
 
   if (version === DASHBOARD_CONFIG_VERSION) {
-    if (!isDashboardConfigV6(value)) {
+    if (!isDashboardConfigV8(value)) {
       throw new InvalidDashboardConfigError();
     }
 

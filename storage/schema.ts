@@ -7,7 +7,7 @@ import type { WeatherWidgetConfig } from '../widgets/weather/types';
 
 import type { CustomTheme, ThemeRef } from '../themes/types';
 
-export const DASHBOARD_CONFIG_VERSION = 6 as const;
+export const DASHBOARD_CONFIG_VERSION = 8 as const;
 
 export type Theme = ThemeRef;
 
@@ -63,9 +63,16 @@ export interface WidgetConfigMap {
 export type WidgetType = keyof WidgetConfigMap;
 export type WidgetConfig = WidgetConfigMap[WidgetType];
 
-export interface DashboardConfig {
-  version: typeof DASHBOARD_CONFIG_VERSION;
+export interface WorkspaceConfig {
+  id: string;
+  name: string;
   widgets: WidgetConfig[];
   appearance: AppearanceConfig;
+}
+
+export interface DashboardConfig {
+  version: typeof DASHBOARD_CONFIG_VERSION;
+  activeWorkspaceId: string;
+  workspaces: WorkspaceConfig[];
   customThemes: CustomTheme[];
 }

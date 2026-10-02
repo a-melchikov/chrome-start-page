@@ -26,6 +26,9 @@ function markdown(id: string): MarkdownWidgetConfig {
     title: id,
     content: id,
     layout: { x: 0, y: 0, w: 3, h: 3 },
+    template: 'blank',
+    quickAddEnabled: false,
+    hideCompletedTasks: false,
   };
 }
 
@@ -54,12 +57,14 @@ describe('widget actions', () => {
       }),
     );
     act(() => dashboard.result.current.undo());
-    expect(dashboard.result.current.config?.widgets[0]).toMatchObject({
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]).toMatchObject({
       content: 'edited',
       layout: { x: 0 },
     });
     act(() => dashboard.result.current.redo());
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(4);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      4,
+    );
     act(() => dashboard.result.current.undo());
     act(() => dashboard.result.current.addWidget(markdown('second')));
     expect(dashboard.result.current.canRedo).toBe(false);
@@ -77,12 +82,14 @@ describe('widget actions', () => {
     });
     expect(inserted).toHaveLength(1);
     expect(inserted[0]).not.toBe('first');
-    expect(dashboard.result.current.config?.widgets).toHaveLength(2);
+    expect(dashboard.result.current.activeWorkspace?.widgets).toHaveLength(2);
     act(() => dashboard.result.current.undo());
-    expect(dashboard.result.current.config?.widgets).toHaveLength(1);
+    expect(dashboard.result.current.activeWorkspace?.widgets).toHaveLength(1);
     act(() => dashboard.result.current.redo());
     expect(
-      dashboard.result.current.config?.widgets.map((widget) => widget.id),
+      dashboard.result.current.activeWorkspace?.widgets.map(
+        (widget) => widget.id,
+      ),
     ).toContain(inserted[0]);
   });
 
@@ -94,12 +101,18 @@ describe('widget actions', () => {
     act(() => dashboard.result.current.moveWidgets(['first'], 1, 0));
     act(() => dashboard.result.current.moveWidgets(['first'], 1, 0));
     act(() => dashboard.result.current.finishNudge());
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(2);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      2,
+    );
 
     act(() => dashboard.result.current.undo());
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(0);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      0,
+    );
     act(() => dashboard.result.current.redo());
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(2);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      2,
+    );
   });
 
   it('records an edge jump as one undoable layout change', async () => {
@@ -113,9 +126,13 @@ describe('widget actions', () => {
     );
 
     act(() => dashboard.result.current.moveWidgets(['first'], 1, 0, true));
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(9);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      9,
+    );
     act(() => dashboard.result.current.undo());
-    expect(dashboard.result.current.config?.widgets[0]?.layout.x).toBe(7);
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.layout.x).toBe(
+      7,
+    );
   });
 
   it('restores a deleted Pomodoro ID and keeps copies on fresh timer state', async () => {
@@ -143,7 +160,7 @@ describe('widget actions', () => {
     act(() => dashboard.result.current.removeWidgets([timer.id]));
     act(() => dashboard.result.current.undo());
     expect(
-      dashboard.result.current.config?.widgets.some(
+      dashboard.result.current.activeWorkspace?.widgets.some(
         (item) => item.id === timer.id,
       ),
     ).toBe(true);
@@ -183,7 +200,9 @@ describe('widget actions', () => {
       expect(await loadImageAsset(IMAGE_ID)).not.toBeNull(),
     );
     act(() => dashboard.result.current.undo());
-    expect(dashboard.result.current.config?.widgets[0]?.id).toBe('image');
+    expect(dashboard.result.current.activeWorkspace?.widgets[0]?.id).toBe(
+      'image',
+    );
   });
 
   it('applies another tab’s saved state and resets local history', async () => {
@@ -196,24 +215,33 @@ describe('widget actions', () => {
     act(() => first.result.current.addWidget(markdown('shared')));
     await waitFor(() =>
       expect(
-        second.result.current.config?.widgets.map((widget) => widget.id),
+        second.result.current.activeWorkspace?.widgets.map(
+          (widget) => widget.id,
+        ),
       ).toEqual(['shared']),
     );
     expect(second.result.current.canUndo).toBe(false);
   });
 
   it('holds a local draft when another tab saves and resolves the conflict explicitly', async () => {
+    const defaultDashboard = createDefaultDashboardConfig();
     await saveDashboardConfig({
-      ...createDefaultDashboardConfig(),
-      widgets: [markdown('shared')],
+      ...defaultDashboard,
+      workspaces: [
+        {
+          ...defaultDashboard.workspaces[0]!,
+          widgets: [markdown('shared')],
+        },
+        ...defaultDashboard.workspaces.slice(1),
+      ],
     });
     const first = renderHook(() => useDashboardConfig());
     const second = renderHook(() => useDashboardConfig());
     await waitFor(() =>
-      expect(first.result.current.config?.widgets).toHaveLength(1),
+      expect(first.result.current.activeWorkspace?.widgets).toHaveLength(1),
     );
     await waitFor(() =>
-      expect(second.result.current.config?.widgets).toHaveLength(1),
+      expect(second.result.current.activeWorkspace?.widgets).toHaveLength(1),
     );
 
     act(() =>
@@ -224,14 +252,14 @@ describe('widget actions', () => {
     );
     act(() => first.result.current.addWidget(markdown('external')));
     await waitFor(() => expect(second.result.current.conflict).toBe(true));
-    expect(second.result.current.config?.widgets[0]).toMatchObject({
+    expect(second.result.current.activeWorkspace?.widgets[0]).toMatchObject({
       content: 'local draft',
     });
 
     await act(async () => second.result.current.resolveConflict('external'));
     expect(second.result.current.conflict).toBe(false);
     expect(
-      second.result.current.config?.widgets.map((widget) => widget.id),
+      second.result.current.activeWorkspace?.widgets.map((widget) => widget.id),
     ).toEqual(['shared', 'external']);
   });
 
@@ -295,7 +323,7 @@ describe('widget actions', () => {
         dashboard.result.current.pasteWidgets(source),
       ).rejects.toThrow('save failed');
     });
-    expect(dashboard.result.current.config?.widgets).toEqual([]);
+    expect(dashboard.result.current.activeWorkspace?.widgets).toEqual([]);
     expect(dashboard.result.current.error).toContain('save failed');
     const snapshot = await storage.snapshot('local');
     expect(

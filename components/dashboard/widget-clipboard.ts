@@ -104,12 +104,21 @@ export function parseWidgetClipboard(source: string): WidgetClipboardPayload {
   let widgets: WidgetConfig[];
   let localImages: LocalWallpaperAssetV1[];
   try {
-    widgets = migrateDashboardConfig({
+    const clipWorkspaceId = '00000000-0000-4000-8000-000000000000';
+    const migrated = migrateDashboardConfig({
       version: DASHBOARD_CONFIG_VERSION,
-      appearance: DEFAULT_APPEARANCE,
-      widgets: payload.widgets,
+      activeWorkspaceId: clipWorkspaceId,
+      workspaces: [
+        {
+          id: clipWorkspaceId,
+          name: 'Clipboard',
+          widgets: payload.widgets,
+          appearance: DEFAULT_APPEARANCE,
+        },
+      ],
       customThemes: [],
-    }).widgets;
+    });
+    widgets = migrated.workspaces[0]?.widgets ?? [];
     localImages = payload.localImages.map(parseWallpaperAsset);
   } catch {
     throw invalidClipboard();

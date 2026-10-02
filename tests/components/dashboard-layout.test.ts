@@ -27,6 +27,9 @@ function createWidget(
     title: id,
     content: `[${id}](${id}.example.com)`,
     layout,
+    template: 'blank',
+    quickAddEnabled: false,
+    hideCompletedTasks: false,
   };
 }
 

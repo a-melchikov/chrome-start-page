@@ -26,28 +26,35 @@ describe('widget self writes', () => {
         title: 'first',
         content: 'first',
         layout: { x: 0, y: 0, w: 3, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       }),
     );
     await waitFor(async () =>
-      expect((await readStoredDashboardConfig())?.widgets).toHaveLength(1),
+      expect(
+        (await readStoredDashboardConfig())?.workspaces[0]?.widgets,
+      ).toHaveLength(1),
     );
 
     const saved = await readStoredDashboardConfig();
     if (!saved) throw new Error('Dashboard config is missing');
     // Chrome may return equivalent objects with a different property order.
     await storage.setItem(DASHBOARD_STORAGE_KEY, {
-      widgets: saved.widgets,
-      appearance: saved.appearance,
       version: saved.version,
       customThemes: saved.customThemes,
+      activeWorkspaceId: saved.activeWorkspaceId,
+      workspaces: saved.workspaces,
     });
 
     act(() => dashboard.result.current.undo());
     await waitFor(async () =>
-      expect((await readStoredDashboardConfig())?.widgets).toHaveLength(0),
+      expect(
+        (await readStoredDashboardConfig())?.workspaces[0]?.widgets,
+      ).toHaveLength(0),
     );
     expect(dashboard.result.current.conflict).toBe(false);
-    expect(dashboard.result.current.config?.widgets).toEqual([]);
+    expect(dashboard.result.current.activeWorkspace?.widgets).toEqual([]);
 
     const setSpy = vi.spyOn(fakeBrowser.storage.local, 'set');
     act(() =>
@@ -57,12 +64,17 @@ describe('widget self writes', () => {
         title: 'second',
         content: 'second',
         layout: { x: 0, y: 0, w: 3, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       }),
     );
     act(() => dashboard.result.current.undo());
     await waitFor(() => expect(setSpy).toHaveBeenCalledTimes(2));
     await waitFor(async () =>
-      expect((await readStoredDashboardConfig())?.widgets).toHaveLength(0),
+      expect(
+        (await readStoredDashboardConfig())?.workspaces[0]?.widgets,
+      ).toHaveLength(0),
     );
     expect(dashboard.result.current.conflict).toBe(false);
   });

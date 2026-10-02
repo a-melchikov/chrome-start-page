@@ -63,7 +63,12 @@ export function WidgetHost({
     (widget as { source: { type: string } }).source.type !== 'none';
   const isClock = widget.type === 'clock';
   const isWeather = widget.type === 'weather';
+  const isVisualWeather =
+    widget.type === 'weather' &&
+    'mode' in widget &&
+    (widget as { mode?: unknown }).mode === 'visual';
   const isTitleHidden = isClock || isWeather;
+  const isImageWithSource = isOverlayControls && hasImage;
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {
     setShouldRestoreEditFocus(true);
@@ -98,7 +103,8 @@ export function WidgetHost({
       aria-label="Управление виджетом"
       aria-hidden={!isEditing}
       className={classNames(
-        'shrink-0 items-center justify-end gap-1',
+        'shrink-0 items-center justify-end',
+        isImageWithSource ? 'gap-1.5' : 'gap-1',
         isOverlayControls ? 'flex' : 'edit-controls',
       )}
       data-visible={isEditing}
@@ -109,7 +115,13 @@ export function WidgetHost({
         <IconButton
           ref={editButtonRef}
           aria-label={`Редактировать виджет «${displayName}»`}
-          className="text-theme-text-secondary hover:text-theme-text-primary"
+          className={
+            isImageWithSource
+              ? '!rounded-full border border-white/20 bg-black/50 text-white shadow-md backdrop-blur-md hover:bg-black/70 hover:text-white active:bg-black/80'
+              : isVisualWeather
+                ? 'text-white/85 hover:bg-white/15 hover:text-white active:bg-white/25'
+                : 'text-theme-text-secondary hover:text-theme-text-primary'
+          }
           size="xs"
           title={`Редактировать виджет «${displayName}»`}
           variant="ghost"
@@ -121,13 +133,17 @@ export function WidgetHost({
       <IconButton
         aria-label={`Удалить виджет «${displayName}»`}
         className={
-          isOverlayControls && hasImage
-            ? 'text-theme-text-secondary hover:text-red-400'
-            : undefined
+          isImageWithSource
+            ? '!rounded-full border border-white/20 bg-black/50 text-white shadow-md backdrop-blur-md hover:border-red-400/50 hover:bg-red-500/80 hover:text-white active:bg-red-600/90'
+            : isVisualWeather
+              ? 'text-white/85 hover:bg-red-500/25 hover:text-red-400 active:bg-red-500/35'
+              : undefined
         }
         size="xs"
         title={`Удалить виджет «${displayName}»`}
-        variant="danger-ghost"
+        variant={
+          isImageWithSource || isVisualWeather ? 'ghost' : 'danger-ghost'
+        }
         onClick={() => onRequestDelete(widget)}
       >
         <CloseIcon className="size-[18px]" />
@@ -191,11 +207,7 @@ export function WidgetHost({
               </div>
               <div
                 aria-hidden={!isEditing}
-                className={classNames(
-                  'edit-controls absolute right-2 top-2 z-10 rounded-lg p-0.5 transition-colors',
-                  hasImage &&
-                    'border border-theme-border/50 bg-theme-surface/85 backdrop-blur-md shadow-xs',
-                )}
+                className="edit-controls absolute right-2 top-2 z-10 p-0.5"
                 data-visible={isEditing}
                 inert={!isEditing}
               >
@@ -218,14 +230,7 @@ export function WidgetHost({
           )
         ) : isTitleHidden ? (
           <>
-            <div
-              className={classNames(
-                'absolute right-2 top-2 z-10 rounded-lg p-0.5',
-                isEditing &&
-                  isFullBleedCard &&
-                  'border border-theme-border/70 bg-theme-surface-elevated shadow-sm',
-              )}
-            >
+            <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
               {controls}
             </div>
             <div

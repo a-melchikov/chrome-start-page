@@ -9,6 +9,7 @@ import type {
   AppearanceConfig,
   DashboardConfig,
   WidgetType,
+  WorkspaceConfig,
 } from '../../storage/schema';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
@@ -27,7 +28,11 @@ import {
 import { Button, IconButton } from '../ui';
 import { MotionNotice } from '../ui/MotionNotice';
 import { AddWidgetDialog } from './AddWidgetDialog';
+import { SelectTemplateDialog } from '../../widgets/markdown/SelectTemplateDialog';
+import type { MarkdownTemplateId } from '../../widgets/markdown/types';
 import { ShortcutsHelpDialog } from './ShortcutsHelpDialog';
+import { WorkspaceSelector } from './WorkspaceSelector';
+import { WorkspaceManagerDialog } from './WorkspaceManagerDialog';
 import { downloadBackup } from './download-backup';
 import type { AppearanceSection, PaletteCommand } from './command-catalog';
 
@@ -60,7 +65,7 @@ interface DashboardControlsProps {
   selectedCount: number;
   wallpaperError: string | null;
   wallpaperPreviewSrc: string | null;
-  onAddWidget: (type: WidgetType) => void;
+  onAddWidget: (type: WidgetType, templateId?: MarkdownTemplateId) => void;
   onAppearanceChange: (changes: Partial<AppearanceConfig>) => void;
   onAppearancePreview: (changes: Partial<AppearanceConfig>) => void;
   onClearBackupError: () => void;
@@ -91,6 +96,17 @@ interface DashboardControlsProps {
   onDuplicateCustomTheme?: (id: string) => void;
   onDeleteCustomTheme?: (id: string) => void;
   reopenAppearanceToken?: number;
+  workspaces?: readonly WorkspaceConfig[];
+  activeWorkspaceId?: string | null;
+  onSwitchWorkspace?: (id: string) => void;
+  onAddWorkspace?: (
+    name?: string,
+    options?: { template?: 'blank' | 'work' | 'study' },
+  ) => void;
+  onRenameWorkspace?: (id: string, name: string) => void;
+  onDuplicateWorkspace?: (id: string) => void;
+  onDeleteWorkspace?: (id: string) => void;
+  onReorderWorkspaces?: (orderedIds: readonly string[]) => void;
 }
 
 export function DashboardControls({
@@ -134,9 +150,20 @@ export function DashboardControls({
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
   reopenAppearanceToken,
+  workspaces,
+  activeWorkspaceId,
+  onSwitchWorkspace,
+  onAddWorkspace,
+  onRenameWorkspace,
+  onDuplicateWorkspace,
+  onDeleteWorkspace,
+  onReorderWorkspaces,
 }: DashboardControlsProps) {
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
+  const [isMarkdownTemplateOpen, setIsMarkdownTemplateOpen] = useState(false);
+  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
+  const [isWorkspaceManagerOpen, setIsWorkspaceManagerOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
@@ -185,6 +212,8 @@ export function DashboardControls({
       setIsBackupOpen(false);
       setIsHelpOpen(false);
       setIsPaletteOpen(false);
+      setIsWorkspaceMenuOpen(false);
+      setIsWorkspaceManagerOpen(false);
     }
   };
 
@@ -205,6 +234,7 @@ export function DashboardControls({
       setIsBackupOpen(true);
     },
     onOpenPalette: openPalette,
+    onOpenWorkspaceMenu: () => setIsWorkspaceMenuOpen((open) => !open),
     selectedCount,
     onClearSelection,
     onCopySelection,
@@ -253,6 +283,17 @@ export function DashboardControls({
       if (command.action === 'add-custom-theme') {
         handleOpenThemeEditor();
       }
+      if (command.action === 'workspaces') {
+        setIsWorkspaceManagerOpen(true);
+      }
+      if (command.action === 'add-workspace') {
+        onAddWorkspace?.();
+      }
+      return;
+    }
+
+    if (command.kind === 'workspace') {
+      onSwitchWorkspace?.(command.workspaceId);
       return;
     }
 
@@ -260,7 +301,11 @@ export function DashboardControls({
       setRequestedSection({ section: command.section, token: Date.now() });
       setIsAppearanceOpen(true);
     } else if (command.kind === 'add') {
-      onAddWidget(command.widgetType);
+      if (command.widgetType === 'markdown') {
+        setIsMarkdownTemplateOpen(true);
+      } else {
+        onAddWidget(command.widgetType);
+      }
       if (!isEditing) onEditingChange(true);
     } else if (command.kind === 'focus') {
       const widget = Array.from(
@@ -290,6 +335,22 @@ export function DashboardControls({
         role="status"
       />
       <div className="dashboard-toolbar liquid-glass-surface fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl p-1">
+        {workspaces && workspaces.length > 0 && onSwitchWorkspace ? (
+          <WorkspaceSelector
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspaceId ?? null}
+            canManage={canManageWidgets}
+            isOpen={isWorkspaceMenuOpen}
+            onOpenChange={setIsWorkspaceMenuOpen}
+            onSwitchWorkspace={onSwitchWorkspace}
+            onAddWorkspace={onAddWorkspace ?? (() => {})}
+            onRenameWorkspace={onRenameWorkspace ?? (() => {})}
+            onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
+            onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
+            onOpenManager={() => setIsWorkspaceManagerOpen(true)}
+          />
+        ) : null}
+
         <div
           aria-hidden={!isEditing}
           className="edit-controls items-center gap-2"
@@ -470,10 +531,38 @@ export function DashboardControls({
       </Suspense>
       <AddWidgetDialog
         open={isAddWidgetOpen}
-        onSelectWidgetType={onAddWidget}
+        onSelectWidgetType={(type) => {
+          if (type === 'markdown') {
+            setIsMarkdownTemplateOpen(true);
+          } else {
+            onAddWidget(type);
+          }
+        }}
         onOpenChange={setIsAddWidgetOpen}
       />
+      <SelectTemplateDialog
+        open={isMarkdownTemplateOpen}
+        onOpenChange={setIsMarkdownTemplateOpen}
+        onSelectTemplate={(templateId) => {
+          onAddWidget('markdown', templateId);
+          if (!isEditing) onEditingChange(true);
+        }}
+      />
       <ShortcutsHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
+      {workspaces && onReorderWorkspaces ? (
+        <WorkspaceManagerDialog
+          open={isWorkspaceManagerOpen}
+          onOpenChange={setIsWorkspaceManagerOpen}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId ?? null}
+          onSwitchWorkspace={onSwitchWorkspace ?? (() => {})}
+          onAddWorkspace={onAddWorkspace ?? (() => {})}
+          onRenameWorkspace={onRenameWorkspace ?? (() => {})}
+          onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
+          onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
+          onReorderWorkspaces={onReorderWorkspaces}
+        />
+      ) : null}
       {hasOpenedPalette ? (
         <Suspense fallback={null}>
           <CommandPalette

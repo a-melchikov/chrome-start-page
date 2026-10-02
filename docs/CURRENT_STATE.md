@@ -1,15 +1,14 @@
 # Current State
 
-Last updated: 2026-09-26
+Last updated: 2026-10-02
 
 ## Implemented
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
-- Version 6 local dashboard schema, defaults, runtime validation, queued saves,
-  `customThemes` array, typed `ThemeRef` (`builtin` / `custom`), `BackgroundColorConfig`,
-  v1 LinksWidget → MarkdownWidget migration, v1/v2/v3 appearance migration,
-  v4 Liquid Glass migration, v5 -> v6 custom theme migration, and recovery of old v2
-  profiles by removing retired WIP Google Calendar widgets.
+- Version 8 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
+  isolated `widgets`, `layout`, `appearance` (`theme`, `backgroundColor`, `wallpaper`, `liquidGlass`) per workspace, global shared `customThemes`,
+  full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.
+- Auto-migration pipeline v1–v7 -> v8 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
 - Global extensible theme system and design tokens (`themes/`, `themes.css`,
   Tailwind CSS 4 `@theme`) with 13 curated presets: System, Light, Dark,
   Tokyo Night, Rainy Tokyo, Cozy Lofi Night, Catppuccin Mocha, Catppuccin Latte,
@@ -39,8 +38,11 @@ Last updated: 2026-09-26
   appearance sections, and safe saved Markdown links. Direct backup export
   reuses the existing export path; the old `/` search-focus shortcut is removed.
 - Multiple Markdown widgets with safe CommonMark/GFM/HTML rendering,
-  interactive source-backed tasks, current-tab favicon links, HTTPS images,
-  copyable code blocks, and fullscreen live split editing.
+  5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar
+  with template-specific formatting, single-line text sizing directives (`:large[текст]` / `:xlarge[текст]`),
+  task filtering (`hideCompletedTasks`) with parent preservation for open subtasks and
+  all-completed empty state, interactive source-backed tasks, current-tab favicon links,
+  HTTPS images, copyable code blocks, and fullscreen live split editing.
 - Widget renderers load on demand by widget type; editors load only when opened.
 - Multiple compact Search widgets with Google/Yandex/Bing/DuckDuckGo, fixed GET
   endpoints, local brand SVGs, icon fallback, one-row layout, and dialog settings.

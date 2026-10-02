@@ -88,7 +88,7 @@ function createBackupFile(config: unknown) {
         formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
         exportedAt: '2026-09-10T12:34:56.000Z',
         dashboard: config,
-        localWallpaper: null,
+        localWallpapers: [],
       }),
     ],
     'dashboard-backup.json',
@@ -100,7 +100,10 @@ async function getStoredMarkdownWidget(): Promise<
   MarkdownWidgetConfig | undefined
 > {
   const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
-  const widget = config?.widgets[0];
+  const activeWorkspace =
+    config?.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
+    config?.workspaces[0];
+  const widget = activeWorkspace?.widgets[0];
   return widget?.type === 'markdown' ? widget : undefined;
 }
 
@@ -131,22 +134,20 @@ describe('useDashboardConfig layout persistence', () => {
       title: 'Работа',
       content: '[Mail](mail.example.com)',
       layout: { x: 0, y: 0, w: 4, h: 3 },
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     };
+    const defaultDashboard = createDefaultDashboardConfig();
     await saveDashboardConfig({
-      version: 6,
-      widgets: [widget],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
+      ...defaultDashboard,
+      workspaces: [
+        {
+          ...defaultDashboard.workspaces[0]!,
+          widgets: [widget],
         },
-      },
+        ...defaultDashboard.workspaces.slice(1),
+      ],
     });
 
     const firstSession = renderHook(() => useDashboardConfig());
@@ -165,15 +166,17 @@ describe('useDashboardConfig layout persistence', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.widgets[0]?.layout).toEqual(updatedLayout);
+      expect(storedConfig?.workspaces[0]?.widgets[0]?.layout).toEqual(
+        updatedLayout,
+      );
     });
     firstSession.unmount();
 
     const restoredSession = renderHook(() => useDashboardConfig());
     await waitFor(() =>
-      expect(restoredSession.result.current.config?.widgets[0]?.layout).toEqual(
-        updatedLayout,
-      ),
+      expect(
+        restoredSession.result.current.activeWorkspace?.widgets[0]?.layout,
+      ).toEqual(updatedLayout),
     );
   });
 
@@ -187,7 +190,9 @@ describe('useDashboardConfig layout persistence', () => {
       );
     });
 
-    expect(dashboard.result.current.config?.appearance.wallpaper).toEqual({
+    expect(
+      dashboard.result.current.activeWorkspace?.appearance.wallpaper,
+    ).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
     });
@@ -205,7 +210,8 @@ describe('useDashboardConfig layout persistence', () => {
       await dashboard.result.current.setLocalWallpaper(createPngFile());
     });
 
-    const wallpaper = dashboard.result.current.config?.appearance.wallpaper;
+    const wallpaper =
+      dashboard.result.current.activeWorkspace?.appearance.wallpaper;
     expect(wallpaper).toMatchObject({ type: 'local' });
 
     if (wallpaper?.type !== 'local') {
@@ -234,7 +240,9 @@ describe('useDashboardConfig layout persistence', () => {
       ).rejects.toThrow('save failed');
     });
 
-    expect(dashboard.result.current.config?.appearance.wallpaper).toEqual({
+    expect(
+      dashboard.result.current.activeWorkspace?.appearance.wallpaper,
+    ).toEqual({
       type: 'none',
     });
     expect(dashboard.result.current.wallpaperError).toContain('save failed');
@@ -247,22 +255,20 @@ describe('useDashboardConfig layout persistence', () => {
       title: 'Работа',
       content: 'До изменения',
       layout: { x: 0, y: 0, w: 4, h: 3 },
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     };
+    const defaultDashboard = createDefaultDashboardConfig();
     await saveDashboardConfig({
-      version: 6,
-      widgets: [widget],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
+      ...defaultDashboard,
+      workspaces: [
+        {
+          ...defaultDashboard.workspaces[0]!,
+          widgets: [widget],
         },
-      },
+        ...defaultDashboard.workspaces.slice(1),
+      ],
     });
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
@@ -283,11 +289,13 @@ describe('useDashboardConfig layout persistence', () => {
     const stored = await storage.getItem<DashboardConfig>(
       DASHBOARD_STORAGE_KEY,
     );
-    expect(stored?.appearance.wallpaper).toEqual({
+    expect(stored?.workspaces[0]?.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
     });
-    expect(stored?.widgets[0]).toMatchObject({ content: 'После изменения' });
+    expect(stored?.workspaces[0]?.widgets[0]).toMatchObject({
+      content: 'После изменения',
+    });
   });
 
   it('reports progress and aborts validation without a user-facing error', async () => {
@@ -343,14 +351,15 @@ describe('useDashboardConfig layout persistence', () => {
     act(() => {
       dashboard.result.current.previewAppearance({
         liquidGlass: {
-          ...initial.appearance.liquidGlass,
+          ...initial.workspaces[0]!.appearance.liquidGlass,
           transparency: 72,
         },
       });
     });
 
     expect(
-      dashboard.result.current.config?.appearance.liquidGlass.transparency,
+      dashboard.result.current.activeWorkspace?.appearance.liquidGlass
+        .transparency,
     ).toBe(72);
     await expect(
       storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
@@ -360,7 +369,7 @@ describe('useDashboardConfig layout persistence', () => {
     await waitFor(async () =>
       expect(
         (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
-          ?.appearance.liquidGlass.transparency,
+          ?.workspaces[0]?.appearance.liquidGlass.transparency,
       ).toBe(72),
     );
 
@@ -379,7 +388,7 @@ describe('useDashboardConfig layout persistence', () => {
     act(() => {
       dashboard.result.current.previewAppearance({
         liquidGlass: {
-          ...initial.appearance.liquidGlass,
+          ...initial.workspaces[0]!.appearance.liquidGlass,
           blur: 27,
         },
       });
@@ -389,7 +398,7 @@ describe('useDashboardConfig layout persistence', () => {
     await waitFor(async () =>
       expect(
         (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
-          ?.appearance.liquidGlass.blur,
+          ?.workspaces[0]?.appearance.liquidGlass.blur,
       ).toBe(27),
     );
   });
@@ -403,7 +412,7 @@ describe('useDashboardConfig layout persistence', () => {
     act(() => {
       dashboard.result.current.previewAppearance({
         liquidGlass: {
-          ...initial.appearance.liquidGlass,
+          ...initial.workspaces[0]!.appearance.liquidGlass,
           shadow: 84,
         },
       });
@@ -413,7 +422,7 @@ describe('useDashboardConfig layout persistence', () => {
     await waitFor(async () =>
       expect(
         (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
-          ?.appearance.liquidGlass.shadow,
+          ?.workspaces[0]?.appearance.liquidGlass.shadow,
       ).toBe(84),
     );
   });
@@ -425,22 +434,20 @@ describe('useDashboardConfig layout persistence', () => {
       title: 'Работа',
       content: '[Mail](mail.example.com)',
       layout: { x: 0, y: 0, w: 4, h: 3 },
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     };
+    const defaultDashboard = createDefaultDashboardConfig();
     await saveDashboardConfig({
-      version: 6,
-      widgets: [widget],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
+      ...defaultDashboard,
+      workspaces: [
+        {
+          ...defaultDashboard.workspaces[0]!,
+          widgets: [widget],
         },
-      },
+        ...defaultDashboard.workspaces.slice(1),
+      ],
     });
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
@@ -469,12 +476,20 @@ describe('useDashboardConfig layout persistence', () => {
       title: 'Работа',
       content: 'До изменения',
       layout: { x: 0, y: 0, w: 4, h: 3 },
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     };
+    const defaultDashboard = createDefaultDashboardConfig();
     await saveDashboardConfig({
-      version: 6,
-      widgets: [widget],
-      customThemes: [],
-      appearance: createDefaultDashboardConfig().appearance,
+      ...defaultDashboard,
+      workspaces: [
+        {
+          ...defaultDashboard.workspaces[0]!,
+          widgets: [widget],
+        },
+        ...defaultDashboard.workspaces.slice(1),
+      ],
     });
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
@@ -496,7 +511,7 @@ describe('useDashboardConfig layout persistence', () => {
     });
 
     const backup = parseDashboardBackupJson(contents);
-    expect(backup.dashboard.widgets[0]).toMatchObject({
+    expect(backup.dashboard.workspaces[0]!.widgets[0]).toMatchObject({
       content: 'Последнее изменение',
     });
     await expect(
@@ -506,23 +521,34 @@ describe('useDashboardConfig layout persistence', () => {
 
   it('replaces the live and stored dashboard after a confirmed import', async () => {
     const current = createDefaultDashboardConfig();
+    const importedId = '11111111-1111-4111-8111-111111111111';
     const imported: DashboardConfig = {
-      version: 6,
-      customThemes: [],
-      widgets: [
+      version: 8,
+      activeWorkspaceId: importedId,
+      workspaces: [
         {
-          id: 'imported-notes',
-          type: 'markdown',
-          title: 'Из копии',
-          content: 'Восстановлено',
-          layout: { x: 2, y: 3, w: 5, h: 4 },
+          id: importedId,
+          name: 'Основной',
+          widgets: [
+            {
+              id: 'imported-notes',
+              type: 'markdown',
+              title: 'Из копии',
+              content: 'Восстановлено',
+              layout: { x: 2, y: 3, w: 5, h: 4 },
+              template: 'blank',
+              quickAddEnabled: false,
+              hideCompletedTasks: false,
+            },
+          ],
+          appearance: {
+            ...current.workspaces[0]!.appearance,
+            theme: { type: 'builtin', id: 'dark' },
+            backgroundColor: { type: 'custom', color: '#123456' },
+          },
         },
       ],
-      appearance: {
-        ...current.appearance,
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#123456' },
-      },
+      customThemes: [],
     };
     await saveDashboardConfig(current);
     const dashboard = renderHook(() => useDashboardConfig());
@@ -554,26 +580,33 @@ describe('useDashboardConfig layout persistence', () => {
         dashboard.result.current.importDashboardBackup(
           new File(['{'], 'broken.json', { type: 'application/json' }),
         ),
-      ).rejects.toThrow('корректный JSON');
+      ).rejects.toThrow('недопустимый JSON');
     });
 
     expect(dashboard.result.current.config).toEqual(current);
-    expect(dashboard.result.current.backupError).toContain('корректный JSON');
+    expect(dashboard.result.current.backupError).toContain('недопустимый JSON');
     await expect(loadDashboardConfig()).resolves.toEqual(current);
   });
 
   it('aborts import validation without showing a backup error', async () => {
     imageShouldLoad = false;
     const controller = new AbortController();
+    const defaultDash = createDefaultDashboardConfig();
     const imported: DashboardConfig = {
-      ...createDefaultDashboardConfig(),
-      appearance: {
-        ...createDefaultDashboardConfig().appearance,
-        wallpaper: {
-          type: 'url',
-          url: 'https://example.com/slow-wallpaper.jpg',
+      ...defaultDash,
+      workspaces: [
+        {
+          ...defaultDash.workspaces[0]!,
+          appearance: {
+            ...defaultDash.workspaces[0]!.appearance,
+            wallpaper: {
+              type: 'url',
+              url: 'https://example.com/slow-wallpaper.jpg',
+            },
+          },
         },
-      },
+        ...defaultDash.workspaces.slice(1),
+      ],
     };
     const dashboard = renderHook(() => useDashboardConfig());
     await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
@@ -622,5 +655,111 @@ describe('useDashboardConfig layout persistence', () => {
     expect(dashboard.result.current.backupError).toContain(
       'Файл резервной копии превышает допустимый размер (32 МБ)',
     );
+  });
+
+  it('switches active workspace and resets undo/redo state', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    act(() =>
+      dashboard.result.current.addWidget({
+        id: 'widget-1',
+        type: 'markdown',
+        title: 'Заметка',
+        content: 'Тест',
+        layout: { x: 0, y: 0, w: 4, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
+      }),
+    );
+    expect(dashboard.result.current.canUndo).toBe(true);
+
+    const workWorkspaceId = dashboard.result.current.workspaces[1]!.id;
+    act(() => {
+      dashboard.result.current.switchWorkspace(workWorkspaceId);
+    });
+
+    expect(dashboard.result.current.activeWorkspaceId).toBe(workWorkspaceId);
+    expect(dashboard.result.current.activeWorkspace?.name).toBe('Работа');
+    expect(dashboard.result.current.canUndo).toBe(false);
+    expect(dashboard.result.current.canRedo).toBe(false);
+  });
+
+  it('adds, renames, duplicates, and deletes a workspace', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    // Add workspace
+    act(() => {
+      dashboard.result.current.addWorkspace('Учёба');
+    });
+    expect(dashboard.result.current.workspaces).toHaveLength(3);
+    expect(dashboard.result.current.activeWorkspace?.name).toBe('Учёба');
+    const uchebaId = dashboard.result.current.activeWorkspaceId!;
+
+    // Rename workspace
+    act(() => {
+      dashboard.result.current.renameWorkspace(uchebaId, 'Учёба и курсы');
+    });
+    expect(dashboard.result.current.activeWorkspace?.name).toBe(
+      'Учёба и курсы',
+    );
+
+    // Duplicate workspace
+    act(() => {
+      dashboard.result.current.duplicateWorkspace(uchebaId);
+    });
+    expect(dashboard.result.current.workspaces).toHaveLength(4);
+    const duplicated = dashboard.result.current.workspaces.find(
+      (w) => w.name === 'Учёба и курсы (копия)',
+    );
+    expect(duplicated).toBeDefined();
+
+    // Delete workspace
+    act(() => {
+      dashboard.result.current.deleteWorkspace(uchebaId);
+    });
+    expect(dashboard.result.current.workspaces).toHaveLength(3);
+    expect(
+      dashboard.result.current.workspaces.some((w) => w.id === uchebaId),
+    ).toBe(false);
+  });
+
+  it('prevents deleting the last remaining workspace', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    const firstId = dashboard.result.current.workspaces[0]!.id;
+    const secondId = dashboard.result.current.workspaces[1]!.id;
+
+    act(() => {
+      dashboard.result.current.deleteWorkspace(secondId);
+    });
+    expect(dashboard.result.current.workspaces).toHaveLength(1);
+
+    // Attempt to delete the last one
+    act(() => {
+      dashboard.result.current.deleteWorkspace(firstId);
+    });
+    expect(dashboard.result.current.workspaces).toHaveLength(1);
+    expect(dashboard.result.current.workspaces[0]!.id).toBe(firstId);
+  });
+
+  it('reorders workspaces', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    const initialNames = dashboard.result.current.workspaces.map((w) => w.name);
+    const initialIds = dashboard.result.current.workspaces.map((w) => w.id);
+    act(() => {
+      dashboard.result.current.reorderWorkspaces([
+        initialIds[1]!,
+        initialIds[0]!,
+      ]);
+    });
+
+    const newNames = dashboard.result.current.workspaces.map((w) => w.name);
+    expect(newNames).toEqual([initialNames[1], initialNames[0]]);
   });
 });

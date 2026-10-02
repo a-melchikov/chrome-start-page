@@ -47,7 +47,7 @@ describe('background service worker Pomodoro handler', () => {
     const widget = createDefaultPomodoroWidget('test-pomodoro-1', 0);
     widget.soundEnabled = true;
     const dashboard = createDefaultDashboardConfig();
-    dashboard.widgets.push(widget);
+    dashboard.workspaces[0]!.widgets.push(widget);
     await saveDashboardConfig(dashboard);
 
     const runningState: PomodoroRuntimeState = {
@@ -97,7 +97,7 @@ describe('background service worker Pomodoro handler', () => {
     const widget = createDefaultPomodoroWidget('test-pomodoro-doc-exists', 0);
     widget.soundEnabled = true;
     const dashboard = createDefaultDashboardConfig();
-    dashboard.widgets.push(widget);
+    dashboard.workspaces[0]!.widgets.push(widget);
     await saveDashboardConfig(dashboard);
 
     const runningState: PomodoroRuntimeState = {
@@ -125,7 +125,7 @@ describe('background service worker Pomodoro handler', () => {
     const widget = createDefaultPomodoroWidget('test-pomodoro-2', 0);
     widget.soundEnabled = false;
     const dashboard = createDefaultDashboardConfig();
-    dashboard.widgets.push(widget);
+    dashboard.workspaces[0]!.widgets.push(widget);
     await saveDashboardConfig(dashboard);
 
     const runningState: PomodoroRuntimeState = {
@@ -149,7 +149,7 @@ describe('background service worker Pomodoro handler', () => {
   it('ignores alarm if state status is not running', async () => {
     const widget = createDefaultPomodoroWidget('test-pomodoro-3', 0);
     const dashboard = createDefaultDashboardConfig();
-    dashboard.widgets.push(widget);
+    dashboard.workspaces[0]!.widgets.push(widget);
     await saveDashboardConfig(dashboard);
 
     const pausedState: PomodoroRuntimeState = {

@@ -13,7 +13,14 @@ import {
 } from './image/defaults';
 import type { ImageWidgetConfig } from './image/types';
 import { createDefaultMarkdownWidget } from './markdown/defaults';
-import type { MarkdownWidgetConfig } from './markdown/types';
+import {
+  createMarkdownWidgetWithTemplate,
+  isMarkdownTemplateId,
+} from './markdown/templates';
+import type {
+  MarkdownTemplateId,
+  MarkdownWidgetConfig,
+} from './markdown/types';
 import { createDefaultPomodoroWidget } from './pomodoro/defaults';
 import type { PomodoroWidgetConfig } from './pomodoro/types';
 import { createDefaultSearchWidget } from './search/defaults';
@@ -158,7 +165,15 @@ function isMarkdownWidgetConfig(value: unknown): value is MarkdownWidgetConfig {
     'type' in value &&
     value.type === 'markdown' &&
     'content' in value &&
-    typeof value.content === 'string'
+    typeof (value as { content: unknown }).content === 'string' &&
+    'template' in value &&
+    isMarkdownTemplateId((value as { template: unknown }).template) &&
+    'quickAddEnabled' in value &&
+    typeof (value as { quickAddEnabled: unknown }).quickAddEnabled ===
+      'boolean' &&
+    'hideCompletedTasks' in value &&
+    typeof (value as { hideCompletedTasks: unknown }).hideCompletedTasks ===
+      'boolean'
   );
 }
 
@@ -399,4 +414,11 @@ export function createWidgetConfig(
 ): WidgetConfig | null {
   const definition = getWidgetDefinition(type);
   return definition?.create(createWidgetId(), index) ?? null;
+}
+
+export function createMarkdownWidgetConfigWithTemplate(
+  templateId: MarkdownTemplateId,
+  index: number,
+): MarkdownWidgetConfig {
+  return createMarkdownWidgetWithTemplate(createWidgetId(), index, templateId);
 }

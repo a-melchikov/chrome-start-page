@@ -52,9 +52,11 @@ Renderer-derived state is not persisted.
 
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 5 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 7 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
-ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`, Search
+ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`,
+`template` (`'blank' | 'tasks' | 'daily-plan' | 'links' | 'draft'`),
+`quickAddEnabled`, and `hideCompletedTasks`, Search
 adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
 `objectPosition`, and optional `altText`, Clock adds `timeFormat`, `showTime`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
@@ -114,6 +116,8 @@ Current migration behavior:
   if matching theme default), and config gains `customThemes: []`;
 - retired WIP `google-calendar` widgets are removed from v2 while all supported
   widgets and appearance data are preserved;
+- v6 configs migrate to v7 by assigning default `template: 'blank'`,
+  `quickAddEnabled: false`, and `hideCompletedTasks: false` to all markdown widgets;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
 - malformed and unsupported/future versions throw explicit errors.
 
@@ -227,11 +231,18 @@ instead of transforming persisted layouts.
 `MarkdownWidget.content` is the sole source of truth. `MarkdownRenderer` uses:
 
 ```text
-Markdown -> remark-gfm -> rehype-raw -> rehype-sanitize -> React components
+Markdown -> remark-gfm -> remark-directive -> remarkTextSizeDirectivePlugin -> remarkTaskFilterPlugin -> rehype-raw -> rehype-sanitize -> React components
 ```
 
+The pipeline supports:
+
+- **5 note templates** (`blank`, `tasks`, `daily-plan`, `links`, `draft`) selected via a unified modal dialog (`SelectTemplateDialog`) during widget creation from both `AddWidgetDialog` and `CommandPalette`;
+- **Quick Add input** positioned at the bottom of the card with template-specific formatting (checkboxes for `tasks`/`daily-plan`, link normalization for `links`, escaped text for `blank`/`draft`);
+- **Task filtering** (`hideCompletedTasks`), which hides completed items while preserving parent items if they contain incomplete subtasks, and shows an empty state («Все задачи выполнены») when all tasks are complete;
+- **Single-line text size directives** (`:large[текст]` for 18px and `:xlarge[текст]` for 22px), validated to exclude multiline text, code blocks, and links, sanitized via allowed `data-size` on `span`.
+
 The sanitizer admits the required structural/formatting subset (including
-tables, `details`, `summary`, `mark`, `kbd`, `sub`, `sup`, and `ins`) and removes
+tables, `details`, `summary`, `mark`, `kbd`, `sub`, `sup`, `ins`, and directive `span` with `data-size`) and removes
 executable/embedded/form content, event attributes, arbitrary class/style data,
 and unsafe URLs. React rendering does not use `dangerouslySetInnerHTML`.
 
@@ -241,9 +252,10 @@ Links stay in the current tab and use Chrome's local `_favicon` via
 Fenced code is unhighlighted, horizontally scrollable, and copyable.
 
 Task-list interaction uses the list item's AST source offset to toggle the exact
-`[ ]`/`[x]` marker in source text. The fullscreen editor owns only ephemeral
-split state (50/50 on each open, keyboard/pointer range 30–70) and sends title
-and content changes through the normal debounced persistence path.
+`[ ]`/`[x]` marker in source text. The fullscreen editor owns ephemeral
+split state (50/50 on each open, keyboard/pointer range 30–70), provides behavior
+settings (template picker, quick add switch, hide completed switch, text size dropdown),
+and sends title and content changes through the normal debounced persistence path.
 
 ## Search Widget
 

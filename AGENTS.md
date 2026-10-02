@@ -4,7 +4,7 @@
 
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `6`; current widget types:
+Russian-language. Current persisted schema version: `8`; current widget types:
 `markdown`, `search`, `pomodoro`, `image`, `clock`, and `weather`.
 
 Source code and configuration are the source of truth for implementation state.
@@ -98,9 +98,10 @@ specification.
   memory and flush after input completion, dialog close, `pagehide`, or
   unmount. Widget editor changes are debounced and must flush on finish,
   Escape, `pagehide`, and unmount. Preserve queued write ordering.
-- Schema v6 supports custom user themes (`customThemes`), typed theme references
+- Schema v8 supports independent workspaces / profiles (`workspaces: WorkspaceConfig[]`,
+  `activeWorkspaceId: string`), custom user themes (`customThemes`), typed theme references
   (`appearance.theme: ThemeRef`), background override modes (`backgroundColor: BackgroundColorConfig`),
-  and auto-migrates v1–v5 configs. V5 introduced grouped `appearance.liquidGlass` settings.
+  and auto-migrates v1–v7 configs. V5 introduced grouped `appearance.liquidGlass` settings.
   V1 `links` widgets migrate to `markdown` without losing ID, title, content, or layout.
 - Search widget height is normalized to `1` during load/save.
 

@@ -26,7 +26,7 @@ import {
 } from '../../storage/wallpaper-assets';
 import { loadImageAsset, saveImageAsset } from '../../storage/image-assets';
 import type { LocalWallpaperAssetV1 } from '../../storage/wallpaper-codec';
-import type { DashboardConfig } from '../../storage/schema';
+import type { DashboardConfig, WallpaperConfig } from '../../storage/schema';
 import type { ImageWidgetConfig } from '../../widgets/image/types';
 
 const OLD_ASSET_ID = '8dc04e26-6465-4e84-bc05-633c0e28415b';
@@ -69,24 +69,23 @@ class FakeImage {
 }
 
 function createConfig(
-  wallpaper: DashboardConfig['appearance']['wallpaper'] = { type: 'none' },
+  wallpaper: WallpaperConfig = { type: 'none' },
 ): DashboardConfig {
-  return {
-    ...createDefaultDashboardConfig(),
-    widgets: [
-      {
-        id: 'notes',
-        type: 'markdown',
-        title: 'Заметки',
-        content: 'Содержимое',
-        layout: { x: 1, y: 2, w: 4, h: 3 },
-      },
-    ],
-    appearance: {
-      ...createDefaultDashboardConfig().appearance,
-      wallpaper,
+  const config = createDefaultDashboardConfig();
+  config.workspaces[0]!.widgets = [
+    {
+      id: 'notes',
+      type: 'markdown',
+      title: 'Заметки',
+      content: 'Содержимое',
+      layout: { x: 1, y: 2, w: 4, h: 3 },
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     },
-  };
+  ];
+  config.workspaces[0]!.appearance.wallpaper = wallpaper;
+  return config;
 }
 
 function createAsset(assetId: string): LocalWallpaperAssetV1 {
@@ -103,7 +102,7 @@ function createAsset(assetId: string): LocalWallpaperAssetV1 {
 
 function createEnvelope(
   dashboard: unknown,
-  localWallpaper: unknown = null,
+  localWallpapers: unknown = [],
   localImages: unknown = [],
 ): Record<string, unknown> {
   return {
@@ -111,7 +110,11 @@ function createEnvelope(
     formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
     exportedAt: EXPORTED_AT,
     dashboard,
-    localWallpaper,
+    localWallpapers: Array.isArray(localWallpapers)
+      ? localWallpapers
+      : localWallpapers
+        ? [localWallpapers]
+        : [],
     localImages,
   };
 }
@@ -137,10 +140,10 @@ describe('dashboard backup format', () => {
 
     expect(backup).toEqual({
       format: DASHBOARD_BACKUP_FORMAT,
-      formatVersion: 2,
+      formatVersion: 3,
       exportedAt: EXPORTED_AT,
       dashboard: config,
-      localWallpaper: null,
+      localWallpapers: [],
       localImages: [],
     });
     expect(parseDashboardBackupJson(serializeDashboardBackup(backup))).toEqual(
@@ -159,7 +162,7 @@ describe('dashboard backup format', () => {
 
     await expect(
       createDashboardBackup(config, new Date(EXPORTED_AT)),
-    ).resolves.toMatchObject({ dashboard: config, localWallpaper: null });
+    ).resolves.toMatchObject({ dashboard: config, localWallpapers: [] });
   });
 
   it('includes and verifies the referenced local wallpaper', async () => {
@@ -174,10 +177,10 @@ describe('dashboard backup format', () => {
       createDashboardBackup(config, new Date(EXPORTED_AT)),
     ).resolves.toEqual({
       format: DASHBOARD_BACKUP_FORMAT,
-      formatVersion: 2,
+      formatVersion: 3,
       exportedAt: EXPORTED_AT,
       dashboard: config,
-      localWallpaper: asset,
+      localWallpapers: [asset],
       localImages: [],
     });
   });
@@ -192,7 +195,25 @@ describe('dashboard backup format', () => {
     };
 
     const parsed = parseDashboardBackup(v1Backup);
-    expect(parsed.formatVersion).toBe(2);
+    expect(parsed.formatVersion).toBe(3);
+    expect(parsed.localWallpapers).toEqual([]);
+    expect(parsed.localImages).toEqual([]);
+  });
+
+  it('parses legacy formatVersion 2 backups with backward compatibility', () => {
+    const asset = createAsset(EXPORTED_ASSET_ID);
+    const v2Backup = {
+      format: DASHBOARD_BACKUP_FORMAT,
+      formatVersion: 2,
+      exportedAt: EXPORTED_AT,
+      dashboard: createConfig({ type: 'local', assetId: EXPORTED_ASSET_ID }),
+      localWallpaper: asset,
+      localImages: [],
+    };
+
+    const parsed = parseDashboardBackup(v2Backup);
+    expect(parsed.formatVersion).toBe(3);
+    expect(parsed.localWallpapers).toEqual([asset]);
     expect(parsed.localImages).toEqual([]);
   });
 
@@ -213,12 +234,17 @@ describe('dashboard backup format', () => {
       }),
     );
 
-    expect(parsed.dashboard.version).toBe(6);
-    expect(parsed.dashboard.widgets[0]).toMatchObject({
+    expect(parsed.dashboard.version).toBe(8);
+    expect(parsed.dashboard.workspaces[0]!.widgets[0]).toMatchObject({
       id: 'legacy-links',
       type: 'markdown',
+      template: 'blank',
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     });
-    expect(parsed.dashboard.appearance.wallpaper).toEqual({ type: 'none' });
+    expect(parsed.dashboard.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'none',
+    });
   });
 
   it.each([
@@ -229,7 +255,7 @@ describe('dashboard backup format', () => {
       () =>
         parseDashboardBackup({
           ...createEnvelope(createConfig()),
-          formatVersion: 3,
+          formatVersion: 4,
         }),
     ],
     [
@@ -334,7 +360,7 @@ describe('dashboard backup format', () => {
 
     const prepared = await prepareDashboardImport(source);
 
-    expect(prepared.dashboard.appearance.wallpaper).toEqual({
+    expect(prepared.dashboard.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
     });
@@ -349,13 +375,13 @@ describe('dashboard backup format', () => {
     );
 
     const prepared = await prepareDashboardImport(source);
-    const wallpaper = prepared.dashboard.appearance.wallpaper;
+    const wallpaper = prepared.dashboard.workspaces[0]!.appearance.wallpaper;
 
     expect(wallpaper.type).toBe('local');
-    expect(prepared.localWallpaper?.assetId).not.toBe(EXPORTED_ASSET_ID);
+    expect(prepared.localWallpapers[0]?.assetId).not.toBe(EXPORTED_ASSET_ID);
 
     if (wallpaper.type === 'local') {
-      expect(prepared.localWallpaper?.assetId).toBe(wallpaper.assetId);
+      expect(prepared.localWallpapers[0]?.assetId).toBe(wallpaper.assetId);
     }
   });
 
@@ -397,7 +423,7 @@ describe('dashboard backup replacement transaction', () => {
     });
     const prepared: PreparedDashboardImport = {
       dashboard: imported,
-      localWallpaper: createAsset(IMPORTED_ASSET_ID),
+      localWallpapers: [createAsset(IMPORTED_ASSET_ID)],
       localImages: [],
     };
     await saveDashboardConfig(current);
@@ -416,7 +442,7 @@ describe('dashboard backup replacement transaction', () => {
     ]);
     await expect(loadDashboardConfig()).resolves.toEqual(imported);
     await expect(loadWallpaperAsset(IMPORTED_ASSET_ID)).resolves.toEqual(
-      prepared.localWallpaper,
+      prepared.localWallpapers[0],
     );
     await expect(loadWallpaperAsset(OLD_ASSET_ID)).resolves.toBeNull();
   });
@@ -428,7 +454,7 @@ describe('dashboard backup replacement transaction', () => {
         type: 'local',
         assetId: IMPORTED_ASSET_ID,
       }),
-      localWallpaper: createAsset(IMPORTED_ASSET_ID),
+      localWallpapers: [createAsset(IMPORTED_ASSET_ID)],
       localImages: [],
     };
     await saveDashboardConfig(current);
@@ -460,7 +486,7 @@ describe('dashboard backup replacement transaction', () => {
 
     const result = await replaceDashboardFromBackup(current, {
       dashboard: imported,
-      localWallpaper: null,
+      localWallpapers: [],
       localImages: [],
     });
 
@@ -475,18 +501,16 @@ describe('dashboard backup replacement transaction', () => {
     const imgAsset = createAsset(EXPORTED_ASSET_ID);
     await saveImageAsset(imgAsset);
 
-    const configWithImage: DashboardConfig = {
-      ...createConfig(),
-      widgets: [
-        {
-          id: 'img-1',
-          type: 'image',
-          source: { type: 'local', assetId: EXPORTED_ASSET_ID },
-          objectPosition: 'center',
-          layout: { x: 0, y: 0, w: 4, h: 4 },
-        },
-      ],
-    };
+    const configWithImage: DashboardConfig = createConfig();
+    configWithImage.workspaces[0]!.widgets = [
+      {
+        id: 'img-1',
+        type: 'image',
+        source: { type: 'local', assetId: EXPORTED_ASSET_ID },
+        objectPosition: 'center',
+        layout: { x: 0, y: 0, w: 4, h: 4 },
+      },
+    ];
 
     const backup = await createDashboardBackup(
       configWithImage,
@@ -503,7 +527,7 @@ describe('dashboard backup replacement transaction', () => {
     const newAssetId = newAsset!.assetId;
     expect(newAssetId).not.toBe(EXPORTED_ASSET_ID);
 
-    const importedWidget = prepared.dashboard.widgets.find(
+    const importedWidget = prepared.dashboard.workspaces[0]!.widgets.find(
       (w): w is ImageWidgetConfig => w.id === 'img-1' && w.type === 'image',
     );
     expect(importedWidget?.source).toEqual({
@@ -518,22 +542,17 @@ describe('dashboard backup replacement transaction', () => {
   });
 
   it('rejects backup with image widget when local image is missing from localImages', () => {
-    const envelope = createEnvelope(
+    const configMissing = createConfig();
+    configMissing.workspaces[0]!.widgets = [
       {
-        ...createConfig(),
-        widgets: [
-          {
-            id: 'img-1',
-            type: 'image',
-            source: { type: 'local', assetId: EXPORTED_ASSET_ID },
-            objectPosition: 'center',
-            layout: { x: 0, y: 0, w: 4, h: 4 },
-          },
-        ],
+        id: 'img-1',
+        type: 'image',
+        source: { type: 'local', assetId: EXPORTED_ASSET_ID },
+        objectPosition: 'center',
+        layout: { x: 0, y: 0, w: 4, h: 4 },
       },
-      null,
-      [],
-    );
+    ];
+    const envelope = createEnvelope(configMissing, [], []);
 
     expect(() => parseDashboardBackup(envelope)).toThrow(
       'В резервной копии отсутствуют необходимые локальные изображения',
@@ -541,41 +560,45 @@ describe('dashboard backup replacement transaction', () => {
   });
 
   it('exports and restores a dashboard containing a clock widget', async () => {
-    const clockConfig: DashboardConfig = {
-      ...createConfig(),
-      widgets: [
-        {
-          id: 'clock-1',
-          type: 'clock',
-          title: 'Офис Токио',
-          timeFormat: '12h',
-          showTime: true,
-          showSeconds: true,
-          showDate: true,
-          dateFormat: 'shortWithYear',
-          showDayOfWeek: true,
-          timezone: 'Asia/Tokyo',
-          showTimezoneName: true,
-          showTimezoneAbbr: true,
-          layout: { x: 0, y: 0, w: 4, h: 2 },
-        },
-      ],
-    };
+    const clockConfig: DashboardConfig = createConfig();
+    clockConfig.workspaces[0]!.widgets = [
+      {
+        id: 'clock-1',
+        type: 'clock',
+        title: 'Офис Токио',
+        timeFormat: '12h',
+        showTime: true,
+        showSeconds: true,
+        showDate: true,
+        dateFormat: 'shortWithYear',
+        showDayOfWeek: true,
+        timezone: 'Asia/Tokyo',
+        showTimezoneName: true,
+        showTimezoneAbbr: true,
+        layout: { x: 0, y: 0, w: 4, h: 2 },
+      },
+    ];
 
     const backup = await createDashboardBackup(
       clockConfig,
       new Date(EXPORTED_AT),
     );
-    expect(backup.dashboard.widgets).toHaveLength(1);
-    expect(backup.dashboard.widgets[0]).toEqual(clockConfig.widgets[0]);
+    expect(backup.dashboard.workspaces[0]!.widgets).toHaveLength(1);
+    expect(backup.dashboard.workspaces[0]!.widgets[0]).toEqual(
+      clockConfig.workspaces[0]!.widgets[0],
+    );
 
     const serialized = serializeDashboardBackup(backup);
     const prepared = await prepareDashboardImport(serialized);
-    expect(prepared.dashboard.widgets[0]).toEqual(clockConfig.widgets[0]);
+    expect(prepared.dashboard.workspaces[0]!.widgets[0]).toEqual(
+      clockConfig.workspaces[0]!.widgets[0],
+    );
 
     const current = createConfig();
     await replaceDashboardFromBackup(current, prepared);
     const stored = await loadDashboardConfig();
-    expect(stored.widgets[0]).toEqual(clockConfig.widgets[0]);
+    expect(stored.workspaces[0]!.widgets[0]).toEqual(
+      clockConfig.workspaces[0]!.widgets[0],
+    );
   });
 });

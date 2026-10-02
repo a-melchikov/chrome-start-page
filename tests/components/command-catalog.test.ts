@@ -8,15 +8,18 @@ import { createDefaultDashboardConfig } from '../../storage/defaults';
 import { THEMES } from '../../themes/registry';
 
 describe('command catalog', () => {
-  it('includes registry widgets, existing cards, themes, settings and duplicate links', () => {
+  it('includes registry widgets, existing cards, themes, settings, workspaces and duplicate links', () => {
     const config = createDefaultDashboardConfig();
-    config.widgets = [
+    config.workspaces[0]!.widgets = [
       {
         id: 'one',
         type: 'markdown',
         title: 'Работа',
         content: '[Почта](https://example.com)',
         layout: { x: 0, y: 0, w: 3, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       },
       {
         id: 'two',
@@ -24,6 +27,9 @@ describe('command catalog', () => {
         title: 'Личное',
         content: '[Почта](https://example.com)',
         layout: { x: 3, y: 0, w: 3, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       },
     ];
     const commands = buildCommandCatalog(config, false);
@@ -38,6 +44,10 @@ describe('command catalog', () => {
     expect(
       commands.filter((command) => command.kind === 'section'),
     ).toHaveLength(4);
+    expect(
+      commands.filter((command) => command.kind === 'workspace'),
+    ).toHaveLength(2);
+    expect(commands.find((c) => c.id === 'action:workspaces')).toBeDefined();
     expect(commands.filter((command) => command.kind === 'link')).toHaveLength(
       2,
     );
@@ -49,5 +59,8 @@ describe('command catalog', () => {
     ).toHaveLength(1);
     expect(filterCommands(commands, 'Добавить Pomodoro')).toHaveLength(1);
     expect(filterCommands(commands, 'example.com')).toHaveLength(2);
+    expect(
+      filterCommands(commands, 'Переключить рабочее пространство:'),
+    ).toHaveLength(2);
   });
 });

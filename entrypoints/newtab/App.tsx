@@ -73,6 +73,15 @@ export function App() {
     deleteCustomTheme,
     duplicateCustomTheme,
     selectTheme,
+    activeWorkspace,
+    activeWorkspaceId,
+    workspaces,
+    switchWorkspace,
+    addWorkspace,
+    renameWorkspace,
+    duplicateWorkspace,
+    deleteWorkspace,
+    reorderWorkspaces,
   } = useDashboardConfig();
 
   const systemDarkMode = useSystemDarkMode();
@@ -91,7 +100,7 @@ export function App() {
     useState<CustomTheme | null>(null);
   const [appearanceReopenToken, setAppearanceReopenToken] = useState(0);
 
-  const appearance = config?.appearance ?? DEFAULT_APPEARANCE;
+  const appearance = activeWorkspace?.appearance ?? DEFAULT_APPEARANCE;
 
   const resolved = useMemo(() => {
     if (fullScreenPreviewDraft) {
@@ -337,6 +346,15 @@ export function App() {
           onDuplicateCustomTheme={duplicateCustomTheme}
           onDeleteCustomTheme={deleteCustomTheme}
           reopenAppearanceToken={appearanceReopenToken}
+          activeWorkspace={activeWorkspace}
+          activeWorkspaceId={activeWorkspaceId}
+          workspaces={workspaces}
+          onSwitchWorkspace={switchWorkspace}
+          onAddWorkspace={addWorkspace}
+          onRenameWorkspace={renameWorkspace}
+          onDuplicateWorkspace={duplicateWorkspace}
+          onDeleteWorkspace={deleteWorkspace}
+          onReorderWorkspaces={reorderWorkspaces}
         />
       </div>
 
@@ -347,7 +365,7 @@ export function App() {
           initialTheme={themeBeingEdited}
           isNew={isNewTheme}
           existingThemes={config?.customThemes ?? []}
-          widgets={config?.widgets ?? []}
+          widgets={activeWorkspace?.widgets ?? []}
           onOpenChange={(open) => {
             setIsThemeEditorOpen(open);
             if (!open) {

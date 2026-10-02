@@ -9,12 +9,15 @@ import type {
   DashboardConfig,
   WidgetConfig,
   WidgetType,
+  WorkspaceConfig,
 } from '../../storage/schema';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
+  createMarkdownWidgetConfigWithTemplate,
   createWidgetConfig,
   getWidgetDefinition,
 } from '../../widgets/registry';
+import type { MarkdownTemplateId } from '../../widgets/markdown/types';
 import { Button, Dialog } from '../ui';
 import { MotionNotice } from '../ui/MotionNotice';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
@@ -77,6 +80,18 @@ interface DashboardProps {
   onDuplicateCustomTheme?: (id: string) => void;
   onDeleteCustomTheme?: (id: string) => void;
   reopenAppearanceToken?: number;
+  activeWorkspace?: WorkspaceConfig | null;
+  activeWorkspaceId?: string | null;
+  workspaces?: readonly WorkspaceConfig[];
+  onSwitchWorkspace?: (id: string) => void;
+  onAddWorkspace?: (
+    name?: string,
+    options?: { template?: 'blank' | 'work' | 'study' },
+  ) => void;
+  onRenameWorkspace?: (id: string, name: string) => void;
+  onDuplicateWorkspace?: (id: string) => void;
+  onDeleteWorkspace?: (id: string) => void;
+  onReorderWorkspaces?: (orderedIds: readonly string[]) => void;
 }
 
 export function Dashboard({
@@ -122,6 +137,15 @@ export function Dashboard({
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
   reopenAppearanceToken,
+  activeWorkspace,
+  activeWorkspaceId,
+  workspaces,
+  onSwitchWorkspace,
+  onAddWorkspace,
+  onRenameWorkspace,
+  onDuplicateWorkspace,
+  onDeleteWorkspace,
+  onReorderWorkspaces,
 }: DashboardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
@@ -137,9 +161,17 @@ export function Dashboard({
     ids: string[];
   }>(() => ({ epoch: historyEpoch, ids: [] }));
   const [actionNotice, setActionNotice] = useState<string | null>(null);
-  const validWidgetIds = new Set(
-    config?.widgets.map((widget) => widget.id) ?? [],
-  );
+  const [prevWorkspaceId, setPrevWorkspaceId] = useState(activeWorkspaceId);
+
+  if (activeWorkspaceId !== prevWorkspaceId) {
+    setPrevWorkspaceId(activeWorkspaceId);
+    setEditingWidgetId(null);
+    setNewWidgetIds(new Set());
+    setSelectionState({ epoch: historyEpoch, ids: new Set() });
+  }
+
+  const activeWidgets = activeWorkspace?.widgets ?? [];
+  const validWidgetIds = new Set(activeWidgets.map((widget) => widget.id));
   const selectedWidgetIds = new Set(
     selectionState.epoch === historyEpoch
       ? [...selectionState.ids].filter((id) => validWidgetIds.has(id))
@@ -229,11 +261,14 @@ export function Dashboard({
     }
   };
 
-  const addWidget = (type: WidgetType) => {
-    const baseWidget = createWidgetConfig(type, 0);
+  const addWidget = (type: WidgetType, templateId?: MarkdownTemplateId) => {
+    const baseWidget =
+      type === 'markdown' && templateId
+        ? createMarkdownWidgetConfigWithTemplate(templateId, 0)
+        : createWidgetConfig(type, 0);
     if (!baseWidget) return;
     const position = calculateNextWidgetPosition(
-      config?.widgets ?? [],
+      activeWidgets,
       baseWidget.layout,
     );
     setNewWidgetIds((ids) => new Set(ids).add(baseWidget.id));
@@ -246,7 +281,7 @@ export function Dashboard({
 
   const canFinishWidgetEditing = (widgetId: string | null): boolean => {
     if (!widgetId) return true;
-    const widget = config?.widgets.find(({ id }) => id === widgetId);
+    const widget = activeWidgets.find(({ id }) => id === widgetId);
     const definition = widget ? getWidgetDefinition(widget.type) : undefined;
     return widget && definition?.canFinishEditing
       ? definition.canFinishEditing(widget)
@@ -309,11 +344,12 @@ export function Dashboard({
     <>
       {config ? (
         <WidgetCanvas
+          key={activeWorkspaceId ?? 'default'}
           editingWidgetId={editingWidgetId}
           isEditing={canEditSelection}
           newWidgetIds={newWidgetIds}
           selectedWidgetIds={selectedWidgetIds}
-          widgets={config.widgets}
+          widgets={activeWidgets}
           onClearSelection={() => setSelectedWidgetIds(new Set())}
           onFinishWidgetEditing={finishWidgetEditing}
           onRemoveWidget={removeWidget}
@@ -382,7 +418,7 @@ export function Dashboard({
         onRequestDeleteSelection={requestGroupDelete}
         onSelectAll={() =>
           setSelectedWidgetIds(
-            new Set(config?.widgets.map((widget) => widget.id) ?? []),
+            new Set(activeWidgets.map((widget) => widget.id)),
           )
         }
         onSetLocalWallpaper={onSetLocalWallpaper}
@@ -394,6 +430,14 @@ export function Dashboard({
         onDuplicateCustomTheme={onDuplicateCustomTheme}
         onDeleteCustomTheme={onDeleteCustomTheme}
         reopenAppearanceToken={reopenAppearanceToken}
+        workspaces={workspaces}
+        activeWorkspaceId={activeWorkspaceId}
+        onSwitchWorkspace={onSwitchWorkspace}
+        onAddWorkspace={onAddWorkspace}
+        onRenameWorkspace={onRenameWorkspace}
+        onDuplicateWorkspace={onDuplicateWorkspace}
+        onDeleteWorkspace={onDeleteWorkspace}
+        onReorderWorkspaces={onReorderWorkspaces}
       />
       <ConfirmWidgetDeleteDialog
         open={pendingGroupDeleteIds.length > 0}

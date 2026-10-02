@@ -240,3 +240,40 @@ export function EyeIcon(props: IconProps) {
     </BaseIcon>
   );
 }
+
+export function CheckSquareIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </BaseIcon>
+  );
+}
+
+export function LayersIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </BaseIcon>
+  );
+}
+
+export function ArrowUpIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <line x1="12" y1="19" x2="12" y2="5" />
+      <polyline points="5 12 12 5 19 12" />
+    </BaseIcon>
+  );
+}
+
+export function ArrowDownIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <polyline points="19 12 12 19 5 12" />
+    </BaseIcon>
+  );
+}

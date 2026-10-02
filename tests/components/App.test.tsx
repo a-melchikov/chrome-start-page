@@ -30,7 +30,7 @@ function createBackupFile(config: DashboardConfig) {
         formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
         exportedAt: '2026-09-10T12:34:56.000Z',
         dashboard: config,
-        localWallpaper: null,
+        localWallpapers: [],
       }),
     ],
     'dashboard-backup.json',
@@ -84,18 +84,21 @@ describe('App', () => {
   it('focuses an existing Markdown card from the palette', async () => {
     const user = userEvent.setup();
     const config = createDefaultDashboardConfig();
-    config.widgets = [
+    config.workspaces[0]!.widgets = [
       {
         id: 'work',
         type: 'markdown',
         title: 'Работа',
         content: '[Почта](https://example.com)',
         layout: { x: 0, y: 0, w: 4, h: 3 },
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       },
     ];
     await saveDashboardConfig(config);
     render(<App />);
-    await screen.findByText('Работа');
+    await screen.findByRole('heading', { name: 'Работа' });
     expect(document.querySelector('[data-widget-id="work"]')).not.toHaveClass(
       'new-widget',
     );
@@ -287,47 +290,69 @@ describe('App', () => {
 
   it('replaces the dashboard only after import confirmation', async () => {
     const user = userEvent.setup();
+    const currentId = '11111111-1111-4111-8111-111111111111';
     const current: DashboardConfig = {
-      version: 6,
-      widgets: [
+      version: 8,
+      activeWorkspaceId: currentId,
+      customThemes: [],
+      workspaces: [
         {
-          id: 'current-widget',
-          type: 'markdown',
-          title: 'Текущий виджет',
-          content: 'До импорта',
-          layout: { x: 0, y: 0, w: 4, h: 3 },
+          id: currentId,
+          name: 'Основной',
+          widgets: [
+            {
+              id: 'current-widget',
+              type: 'markdown',
+              title: 'Текущий виджет',
+              content: 'До импорта',
+              layout: { x: 0, y: 0, w: 4, h: 3 },
+              template: 'blank',
+              quickAddEnabled: false,
+              hideCompletedTasks: false,
+            },
+          ],
+          appearance: {
+            theme: { type: 'builtin', id: 'light' },
+            backgroundColor: { type: 'custom', color: '#f4f4f5' },
+            wallpaper: { type: 'none' },
+            liquidGlass: {
+              enabled: true,
+              transparency: 40,
+              blur: 18,
+              shadow: 50,
+            },
+          },
         },
       ],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'light' },
-        backgroundColor: { type: 'custom', color: '#f4f4f5' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
-      },
     };
+    const importedId = '22222222-2222-4222-8222-222222222222';
     const imported: DashboardConfig = {
-      version: 6,
-      widgets: [
+      version: 8,
+      activeWorkspaceId: importedId,
+      customThemes: [],
+      workspaces: [
         {
-          id: 'imported-widget',
-          type: 'markdown',
-          title: 'Импортированный виджет',
-          content: 'После импорта',
-          layout: { x: 2, y: 1, w: 5, h: 4 },
+          id: importedId,
+          name: 'Основной',
+          widgets: [
+            {
+              id: 'imported-widget',
+              type: 'markdown',
+              title: 'Импортированный виджет',
+              content: 'После импорта',
+              layout: { x: 2, y: 1, w: 5, h: 4 },
+              template: 'blank',
+              quickAddEnabled: false,
+              hideCompletedTasks: false,
+            },
+          ],
+          appearance: {
+            ...current.workspaces[0]!.appearance,
+            theme: { type: 'builtin', id: 'dark' },
+            backgroundColor: { type: 'custom', color: '#123456' },
+          },
         },
       ],
-      customThemes: [],
-      appearance: {
-        ...current.appearance,
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#123456' },
-      },
     };
     await saveDashboardConfig(current);
     render(<App />);
@@ -383,7 +408,7 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance).toEqual({
         theme: { type: 'builtin', id: 'dark' },
         backgroundColor: { type: 'custom', color: '#123456' },
         wallpaper: { type: 'none' },
@@ -422,11 +447,11 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.theme).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance.theme).toEqual({
         type: 'builtin',
         id: 'tokyo-night',
       });
-      expect(storedConfig?.appearance.backgroundColor).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance.backgroundColor).toEqual({
         type: 'theme',
       });
     });
@@ -459,11 +484,11 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.theme).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance.theme).toEqual({
         type: 'builtin',
         id: theme,
       });
-      expect(storedConfig?.appearance.backgroundColor).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance.backgroundColor).toEqual({
         type: 'theme',
       });
     });
@@ -509,7 +534,9 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.liquidGlass.transparency).toBe(70);
+      expect(
+        storedConfig?.workspaces[0]?.appearance.liquidGlass.transparency,
+      ).toBe(70);
     });
 
     await user.click(
@@ -526,7 +553,7 @@ describe('App', () => {
       const storedConfig = await storage.getItem<DashboardConfig>(
         DASHBOARD_STORAGE_KEY,
       );
-      expect(storedConfig?.appearance.liquidGlass).toEqual({
+      expect(storedConfig?.workspaces[0]?.appearance.liquidGlass).toEqual({
         enabled: false,
         transparency: 40,
         blur: 18,
@@ -537,22 +564,19 @@ describe('App', () => {
 
   it('restores a saved appearance on load', async () => {
     const user = userEvent.setup();
-    await saveDashboardConfig({
-      version: 6,
-      widgets: [],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'light' },
-        backgroundColor: { type: 'custom', color: '#abcdef' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.appearance = {
+      theme: { type: 'builtin', id: 'light' },
+      backgroundColor: { type: 'custom', color: '#abcdef' },
+      wallpaper: { type: 'none' },
+      liquidGlass: {
+        enabled: true,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
       },
-    });
+    };
+    await saveDashboardConfig(config);
 
     render(<App />);
 
@@ -576,20 +600,16 @@ describe('App', () => {
   });
 
   it('maps saved Liquid Glass controls to CSS custom properties', async () => {
-    const config: DashboardConfig = {
-      version: 6,
-      widgets: [],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 75,
-          blur: 12,
-          shadow: 80,
-        },
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.appearance = {
+      theme: { type: 'builtin', id: 'dark' },
+      backgroundColor: { type: 'custom', color: '#18181b' },
+      wallpaper: { type: 'none' },
+      liquidGlass: {
+        enabled: true,
+        transparency: 75,
+        blur: 12,
+        shadow: 80,
       },
     };
     await saveDashboardConfig(config);
@@ -606,20 +626,16 @@ describe('App', () => {
   });
 
   it('keeps Liquid Glass custom properties when the effect is disabled', async () => {
-    const config: DashboardConfig = {
-      version: 6,
-      widgets: [],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'light' },
-        backgroundColor: { type: 'custom', color: '#f4f4f5' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: false,
-          transparency: 25,
-          blur: 30,
-          shadow: 10,
-        },
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.appearance = {
+      theme: { type: 'builtin', id: 'light' },
+      backgroundColor: { type: 'custom', color: '#f4f4f5' },
+      wallpaper: { type: 'none' },
+      liquidGlass: {
+        enabled: false,
+        transparency: 25,
+        blur: 30,
+        shadow: 10,
       },
     };
     await saveDashboardConfig(config);
@@ -641,22 +657,19 @@ describe('App', () => {
       type: 'url' as const,
       url: 'https://example.com/previous.jpg',
     };
-    await saveDashboardConfig({
-      version: 6,
-      widgets: [],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#f4f4f5' },
-        wallpaper: previousWallpaper,
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.appearance = {
+      theme: { type: 'builtin', id: 'system' },
+      backgroundColor: { type: 'custom', color: '#f4f4f5' },
+      wallpaper: previousWallpaper,
+      liquidGlass: {
+        enabled: true,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
       },
-    });
+    };
+    await saveDashboardConfig(config);
     render(<App />);
 
     await user.click(
@@ -683,7 +696,9 @@ describe('App', () => {
     const storedConfig = await storage.getItem<DashboardConfig>(
       DASHBOARD_STORAGE_KEY,
     );
-    expect(storedConfig?.appearance.wallpaper).toEqual(previousWallpaper);
+    expect(storedConfig?.workspaces[0]?.appearance.wallpaper).toEqual(
+      previousWallpaper,
+    );
   });
 
   it('updates the system theme when prefers-color-scheme changes', async () => {
@@ -839,29 +854,27 @@ describe('App', () => {
 
   it('opens command palette on slash (/) shortcut', async () => {
     const user = userEvent.setup();
-    await saveDashboardConfig({
-      version: 6,
-      widgets: [
-        {
-          id: 'search-widget',
-          type: 'search',
-          engine: 'google',
-          layout: { x: 0, y: 0, w: 6, h: 1 },
-        },
-      ],
-      customThemes: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.widgets = [
+      {
+        id: 'search-widget',
+        type: 'search',
+        engine: 'google',
+        layout: { x: 0, y: 0, w: 6, h: 1 },
       },
-    });
+    ];
+    config.workspaces[0]!.appearance = {
+      theme: { type: 'builtin', id: 'system' },
+      backgroundColor: { type: 'custom', color: '#18181b' },
+      wallpaper: { type: 'none' },
+      liquidGlass: {
+        enabled: true,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
+      },
+    };
+    await saveDashboardConfig(config);
 
     render(<App />);
 

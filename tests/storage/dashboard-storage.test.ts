@@ -7,7 +7,6 @@ import {
   loadDashboardConfig,
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
-import { createDefaultDashboardConfig } from '../../storage/defaults';
 import type { DashboardConfig } from '../../storage/schema';
 
 describe('dashboard storage', () => {
@@ -18,54 +17,74 @@ describe('dashboard storage', () => {
   it('creates and persists the default config when storage is empty', async () => {
     const config = await loadDashboardConfig();
 
-    expect(config).toEqual(createDefaultDashboardConfig());
+    expect(config.version).toBe(8);
+    expect(config.workspaces).toHaveLength(2);
+    expect(config.activeWorkspaceId).toBe(config.workspaces[0]!.id);
+    expect(config.workspaces[0]!.name).toBe('Основной');
+    expect(config.workspaces[1]!.name).toBe('Работа');
     await expect(
       storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
     ).resolves.toEqual(config);
   });
 
   it('saves and loads a config without losing widget data', async () => {
+    const workspaceId = '12c8b540-4847-45b3-98b7-d13b00833041';
     const config: DashboardConfig = {
-      version: 6,
-      appearance: {
-        theme: { type: 'builtin', id: 'light' },
-        backgroundColor: { type: 'custom', color: '#f4f4f5' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
-      },
-      customThemes: [],
-      widgets: [
+      version: 8,
+      activeWorkspaceId: workspaceId,
+      workspaces: [
         {
-          id: '12c8b540-4847-45b3-98b7-d13b00833040',
-          type: 'markdown',
-          title: 'Работа',
-          content: '[Mail](https://mail.example.com/)',
-          layout: { x: 1, y: 2, w: 3, h: 4 },
-        },
-        {
-          id: 'ec39ba5f-89f2-471c-b774-0b84d592ad87',
-          type: 'search',
-          title: 'Поиск',
-          engine: 'bing',
-          layout: { x: 4, y: 2, w: 6, h: 3 },
+          id: workspaceId,
+          name: 'Основной',
+          appearance: {
+            theme: { type: 'builtin', id: 'light' },
+            backgroundColor: { type: 'custom', color: '#f4f4f5' },
+            wallpaper: { type: 'none' },
+            liquidGlass: {
+              enabled: true,
+              transparency: 40,
+              blur: 18,
+              shadow: 50,
+            },
+          },
+          widgets: [
+            {
+              id: '12c8b540-4847-45b3-98b7-d13b00833040',
+              type: 'markdown',
+              title: 'Работа',
+              content: '[Mail](https://mail.example.com/)',
+              layout: { x: 1, y: 2, w: 3, h: 4 },
+              template: 'blank',
+              quickAddEnabled: false,
+              hideCompletedTasks: false,
+            },
+            {
+              id: 'ec39ba5f-89f2-471c-b774-0b84d592ad87',
+              type: 'search',
+              title: 'Поиск',
+              engine: 'bing',
+              layout: { x: 4, y: 2, w: 6, h: 3 },
+            },
+          ],
         },
       ],
+      customThemes: [],
     };
 
     await saveDashboardConfig(config);
 
-    const normalizedConfig = {
+    const normalizedConfig: DashboardConfig = {
       ...config,
-      widgets: config.widgets.map((widget) =>
-        widget.type === 'search'
-          ? { ...widget, layout: { ...widget.layout, h: 1 } }
-          : widget,
-      ),
+      workspaces: [
+        {
+          ...config.workspaces[0]!,
+          widgets: config.workspaces[0]!.widgets.map((widget) =>
+            widget.type === 'search'
+              ? { ...widget, layout: { ...widget.layout, h: 1 } }
+              : widget,
+          ),
+        },
+      ],
     };
 
     await expect(loadDashboardConfig()).resolves.toEqual(normalizedConfig);
@@ -74,7 +93,7 @@ describe('dashboard storage', () => {
     ).resolves.toEqual(normalizedConfig);
   });
 
-  it('migrates a stored v1 LinksWidget and writes v6 back to storage', async () => {
+  it('migrates a stored v1 LinksWidget and writes v8 back to storage', async () => {
     const legacyConfig = {
       version: 1,
       appearance: { theme: 'system', backgroundColor: '#18181b' },
@@ -92,22 +111,21 @@ describe('dashboard storage', () => {
 
     const migrated = await loadDashboardConfig();
 
-    expect(migrated).toEqual({
-      version: 6,
-      appearance: {
-        theme: { type: 'builtin', id: 'system' },
-        backgroundColor: { type: 'custom', color: '#18181b' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces).toHaveLength(2);
+    expect(migrated.activeWorkspaceId).toBe(migrated.workspaces[0]!.id);
+    expect(migrated.workspaces[0]!.name).toBe('Основной');
+    expect(migrated.workspaces[0]!.widgets).toEqual([
+      {
+        ...legacyConfig.widgets[0],
+        type: 'markdown',
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       },
-      widgets: [{ ...legacyConfig.widgets[0], type: 'markdown' }],
-      customThemes: [],
-    });
+    ]);
+    expect(migrated.workspaces[1]!.name).toBe('Работа');
+    expect(migrated.workspaces[1]!.widgets).toHaveLength(3);
     await expect(
       storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY),
     ).resolves.toEqual(migrated);

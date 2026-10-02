@@ -11,7 +11,7 @@ import {
   saveWallpaperAsset,
 } from '../../storage/wallpaper-assets';
 import type { LocalWallpaperAssetV1 } from '../../storage/wallpaper-codec';
-import type { DashboardConfig } from '../../storage/schema';
+import type { DashboardConfig, WallpaperConfig } from '../../storage/schema';
 import {
   installLocalWallpaper,
   installUrlWallpaper,
@@ -20,6 +20,7 @@ import {
 
 const OLD_ID = '8dc04e26-6465-4e84-bc05-633c0e28415b';
 const NEW_ID = '7af1599d-ae5f-4590-9791-bc299eb3b4db';
+const WORKSPACE_ID = 'd827cf48-43ee-4f36-a36c-9a4f48ff2f74';
 
 function createAsset(assetId: string): LocalWallpaperAssetV1 {
   return {
@@ -33,24 +34,29 @@ function createAsset(assetId: string): LocalWallpaperAssetV1 {
   };
 }
 
-function createConfig(
-  wallpaper: DashboardConfig['appearance']['wallpaper'],
-): DashboardConfig {
+function createConfig(wallpaper: WallpaperConfig): DashboardConfig {
   return {
-    version: 6,
-    widgets: [],
-    customThemes: [],
-    appearance: {
-      theme: { type: 'builtin', id: 'system' },
-      backgroundColor: { type: 'custom', color: '#18181b' },
-      wallpaper,
-      liquidGlass: {
-        enabled: true,
-        transparency: 40,
-        blur: 18,
-        shadow: 50,
+    version: 8,
+    activeWorkspaceId: WORKSPACE_ID,
+    workspaces: [
+      {
+        id: WORKSPACE_ID,
+        name: 'Основной',
+        widgets: [],
+        appearance: {
+          theme: { type: 'builtin', id: 'system' },
+          backgroundColor: { type: 'custom', color: '#18181b' },
+          wallpaper,
+          liquidGlass: {
+            enabled: true,
+            transparency: 40,
+            blur: 18,
+            shadow: 50,
+          },
+        },
       },
-    },
+    ],
+    customThemes: [],
   };
 }
 
@@ -85,7 +91,7 @@ describe('wallpaper storage transactions', () => {
       createAsset(NEW_ID),
     );
 
-    expect(result.config.appearance.wallpaper).toEqual({
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'local',
       assetId: NEW_ID,
     });
@@ -95,14 +101,53 @@ describe('wallpaper storage transactions', () => {
     );
   });
 
+  it('preserves the old asset when another workspace still uses it', async () => {
+    await saveWallpaperAsset(createAsset(OLD_ID));
+    const multiConfig = createConfig({ type: 'local', assetId: OLD_ID });
+    multiConfig.workspaces.push({
+      id: 'c6a7e025-a1c2-4848-8df0-1ea1fba5b5ad',
+      name: 'Работа',
+      widgets: [],
+      appearance: {
+        ...multiConfig.workspaces[0]!.appearance,
+        wallpaper: { type: 'local', assetId: OLD_ID },
+      },
+    });
+
+    await saveDashboardConfig(multiConfig);
+
+    const result = await installLocalWallpaper(
+      multiConfig,
+      createAsset(NEW_ID),
+    );
+
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'local',
+      assetId: NEW_ID,
+    });
+    // OLD_ID must still exist because workspace 2 uses it
+    await expect(loadWallpaperAsset(OLD_ID)).resolves.toEqual(
+      createAsset(OLD_ID),
+    );
+    await expect(loadWallpaperAsset(NEW_ID)).resolves.toEqual(
+      createAsset(NEW_ID),
+    );
+  });
+
   it('rolls back the new asset and preserves the old one when config save fails', async () => {
     await saveWallpaperAsset(createAsset(OLD_ID));
+    const base = createConfig({ type: 'local', assetId: OLD_ID });
     const invalidCurrent = {
-      ...createConfig({ type: 'local', assetId: OLD_ID }),
-      appearance: {
-        ...createConfig({ type: 'local', assetId: OLD_ID }).appearance,
-        theme: 'invalid',
-      },
+      ...base,
+      workspaces: [
+        {
+          ...base.workspaces[0]!,
+          appearance: {
+            ...base.workspaces[0]!.appearance,
+            theme: 'invalid',
+          },
+        },
+      ],
     } as unknown as DashboardConfig;
 
     await expect(
@@ -124,7 +169,7 @@ describe('wallpaper storage transactions', () => {
       'https://example.com/wallpaper.svg',
     );
 
-    expect(result.config.appearance.wallpaper).toEqual({
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.svg',
     });
@@ -138,7 +183,9 @@ describe('wallpaper storage transactions', () => {
       createConfig({ type: 'local', assetId: OLD_ID }),
     );
 
-    expect(result.config.appearance.wallpaper).toEqual({ type: 'none' });
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'none',
+    });
     await expect(loadWallpaperAsset(OLD_ID)).resolves.toBeNull();
   });
 

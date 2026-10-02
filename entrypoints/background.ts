@@ -135,10 +135,12 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 
   try {
     const dashboardConfig = await loadDashboardConfig();
-    const widget = dashboardConfig.widgets.find(
-      (w): w is PomodoroWidgetConfig =>
-        w.id === widgetId && w.type === 'pomodoro',
-    );
+    const widget = dashboardConfig.workspaces
+      .flatMap((w) => w.widgets)
+      .find(
+        (w): w is PomodoroWidgetConfig =>
+          w.id === widgetId && w.type === 'pomodoro',
+      );
 
     if (!widget) {
       await browser.alarms.clear(alarmName);

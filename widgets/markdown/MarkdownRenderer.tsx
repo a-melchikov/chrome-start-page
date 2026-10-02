@@ -14,6 +14,7 @@ import rehypeSanitize, {
   defaultSchema,
   type Options as SanitizeSchema,
 } from 'rehype-sanitize';
+import remarkDirective from 'remark-directive';
 import remarkGfm from 'remark-gfm';
 
 import { Button } from '../../components/ui';
@@ -21,12 +22,15 @@ import { classNames } from '../../components/ui/class-names';
 import { LinkFavicon } from './LinkFavicon';
 import { toggleMarkdownTask } from './task-list';
 import { normalizeImageUrl, normalizeLinkUrl } from './validation';
+import { remarkTextSizeDirectivePlugin } from './text-size';
+import { remarkTaskFilterPlugin, analyzeTaskContent } from './task-filter';
 
 interface MarkdownRendererProps {
   content: string;
   emptyMessage?: string;
   onContentChange?: (content: string) => void;
   compact?: boolean;
+  hideCompletedTasks?: boolean;
 }
 
 const extendedTags = [
@@ -57,6 +61,7 @@ const markdownSanitizeSchema: SanitizeSchema = {
     ...defaultSchema.attributes,
     abbr: [...(defaultSchema.attributes?.abbr ?? []), 'title'],
     details: [...(defaultSchema.attributes?.details ?? []), 'open'],
+    span: [...(defaultSchema.attributes?.span ?? []), 'data-size', 'dataSize'],
   },
   protocols: {
     ...defaultSchema.protocols,
@@ -296,6 +301,7 @@ function createComponents(
         <input
           {...props}
           aria-label={props.checked ? 'Выполнено' : 'Не выполнено'}
+          checked={Boolean(props.checked)}
           className={classNames(
             compact ? 'mt-0.5 size-3' : 'mt-1 size-4',
             'shrink-0 cursor-pointer accent-theme-accent',
@@ -417,6 +423,36 @@ function createComponents(
         {...props}
       />
     ),
+    span: ({ node: _node, className, ...props }) => {
+      const dataSize =
+        (props as Record<string, unknown>)['data-size'] ??
+        (props as Record<string, unknown>)['dataSize'];
+      if (dataSize === 'large') {
+        return (
+          <span
+            {...props}
+            className={classNames(
+              compact ? 'text-xs' : 'text-[18px]',
+              'leading-snug',
+              className,
+            )}
+          />
+        );
+      }
+      if (dataSize === 'xlarge') {
+        return (
+          <span
+            {...props}
+            className={classNames(
+              compact ? 'text-sm' : 'text-[22px]',
+              'leading-tight font-medium',
+              className,
+            )}
+          />
+        );
+      }
+      return <span className={className} {...props} />;
+    },
   };
 }
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -426,10 +462,21 @@ export function MarkdownRenderer({
   emptyMessage = 'Markdown пока пуст.',
   onContentChange,
   compact = false,
+  hideCompletedTasks = false,
 }: MarkdownRendererProps) {
   const components = useMemo(
     () => createComponents(content, onContentChange, compact),
     [content, onContentChange, compact],
+  );
+
+  const remarkPlugins = useMemo(
+    () => [
+      remarkGfm,
+      remarkDirective,
+      remarkTextSizeDirectivePlugin,
+      [remarkTaskFilterPlugin, { hideCompletedTasks }],
+    ],
+    [hideCompletedTasks],
   );
 
   if (!content.trim()) {
@@ -445,6 +492,26 @@ export function MarkdownRenderer({
     );
   }
 
+  if (hideCompletedTasks) {
+    const stats = analyzeTaskContent(content);
+    if (
+      stats.totalTasks > 0 &&
+      stats.completedTasks === stats.totalTasks &&
+      !stats.hasOtherContent
+    ) {
+      return (
+        <p
+          className={classNames(
+            compact ? 'text-[10px]' : 'text-sm',
+            'text-theme-text-muted italic',
+          )}
+        >
+          Все задачи выполнены
+        </p>
+      );
+    }
+  }
+
   return (
     <div
       className={classNames(
@@ -455,7 +522,7 @@ export function MarkdownRenderer({
       <ReactMarkdown
         components={components}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, markdownSanitizeSchema]]}
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={remarkPlugins as unknown as (typeof remarkGfm)[]}
         urlTransform={(url) => url}
       >
         {content}

@@ -36,6 +36,10 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
         description: 'Справка по горячим клавишам',
       },
       {
+        keys: ['W'],
+        description: 'Выбрать рабочее пространство',
+      },
+      {
         keys: ['Esc'],
         description: 'Закрыть окно или выйти из редактирования',
       },

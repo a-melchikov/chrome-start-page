@@ -12,8 +12,11 @@ have the complete dashboard restored from local Chrome storage.
 Version 0.1.0 implements six repeatable widget types:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
-  sanitized CommonMark/GFM rendering, interactive task lists, safe links and
-  HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog.
+  5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar
+  with template-specific formatting, single-line text sizing directives (`:large[текст]` / `:xlarge[текст]`),
+  task filtering (`hideCompletedTasks`) with parent preservation for open subtasks and
+  all-completed empty state, sanitized CommonMark/GFM rendering, interactive task lists, safe links and
+  HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog with behavior settings.
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and
   DuckDuckGo use fixed GET endpoints and bundled brand icons. One surface places
   the colored glass-framed engine mark on the left and the magnifier submit
@@ -97,7 +100,8 @@ Markdown. Поле остаётся на одной линии с блоком �
   update the exact source marker rather than a derived model.
 - Existing v1 `links` data migrates to `markdown` without data or layout loss.
   V1/v2/v3 configurations migrate to schema v5 with Liquid Glass defaults; v4
-  preserves its enabled state and gains numeric defaults. Legacy appearance
+  preserves its enabled state and gains numeric defaults. V5 migrates to v6 with
+  customThemes support. V6 migrates to v7 with markdown template defaults. Legacy appearance
   without wallpaper gains `{type: 'none'}`. Existing search height is
   normalized to one row.
 - Wallpaper accepts PNG, JPEG, WebP, GIF, AVIF, and SVG files or a direct HTTPS

@@ -42,6 +42,9 @@ describe('widget registry lazy loading', () => {
       title: 'Notes',
       content: 'Hello',
       layout: { x: 0, y: 0, w: 4, h: 3 },
+      template: 'blank' as const,
+      quickAddEnabled: false,
+      hideCompletedTasks: false,
     };
 
     expect(loadedModules).toEqual({

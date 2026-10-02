@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
 import {
   loadDashboardConfig,
@@ -10,6 +10,7 @@ import {
 import {
   cleanupOrphanedImageAssets,
   cleanupUnusedImageAssets,
+  collectAllWorkspaceImageAssetIds,
   collectLocalImageAssetIds,
   deleteImageAssets,
   saveHistoryImageLease,
@@ -33,10 +34,13 @@ import {
   removeWallpaper as removeWallpaperTransaction,
   type WallpaperTransactionResult,
 } from '../storage/wallpaper-transactions';
+import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
+import { DEFAULT_APPEARANCE, DEFAULT_LIQUID_GLASS } from '../storage/defaults';
 import type {
   AppearanceConfig,
   DashboardConfig,
   WidgetConfig,
+  WorkspaceConfig,
 } from '../storage/schema';
 import type { CustomTheme, ThemeRef } from '../themes/types';
 import {
@@ -63,8 +67,11 @@ import {
   validateWallpaperUrl,
 } from '../wallpaper/image-validation';
 
-interface UseDashboardConfigResult {
+export interface UseDashboardConfigResult {
   config: DashboardConfig | null;
+  activeWorkspace: WorkspaceConfig | null;
+  activeWorkspaceId: string | null;
+  workspaces: readonly WorkspaceConfig[];
   backupError: string | null;
   error: string | null;
   isBackupProcessing: boolean;
@@ -116,6 +123,12 @@ interface UseDashboardConfigResult {
   deleteCustomTheme: (id: string) => void;
   duplicateCustomTheme: (id: string) => Promise<CustomTheme>;
   selectTheme: (themeRef: ThemeRef) => void;
+  switchWorkspace: (workspaceId: string) => void;
+  addWorkspace: (name?: string) => void;
+  renameWorkspace: (workspaceId: string, name: string) => void;
+  duplicateWorkspace: (workspaceId: string) => void;
+  deleteWorkspace: (workspaceId: string) => void;
+  reorderWorkspaces: (orderedIds: readonly string[]) => void;
 }
 
 export const MAX_BACKUP_FILE_BYTES = 32 * 1024 * 1024;
@@ -190,6 +203,44 @@ async function readBackupFile(file: File): Promise<string> {
   }
 }
 
+function getActiveWorkspaceWidgets(
+  config: DashboardConfig | null,
+): WidgetConfig[] {
+  if (!config) return [];
+  const targetId = config.activeWorkspaceId;
+  const workspace =
+    config.workspaces.find((w) => w.id === targetId) ?? config.workspaces[0];
+  return workspace ? workspace.widgets : [];
+}
+
+function updateActiveWorkspaceInConfig(
+  config: DashboardConfig,
+  updater: (workspace: WorkspaceConfig) => WorkspaceConfig,
+): DashboardConfig {
+  const targetId = config.activeWorkspaceId;
+  const targetIndex = config.workspaces.findIndex((w) => w.id === targetId);
+  const actualIndex = targetIndex >= 0 ? targetIndex : 0;
+  if (!config.workspaces[actualIndex]) return config;
+
+  const updatedWorkspace = updater(config.workspaces[actualIndex]);
+  return {
+    ...config,
+    workspaces: config.workspaces.map((w, idx) =>
+      idx === actualIndex ? updatedWorkspace : w,
+    ),
+  };
+}
+
+function updateActiveWorkspaceWidgets(
+  config: DashboardConfig,
+  updater: (widgets: WidgetConfig[]) => WidgetConfig[],
+): DashboardConfig {
+  return updateActiveWorkspaceInConfig(config, (workspace) => ({
+    ...workspace,
+    widgets: updater(workspace.widgets),
+  }));
+}
+
 export function useDashboardConfig(): UseDashboardConfigResult {
   const [config, setConfig] = useState<DashboardConfig | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -226,6 +277,18 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const widgetSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
+  const activeWorkspace = useMemo(() => {
+    if (!config) return null;
+    return (
+      config.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
+      config.workspaces[0] ??
+      null
+    );
+  }, [config]);
+
+  const activeWorkspaceId = activeWorkspace?.id ?? null;
+  const workspaces = config?.workspaces ?? [];
+
   const refreshHistory = useCallback(() => {
     setHistoryAvailability({
       canUndo: undoStackRef.current.length > 0,
@@ -235,7 +298,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const syncHistoryImageLease = useCallback(() => {
     const historyWidgets = [
-      ...(configRef.current?.widgets ?? []),
+      ...(configRef.current?.workspaces.flatMap((w) => w.widgets) ?? []),
       ...collectHistoryWidgets(undoStackRef.current),
       ...collectHistoryWidgets(redoStackRef.current),
     ];
@@ -246,7 +309,8 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const cleanupHistoryAssets = useCallback(
     (previous: readonly WidgetConfig[]) => {
-      const current = configRef.current?.widgets ?? [];
+      const current =
+        configRef.current?.workspaces.flatMap((w) => w.widgets) ?? [];
       const retained = [
         ...current,
         ...collectHistoryWidgets(undoStackRef.current),
@@ -349,17 +413,23 @@ export function useDashboardConfig(): UseDashboardConfigResult {
           acceptedConfigRef.current = result.config;
           rememberOwned(result.config);
           if (previous) {
+            const currentWidgets = result.config.workspaces.flatMap(
+              (w) => w.widgets,
+            );
             const retained = [
-              ...result.config.widgets,
+              ...currentWidgets,
               ...collectHistoryWidgets(undoStackRef.current),
               ...collectHistoryWidgets(redoStackRef.current),
             ];
-            await cleanupUnusedImageAssets(previous.widgets, retained).catch(
+            const previousWidgets = previous.workspaces.flatMap(
+              (w) => w.widgets,
+            );
+            await cleanupUnusedImageAssets(previousWidgets, retained).catch(
               () => undefined,
             );
             await cleanupUnusedWeatherCaches(
-              previous.widgets,
-              result.config.widgets,
+              previousWidgets,
+              currentWidgets,
             ).catch(() => undefined);
           }
           return result;
@@ -494,7 +564,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
           const latest = await readStoredDashboardConfig();
           if (latest) {
             await cleanupOrphanedImageAssets(
-              collectLocalImageAssetIds(latest.widgets),
+              collectAllWorkspaceImageAssetIds(latest.workspaces),
             );
           }
         }).catch(() => undefined);
@@ -523,7 +593,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
             const latest = await readStoredDashboardConfig();
             if (latest)
               await cleanupOrphanedImageAssets(
-                collectLocalImageAssetIds(latest.widgets),
+                collectAllWorkspaceImageAssetIds(latest.workspaces),
               );
           }),
         )
@@ -537,11 +607,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   ]);
 
   const runWallpaperOperation = useCallback(
-    async (
-      operation: () => Promise<WallpaperTransactionResult>,
-    ): Promise<void> => {
+    async (operation: () => Promise<void>): Promise<void> => {
       if (backupOperationRef.current) {
-        throw new Error('Операция с резервной копией уже выполняется');
+        throw new Error('Дождитесь завершения операции с резервной копией');
       }
 
       if (wallpaperOperationRef.current) {
@@ -556,14 +624,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       }
 
       try {
-        const result = await operation();
-        configRef.current = result.config;
-
-        if (isMountedRef.current) {
-          setConfig(result.config);
-          setError(null);
-          setWallpaperError(result.warning);
-        }
+        await operation();
       } catch (operationError) {
         if (
           isMountedRef.current &&
@@ -593,14 +654,23 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       flushPendingUpdates();
 
       return enqueueStorageOperation(() =>
-        runCheckedWrite(() => {
+        runCheckedWrite(async () => {
           const currentConfig = configRef.current;
 
           if (!currentConfig) {
             throw new Error('Настройки дашборда ещё не загружены');
           }
 
-          return transaction(currentConfig);
+          const result = await transaction(currentConfig);
+          configRef.current = result.config;
+
+          if (isMountedRef.current) {
+            setConfig(result.config);
+            setError(null);
+            setWallpaperError(result.warning);
+          }
+
+          return result;
         }),
       );
     },
@@ -617,7 +687,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
           bytes,
         );
 
-        return enqueueWallpaperTransaction((currentConfig) =>
+        await enqueueWallpaperTransaction((currentConfig) =>
           installLocalWallpaper(currentConfig, asset),
         );
       }),
@@ -628,7 +698,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     (url: string, signal?: AbortSignal) =>
       runWallpaperOperation(async () => {
         const validatedUrl = await validateWallpaperUrl(url, signal);
-        return enqueueWallpaperTransaction((currentConfig) =>
+        await enqueueWallpaperTransaction((currentConfig) =>
           installUrlWallpaper(currentConfig, validatedUrl),
         );
       }),
@@ -637,9 +707,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const removeWallpaper = useCallback(
     () =>
-      runWallpaperOperation(() =>
-        enqueueWallpaperTransaction(removeWallpaperTransaction),
-      ),
+      runWallpaperOperation(async () => {
+        await enqueueWallpaperTransaction(removeWallpaperTransaction);
+      }),
     [enqueueWallpaperTransaction, runWallpaperOperation],
   );
 
@@ -814,13 +884,15 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const updateAppearance = useCallback(
     (changes: Partial<AppearanceConfig>) => {
-      commitConfig((currentConfig) => ({
-        ...currentConfig,
-        appearance: {
-          ...currentConfig.appearance,
-          ...changes,
-        },
-      }));
+      commitConfig((currentConfig) =>
+        updateActiveWorkspaceInConfig(currentConfig, (workspace) => ({
+          ...workspace,
+          appearance: {
+            ...workspace.appearance,
+            ...changes,
+          },
+        })),
+      );
     },
     [commitConfig],
   );
@@ -833,13 +905,16 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         return;
       }
 
-      const nextConfig = {
-        ...currentConfig,
-        appearance: {
-          ...currentConfig.appearance,
-          ...changes,
-        },
-      };
+      const nextConfig = updateActiveWorkspaceInConfig(
+        currentConfig,
+        (workspace) => ({
+          ...workspace,
+          appearance: {
+            ...workspace.appearance,
+            ...changes,
+          },
+        }),
+      );
 
       configRef.current = nextConfig;
       pendingAppearanceConfigRef.current = nextConfig;
@@ -854,14 +929,16 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const selectTheme = useCallback(
     (themeRef: ThemeRef) => {
-      commitConfig((currentConfig) => ({
-        ...currentConfig,
-        appearance: {
-          ...currentConfig.appearance,
-          theme: themeRef,
-          backgroundColor: { type: 'theme' },
-        },
-      }));
+      commitConfig((currentConfig) =>
+        updateActiveWorkspaceInConfig(currentConfig, (workspace) => ({
+          ...workspace,
+          appearance: {
+            ...workspace.appearance,
+            theme: themeRef,
+            backgroundColor: { type: 'theme' },
+          },
+        })),
+      );
     },
     [commitConfig],
   );
@@ -882,19 +959,26 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         }
 
         const shouldActivate = options?.makeActive ?? false;
-        return {
+        let nextConfig: DashboardConfig = {
           ...currentConfig,
           customThemes: nextThemes,
-          ...(shouldActivate
-            ? {
-                appearance: {
-                  ...currentConfig.appearance,
-                  theme: { type: 'custom', id: theme.id },
-                  backgroundColor: { type: 'theme' },
-                },
-              }
-            : {}),
         };
+
+        if (shouldActivate) {
+          nextConfig = updateActiveWorkspaceInConfig(
+            nextConfig,
+            (workspace) => ({
+              ...workspace,
+              appearance: {
+                ...workspace.appearance,
+                theme: { type: 'custom', id: theme.id },
+                backgroundColor: { type: 'theme' },
+              },
+            }),
+          );
+        }
+
+        return nextConfig;
       });
     },
     [commitConfig],
@@ -902,28 +986,23 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const deleteCustomTheme = useCallback(
     (id: string) => {
-      commitConfig((currentConfig) => {
-        const nextThemes = currentConfig.customThemes.filter(
-          (t) => t.id !== id,
-        );
-        const isActive =
-          currentConfig.appearance.theme.type === 'custom' &&
-          currentConfig.appearance.theme.id === id;
-
-        return {
-          ...currentConfig,
-          customThemes: nextThemes,
-          ...(isActive
+      commitConfig((currentConfig) => ({
+        ...currentConfig,
+        customThemes: currentConfig.customThemes.filter((t) => t.id !== id),
+        workspaces: currentConfig.workspaces.map((workspace) =>
+          workspace.appearance.theme.type === 'custom' &&
+          workspace.appearance.theme.id === id
             ? {
+                ...workspace,
                 appearance: {
-                  ...currentConfig.appearance,
+                  ...workspace.appearance,
                   theme: { type: 'builtin', id: 'system' },
                   backgroundColor: { type: 'theme' },
                 },
               }
-            : {}),
-        };
-      });
+            : workspace,
+        ),
+      }));
     },
     [commitConfig],
   );
@@ -952,15 +1031,20 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         manualOverrides: [...original.manualOverrides],
       };
 
-      commitConfig((config) => ({
-        ...config,
-        customThemes: [...config.customThemes, copy],
-        appearance: {
-          ...config.appearance,
-          theme: { type: 'custom', id: newId },
-          backgroundColor: { type: 'theme' },
-        },
-      }));
+      commitConfig((config) => {
+        const next = {
+          ...config,
+          customThemes: [...config.customThemes, copy],
+        };
+        return updateActiveWorkspaceInConfig(next, (workspace) => ({
+          ...workspace,
+          appearance: {
+            ...workspace.appearance,
+            theme: { type: 'custom', id: newId },
+            backgroundColor: { type: 'theme' },
+          },
+        }));
+      });
 
       return copy;
     },
@@ -972,14 +1056,14 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       const currentConfig = configRef.current;
       if (!currentConfig || conflictRef.current || widgetActionRef.current)
         return;
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
       pushHistory({
         kind: 'insert',
-        items: [{ widget, index: currentConfig.widgets.length }],
+        items: [{ widget, index: currentWidgets.length }],
       });
-      commitConfig((currentConfig) => ({
-        ...currentConfig,
-        widgets: [...currentConfig.widgets, widget],
-      }));
+      commitConfig((config) =>
+        updateActiveWorkspaceWidgets(config, (widgets) => [...widgets, widget]),
+      );
     },
     [commitConfig, pushHistory],
   );
@@ -990,15 +1074,17 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       if (!currentConfig || conflictRef.current || widgetActionRef.current)
         return;
       const ids = new Set(widgetIds);
-      const items = currentConfig.widgets.flatMap((widget, index) =>
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
+      const items = currentWidgets.flatMap((widget, index) =>
         ids.has(widget.id) ? [{ widget, index }] : [],
       );
       if (items.length === 0) return;
       pushHistory({ kind: 'remove', items });
-      commitConfig((currentConfig) => ({
-        ...currentConfig,
-        widgets: currentConfig.widgets.filter((widget) => !ids.has(widget.id)),
-      }));
+      commitConfig((config) =>
+        updateActiveWorkspaceWidgets(config, (widgets) =>
+          widgets.filter((widget) => !ids.has(widget.id)),
+        ),
+      );
     },
     [commitConfig, pushHistory],
   );
@@ -1013,12 +1099,10 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   const updateWidget = useCallback(
     (widget: WidgetConfig) => {
       commitConfig(
-        (currentConfig) => ({
-          ...currentConfig,
-          widgets: currentConfig.widgets.map((currentWidget) =>
-            currentWidget.id === widget.id ? widget : currentWidget,
+        (config) =>
+          updateActiveWorkspaceWidgets(config, (widgets) =>
+            widgets.map((w) => (w.id === widget.id ? widget : w)),
           ),
-        }),
         'debounced',
       );
     },
@@ -1030,23 +1114,20 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       const currentConfig = configRef.current;
       if (!currentConfig || conflictRef.current || widgetActionRef.current)
         return;
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
       const incomingLayouts = new Map(
         widgets.map((widget) => [widget.id, widget.layout]),
       );
-      const nextWidgets = currentConfig.widgets.map((widget) => {
+      const nextWidgets = currentWidgets.map((widget) => {
         const layout = incomingLayouts.get(widget.id);
         return layout ? { ...widget, layout } : widget;
       });
-      const entry = createLayoutHistoryEntry(
-        currentConfig.widgets,
-        nextWidgets,
-      );
+      const entry = createLayoutHistoryEntry(currentWidgets, nextWidgets);
       if (!entry) return;
       pushHistory(entry);
-      commitConfig((currentConfig) => ({
-        ...currentConfig,
-        widgets: nextWidgets,
-      }));
+      commitConfig((config) =>
+        updateActiveWorkspaceWidgets(config, () => nextWidgets),
+      );
     },
     [commitConfig, pushHistory],
   );
@@ -1062,21 +1143,19 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       const currentConfig = configRef.current;
       if (!currentConfig || conflictRef.current || widgetActionRef.current)
         return;
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
       const selectedIds = new Set(ids);
       const nextWidgets = toEdge
         ? moveWidgetGroupToEdge(
-            currentConfig.widgets,
+            currentWidgets,
             selectedIds,
             deltaX,
             deltaY,
             visibleBottomRow,
           )
-        : moveWidgetGroup(currentConfig.widgets, selectedIds, deltaX, deltaY);
-      if (nextWidgets === currentConfig.widgets) return;
-      const entry = createLayoutHistoryEntry(
-        currentConfig.widgets,
-        nextWidgets,
-      );
+        : moveWidgetGroup(currentWidgets, selectedIds, deltaX, deltaY);
+      if (nextWidgets === currentWidgets) return;
+      const entry = createLayoutHistoryEntry(currentWidgets, nextWidgets);
       if (!entry || entry.kind !== 'layout') return;
       const selectionKey = [...ids].sort().join('\u0000');
       const previous = undoStackRef.current.at(-1);
@@ -1096,7 +1175,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       }
       nudgeActiveRef.current = true;
       nudgeSelectionRef.current = selectionKey;
-      commitConfig((config) => ({ ...config, widgets: [...nextWidgets] }));
+      commitConfig((config) =>
+        updateActiveWorkspaceWidgets(config, () => [...nextWidgets]),
+      );
     },
     [commitConfig, pushHistory, refreshHistory],
   );
@@ -1116,15 +1197,14 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       const entry = from.at(-1);
       const currentConfig = configRef.current;
       if (!entry || !currentConfig) return;
-      const result = applyWidgetHistoryEntry(
-        currentConfig.widgets,
-        entry,
-        direction,
-      );
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
+      const result = applyWidgetHistoryEntry(currentWidgets, entry, direction);
       from.pop();
       to.push(result.entry);
       refreshHistory();
-      commitConfig((config) => ({ ...config, widgets: result.widgets }));
+      commitConfig((config) =>
+        updateActiveWorkspaceWidgets(config, () => result.widgets),
+      );
       cleanupHistoryAssets(
         entry.kind === 'layout' ? [] : entry.items.map(({ widget }) => widget),
       );
@@ -1139,9 +1219,8 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     const currentConfig = configRef.current;
     if (!currentConfig) throw new Error('Настройки дашборда ещё не загружены');
     const selected = new Set(ids);
-    const widgets = currentConfig.widgets.filter((widget) =>
-      selected.has(widget.id),
-    );
+    const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
+    const widgets = currentWidgets.filter((widget) => selected.has(widget.id));
     if (widgets.length === 0)
       throw new Error('Выберите виджеты для копирования');
     return serializeWidgetClipboard(
@@ -1164,14 +1243,12 @@ export function useDashboardConfig(): UseDashboardConfigResult {
             const currentConfig = configRef.current;
             if (!currentConfig)
               throw new Error('Настройки дашборда ещё не загружены');
-            const widgets = placeWidgetGroup(
-              currentConfig.widgets,
-              sourceWidgets,
+            const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
+            const placed = placeWidgetGroup(currentWidgets, sourceWidgets);
+            const nextConfig = updateActiveWorkspaceWidgets(
+              currentConfig,
+              (widgets) => [...widgets, ...placed],
             );
-            const nextConfig = {
-              ...currentConfig,
-              widgets: [...currentConfig.widgets, ...widgets],
-            };
             try {
               for (const asset of localImages) {
                 await saveImageAsset(asset);
@@ -1182,17 +1259,18 @@ export function useDashboardConfig(): UseDashboardConfigResult {
               await deleteImageAssets(savedAssetIds).catch(() => undefined);
               throw error;
             }
-            return { config: nextConfig, widgets };
+            return { config: nextConfig, widgets: placed };
           }),
         );
         configRef.current = result.config;
         setConfig(result.config);
         setError(null);
+        const activeWidgets = getActiveWorkspaceWidgets(result.config);
         pushHistory({
           kind: 'insert',
           items: result.widgets.map((widget, index) => ({
             widget,
-            index: result.config.widgets.length - result.widgets.length + index,
+            index: activeWidgets.length - result.widgets.length + index,
           })),
         });
         return result.widgets.map((widget) => widget.id);
@@ -1213,7 +1291,8 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       if (!currentConfig)
         throw new Error('Настройки дашборда ещё не загружены');
       const selected = new Set(ids);
-      const widgets = currentConfig.widgets.filter((widget) =>
+      const currentWidgets = getActiveWorkspaceWidgets(currentConfig);
+      const widgets = currentWidgets.filter((widget) =>
         selected.has(widget.id),
       );
       if (widgets.length === 0) return [];
@@ -1231,6 +1310,210 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       return installCopies(copies.widgets, copies.localImages);
     },
     [installCopies],
+  );
+
+  const switchWorkspace = useCallback(
+    (workspaceId: string) => {
+      const currentConfig = configRef.current;
+      if (
+        !currentConfig ||
+        currentConfig.activeWorkspaceId === workspaceId ||
+        conflictRef.current ||
+        widgetActionRef.current
+      ) {
+        return;
+      }
+
+      const targetExists = currentConfig.workspaces.some(
+        (w) => w.id === workspaceId,
+      );
+      if (!targetExists) return;
+
+      flushPendingUpdates();
+      clearHistory();
+
+      commitConfig((config) => ({
+        ...config,
+        activeWorkspaceId: workspaceId,
+      }));
+    },
+    [clearHistory, commitConfig, flushPendingUpdates],
+  );
+
+  const addWorkspace = useCallback(
+    (name?: string) => {
+      const currentConfig = configRef.current;
+      if (!currentConfig || conflictRef.current || widgetActionRef.current)
+        return;
+
+      flushPendingUpdates();
+      clearHistory();
+
+      const newId = crypto.randomUUID();
+      const newName =
+        name?.trim() || `Пространство ${currentConfig.workspaces.length + 1}`;
+
+      const newWorkspace: WorkspaceConfig = {
+        id: newId,
+        name: newName.slice(0, 64),
+        appearance: {
+          ...DEFAULT_APPEARANCE,
+          theme: { ...DEFAULT_APPEARANCE.theme },
+          backgroundColor: { ...DEFAULT_APPEARANCE.backgroundColor },
+          wallpaper: { ...DEFAULT_APPEARANCE.wallpaper },
+          liquidGlass: { ...DEFAULT_LIQUID_GLASS },
+        },
+        widgets: [],
+      };
+
+      commitConfig((config) => ({
+        ...config,
+        activeWorkspaceId: newId,
+        workspaces: [...config.workspaces, newWorkspace],
+      }));
+    },
+    [clearHistory, commitConfig, flushPendingUpdates],
+  );
+
+  const renameWorkspace = useCallback(
+    (workspaceId: string, name: string) => {
+      const trimmed = name.trim().slice(0, 64);
+      if (!trimmed) return;
+
+      commitConfig((config) => ({
+        ...config,
+        workspaces: config.workspaces.map((w) =>
+          w.id === workspaceId ? { ...w, name: trimmed } : w,
+        ),
+      }));
+    },
+    [commitConfig],
+  );
+
+  const duplicateWorkspace = useCallback(
+    (workspaceId: string) => {
+      const currentConfig = configRef.current;
+      if (!currentConfig || conflictRef.current || widgetActionRef.current)
+        return;
+
+      const original = currentConfig.workspaces.find(
+        (w) => w.id === workspaceId,
+      );
+      if (!original) return;
+
+      flushPendingUpdates();
+      clearHistory();
+
+      const newId = crypto.randomUUID();
+      const newName = `${original.name} (копия)`.slice(0, 64);
+      const duplicatedWidgets = original.widgets.map((widget) => ({
+        ...widget,
+        id: crypto.randomUUID(),
+      }));
+
+      const copy: WorkspaceConfig = {
+        id: newId,
+        name: newName,
+        appearance: {
+          ...original.appearance,
+          theme: { ...original.appearance.theme },
+          backgroundColor: { ...original.appearance.backgroundColor },
+          wallpaper: { ...original.appearance.wallpaper },
+          liquidGlass: { ...original.appearance.liquidGlass },
+        },
+        widgets: duplicatedWidgets,
+      };
+
+      const originalIndex = currentConfig.workspaces.findIndex(
+        (w) => w.id === workspaceId,
+      );
+      const nextWorkspaces = [...currentConfig.workspaces];
+      nextWorkspaces.splice(originalIndex + 1, 0, copy);
+
+      commitConfig((config) => ({
+        ...config,
+        activeWorkspaceId: newId,
+        workspaces: nextWorkspaces,
+      }));
+    },
+    [clearHistory, commitConfig, flushPendingUpdates],
+  );
+
+  const deleteWorkspace = useCallback(
+    (workspaceId: string) => {
+      const currentConfig = configRef.current;
+      if (
+        !currentConfig ||
+        currentConfig.workspaces.length <= 1 ||
+        conflictRef.current ||
+        widgetActionRef.current
+      ) {
+        return;
+      }
+
+      const index = currentConfig.workspaces.findIndex(
+        (w) => w.id === workspaceId,
+      );
+      if (index === -1) return;
+
+      flushPendingUpdates();
+
+      let nextActiveId = currentConfig.activeWorkspaceId;
+      if (currentConfig.activeWorkspaceId === workspaceId) {
+        clearHistory();
+        const remainingWorkspaces = currentConfig.workspaces.filter(
+          (w) => w.id !== workspaceId,
+        );
+        const nextIndex = Math.min(index, remainingWorkspaces.length - 1);
+        nextActiveId = remainingWorkspaces[nextIndex]!.id;
+      }
+
+      const deletedWorkspace = currentConfig.workspaces[index]!;
+      commitConfig((config) => ({
+        ...config,
+        activeWorkspaceId: nextActiveId,
+        workspaces: config.workspaces.filter((w) => w.id !== workspaceId),
+      }));
+
+      cleanupHistoryAssets(deletedWorkspace.widgets);
+      if (deletedWorkspace.appearance.wallpaper.type === 'local') {
+        const remainingWallpaperIds = currentConfig.workspaces
+          .filter((w) => w.id !== workspaceId)
+          .map((w) => w.appearance.wallpaper)
+          .filter(
+            (w): w is { type: 'local'; assetId: string } => w.type === 'local',
+          )
+          .map((w) => w.assetId);
+        void cleanupOrphanedWallpaperAssets(remainingWallpaperIds).catch(
+          () => undefined,
+        );
+      }
+    },
+    [cleanupHistoryAssets, clearHistory, commitConfig, flushPendingUpdates],
+  );
+
+  const reorderWorkspaces = useCallback(
+    (orderedIds: readonly string[]) => {
+      commitConfig((config) => {
+        const workspaceMap = new Map(config.workspaces.map((w) => [w.id, w]));
+        const reordered: WorkspaceConfig[] = [];
+        for (const id of orderedIds) {
+          const item = workspaceMap.get(id);
+          if (item) {
+            reordered.push(item);
+            workspaceMap.delete(id);
+          }
+        }
+        for (const remaining of workspaceMap.values()) {
+          reordered.push(remaining);
+        }
+        return {
+          ...config,
+          workspaces: reordered,
+        };
+      });
+    },
+    [commitConfig],
   );
 
   const resolveConflict = useCallback(
@@ -1278,7 +1561,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         clearHistory();
         void withDashboardWriteLock(() =>
           cleanupOrphanedImageAssets(
-            collectLocalImageAssetIds(resolved.widgets),
+            collectAllWorkspaceImageAssetIds(resolved.workspaces),
           ),
         ).catch(() => undefined);
       } catch (resolutionError) {
@@ -1291,6 +1574,9 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   return {
     config,
+    activeWorkspace,
+    activeWorkspaceId,
+    workspaces,
     backupError,
     error,
     isBackupProcessing,
@@ -1330,5 +1616,11 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     deleteCustomTheme,
     duplicateCustomTheme,
     selectTheme,
+    switchWorkspace,
+    addWorkspace,
+    renameWorkspace,
+    duplicateWorkspace,
+    deleteWorkspace,
+    reorderWorkspaces,
   };
 }

@@ -252,7 +252,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
       >
         {/* Header: Location & Stale status / Update time */}
         <div
-          className={`flex shrink-0 items-start justify-between gap-2 ${isVisual ? `weather-visual-header ${isCompactHeight ? 'pl-3 pr-[72px] pt-3' : 'pl-4 pr-20 pt-4'}` : ''}`}
+          className={`flex shrink-0 items-start justify-between gap-2 ${isVisual ? `weather-visual-header ${isCompactHeight ? 'pl-3 pr-[72px] pt-3' : 'pl-4 pr-20 pt-4'}` : 'pr-[72px]'}`}
         >
           <div className="min-w-0 flex-1">
             <h3
@@ -273,15 +273,24 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                   updateStatus && <span aria-hidden="true">·</span>}
                 {updateStatus}
               </div>
-            ) : config.location.type === 'city' && config.location.country ? (
-              <p className="truncate text-[11px] leading-tight text-theme-text-muted">
-                {[config.location.region, config.location.country]
-                  .filter(Boolean)
-                  .join(', ')}
-              </p>
-            ) : null}
+            ) : (
+              <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] leading-tight text-theme-text-muted">
+                {config.location.type === 'city' && config.location.country ? (
+                  <span className="min-w-0 truncate">
+                    {[config.location.region, config.location.country]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </span>
+                ) : null}
+                {config.location.type === 'city' &&
+                config.location.country &&
+                updateStatus ? (
+                  <span aria-hidden="true">·</span>
+                ) : null}
+                {updateStatus}
+              </div>
+            )}
           </div>
-          {!isVisual && updateStatus}
         </div>
 
         {/* Primary weather indicator: Temperature and Condition */}

@@ -15,6 +15,7 @@ import {
 } from 'react-grid-layout';
 
 import type { WidgetConfig } from '../../storage/schema';
+import { getWidgetDefinition } from '../../widgets/registry';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
 import { createDashboardDragConfig } from './dashboard-drag';
 import {
@@ -250,29 +251,44 @@ export function WidgetCanvas({
               onDragStop={persistGridLayout}
               onResizeStop={persistGridLayout}
             >
-              {widgets.map((widget) => (
-                <div
-                  key={widget.id}
-                  className="min-w-0"
-                  onPointerDown={(event) => handlePointerDown(event, widget.id)}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={(event) => finishGroupDrag(event)}
-                  onPointerCancel={(event) => finishGroupDrag(event, true)}
-                >
-                  <WidgetHost
-                    isEditing={isEditing}
-                    isNew={newWidgetIds.has(widget.id)}
-                    isSelected={selectedWidgetIds.has(widget.id)}
-                    isWidgetEditing={editingWidgetId === widget.id}
-                    widget={widget}
-                    onRequestEdit={() => onStartWidgetEditing(widget.id)}
-                    onRequestDelete={setWidgetPendingDelete}
-                    onRequestFinishEditing={onFinishWidgetEditing}
-                    onWidgetChange={onUpdateWidget}
-                    onWidgetEnterEnd={() => onWidgetEnterEnd(widget.id)}
-                  />
-                </div>
-              ))}
+              {widgets.map((widget) => {
+                const constraints = getWidgetDefinition(widget.type)
+                  ?.presentation.layout;
+                return (
+                  <div
+                    key={widget.id}
+                    data-grid={{
+                      x: widget.layout.x,
+                      y: widget.layout.y,
+                      w: widget.layout.w,
+                      h: widget.layout.h,
+                      minW: constraints?.minW,
+                      minH: constraints?.minH,
+                      maxH: constraints?.maxH,
+                    }}
+                    className="min-w-0"
+                    onPointerDown={(event) =>
+                      handlePointerDown(event, widget.id)
+                    }
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={(event) => finishGroupDrag(event)}
+                    onPointerCancel={(event) => finishGroupDrag(event, true)}
+                  >
+                    <WidgetHost
+                      isEditing={isEditing}
+                      isNew={newWidgetIds.has(widget.id)}
+                      isSelected={selectedWidgetIds.has(widget.id)}
+                      isWidgetEditing={editingWidgetId === widget.id}
+                      widget={widget}
+                      onRequestEdit={() => onStartWidgetEditing(widget.id)}
+                      onRequestDelete={setWidgetPendingDelete}
+                      onRequestFinishEditing={onFinishWidgetEditing}
+                      onWidgetChange={onUpdateWidget}
+                      onWidgetEnterEnd={() => onWidgetEnterEnd(widget.id)}
+                    />
+                  </div>
+                );
+              })}
             </GridLayout>
           ) : null}
         </div>

@@ -33,7 +33,7 @@ import {
 } from '../widgets/image/image-validation';
 
 export const DASHBOARD_BACKUP_FORMAT = 'chrome-start-page-backup' as const;
-export const DASHBOARD_BACKUP_FORMAT_VERSION = 2 as const;
+export const DASHBOARD_BACKUP_FORMAT_VERSION = 3 as const;
 
 export interface DashboardBackupV1 {
   format: typeof DASHBOARD_BACKUP_FORMAT;
@@ -52,7 +52,17 @@ export interface DashboardBackupV2 {
   localImages: LocalImageAssetV1[];
 }
 
-export type DashboardBackup = DashboardBackupV1 | DashboardBackupV2;
+export interface DashboardBackupV3 {
+  format: typeof DASHBOARD_BACKUP_FORMAT;
+  formatVersion: 3;
+  exportedAt: string;
+  dashboard: DashboardConfig;
+  localWallpapers: LocalWallpaperAssetV1[];
+  localImages: LocalImageAssetV1[];
+}
+
+export type DashboardBackup =
+  DashboardBackupV1 | DashboardBackupV2 | DashboardBackupV3;
 
 export interface DashboardBackupDownload {
   fileName: string;
@@ -61,7 +71,7 @@ export interface DashboardBackupDownload {
 
 export interface PreparedDashboardImport {
   dashboard: DashboardConfig;
-  localWallpaper: LocalWallpaperAssetV1 | null;
+  localWallpapers: LocalWallpaperAssetV1[];
   localImages: LocalImageAssetV1[];
 }
 
@@ -120,78 +130,63 @@ function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
-async function removePreviousLocalWallpaper(
-  currentConfig: DashboardConfig,
-  nextLocalWallpaperId: string | null,
-): Promise<string | null> {
-  const currentWallpaper = currentConfig.appearance.wallpaper;
-
-  if (
-    currentWallpaper.type !== 'local' ||
-    currentWallpaper.assetId === nextLocalWallpaperId
-  ) {
-    return null;
-  }
-
-  try {
-    await deleteWallpaperAsset(currentWallpaper.assetId);
-    return null;
-  } catch {
-    return 'Импорт завершён, но старые локальные обои удалить не удалось';
-  }
-}
-
 export async function createDashboardBackup(
   config: DashboardConfig,
   exportedAt = new Date(),
-): Promise<DashboardBackupV2> {
+): Promise<DashboardBackupV3> {
   const dashboard = migrateBackupDashboard(config);
-  const wallpaper = dashboard.appearance.wallpaper;
-  let localWallpaper: LocalWallpaperAssetV1 | null = null;
 
-  if (wallpaper.type === 'local') {
-    localWallpaper = await loadWallpaperAsset(wallpaper.assetId);
+  const localWallpapers: LocalWallpaperAssetV1[] = [];
+  const seenWallpaperIds = new Set<string>();
 
-    if (!localWallpaper) {
-      throw new InvalidDashboardBackupError(
-        'Локальные обои не найдены, поэтому полную копию создать нельзя',
-      );
-    }
-
-    try {
-      await decodeWallpaperAsset(localWallpaper);
-    } catch {
-      throw new InvalidDashboardBackupError(
-        'Сохранённые локальные обои повреждены',
-      );
+  for (const workspace of dashboard.workspaces) {
+    const wallpaper = workspace.appearance.wallpaper;
+    if (
+      wallpaper.type === 'local' &&
+      !seenWallpaperIds.has(wallpaper.assetId)
+    ) {
+      seenWallpaperIds.add(wallpaper.assetId);
+      const asset = await loadWallpaperAsset(wallpaper.assetId);
+      if (!asset) {
+        throw new InvalidDashboardBackupError(
+          'Локальные обои не найдены, поэтому полную копию создать нельзя',
+        );
+      }
+      try {
+        await decodeWallpaperAsset(asset);
+      } catch {
+        throw new InvalidDashboardBackupError(
+          'Сохранённые локальные обои повреждены',
+        );
+      }
+      localWallpapers.push(asset);
     }
   }
 
   const localImages: LocalImageAssetV1[] = [];
-  const seenAssetIds = new Set<string>();
+  const seenImageIds = new Set<string>();
 
-  for (const widget of dashboard.widgets) {
-    if (widget.type === 'image' && widget.source.type === 'local') {
-      const assetId = widget.source.assetId;
-      if (!seenAssetIds.has(assetId)) {
-        seenAssetIds.add(assetId);
-        const localImage = await loadImageAsset(assetId);
-
-        if (!localImage) {
-          throw new InvalidDashboardBackupError(
-            'Локальное изображение не найдено, поэтому полную копию создать нельзя',
-          );
+  for (const workspace of dashboard.workspaces) {
+    for (const widget of workspace.widgets) {
+      if (widget.type === 'image' && widget.source.type === 'local') {
+        const assetId = widget.source.assetId;
+        if (!seenImageIds.has(assetId)) {
+          seenImageIds.add(assetId);
+          const localImage = await loadImageAsset(assetId);
+          if (!localImage) {
+            throw new InvalidDashboardBackupError(
+              'Локальное изображение не найдено, поэтому полную копию создать нельзя',
+            );
+          }
+          try {
+            await decodeWallpaperAsset(localImage);
+          } catch {
+            throw new InvalidDashboardBackupError(
+              'Сохранённое локальное изображение повреждено',
+            );
+          }
+          localImages.push(localImage);
         }
-
-        try {
-          await decodeWallpaperAsset(localImage);
-        } catch {
-          throw new InvalidDashboardBackupError(
-            'Сохранённое локальное изображение повреждено',
-          );
-        }
-
-        localImages.push(localImage);
       }
     }
   }
@@ -201,13 +196,13 @@ export async function createDashboardBackup(
     formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
     exportedAt: exportedAt.toISOString(),
     dashboard,
-    localWallpaper,
+    localWallpapers,
     localImages,
   };
 }
 
 export function serializeDashboardBackup(
-  backup: DashboardBackupV1 | DashboardBackupV2,
+  backup: DashboardBackupV1 | DashboardBackupV2 | DashboardBackupV3,
 ): string {
   return `${JSON.stringify(backup, null, 2)}\n`;
 }
@@ -221,14 +216,18 @@ export function createDashboardBackupFileName(exportedAt: string): string {
   return `chrome-start-page-backup-${timestamp}.json`;
 }
 
-export function parseDashboardBackup(value: unknown): DashboardBackupV2 {
+export function parseDashboardBackup(value: unknown): DashboardBackupV3 {
   if (!isRecord(value) || value.format !== DASHBOARD_BACKUP_FORMAT) {
     throw new InvalidDashboardBackupError(
       'Файл не является резервной копией Chrome Start Page',
     );
   }
 
-  if (value.formatVersion !== 1 && value.formatVersion !== 2) {
+  if (
+    value.formatVersion !== 1 &&
+    value.formatVersion !== 2 &&
+    value.formatVersion !== 3
+  ) {
     const version =
       typeof value.formatVersion === 'number'
         ? String(value.formatVersion)
@@ -245,38 +244,65 @@ export function parseDashboardBackup(value: unknown): DashboardBackupV2 {
   }
 
   const dashboard = migrateBackupDashboard(value.dashboard);
-  const localWallpaper = parseBackupWallpaper(value.localWallpaper);
-  const wallpaper = dashboard.appearance.wallpaper;
 
-  if (wallpaper.type === 'local') {
-    if (!localWallpaper) {
+  const localWallpapers: LocalWallpaperAssetV1[] = [];
+  const wallpaperAssetIdsInBackup = new Set<string>();
+
+  if (value.formatVersion === 3) {
+    if (
+      value.localWallpapers !== undefined &&
+      !Array.isArray(value.localWallpapers)
+    ) {
       throw new InvalidDashboardBackupError(
-        'В резервной копии отсутствуют локальные обои',
+        'Данные локальных обоев в резервной копии повреждены',
       );
     }
-
-    if (localWallpaper.assetId !== wallpaper.assetId) {
-      throw new InvalidDashboardBackupError(
-        'Идентификатор локальных обоев не совпадает с конфигурацией',
-      );
+    const rawWallpapers = Array.isArray(value.localWallpapers)
+      ? value.localWallpapers
+      : [];
+    for (const item of rawWallpapers) {
+      const asset = parseBackupWallpaper(item);
+      if (!asset) {
+        throw new InvalidDashboardBackupError(
+          'Данные локальных обоев в резервной копии повреждены',
+        );
+      }
+      if (wallpaperAssetIdsInBackup.has(asset.assetId)) {
+        throw new InvalidDashboardBackupError(
+          'Резервная копия содержит дублирующиеся локальные обои',
+        );
+      }
+      wallpaperAssetIdsInBackup.add(asset.assetId);
+      localWallpapers.push(asset);
     }
-  } else if (localWallpaper !== null) {
-    throw new InvalidDashboardBackupError(
-      'Резервная копия содержит лишние данные локальных обоев',
-    );
+  } else {
+    const single = parseBackupWallpaper(value.localWallpaper);
+    if (single) {
+      wallpaperAssetIdsInBackup.add(single.assetId);
+      localWallpapers.push(single);
+    }
+  }
+
+  for (const workspace of dashboard.workspaces) {
+    const wallpaper = workspace.appearance.wallpaper;
+    if (wallpaper.type === 'local') {
+      if (!wallpaperAssetIdsInBackup.has(wallpaper.assetId)) {
+        throw new InvalidDashboardBackupError(
+          'В резервной копии отсутствуют локальные обои',
+        );
+      }
+    }
   }
 
   const localImages: LocalImageAssetV1[] = [];
-
-  if (value.formatVersion === 2) {
+  if (value.formatVersion === 2 || value.formatVersion === 3) {
     if (value.localImages !== undefined && !Array.isArray(value.localImages)) {
       throw new InvalidDashboardBackupError(
         'Данные локальных изображений в резервной копии повреждены',
       );
     }
-
     const rawImages = Array.isArray(value.localImages) ? value.localImages : [];
-    const assetIdsInBackup = new Set<string>();
+    const imageAssetIdsInBackup = new Set<string>();
 
     for (const item of rawImages) {
       let asset: LocalImageAssetV1;
@@ -287,23 +313,23 @@ export function parseDashboardBackup(value: unknown): DashboardBackupV2 {
           'Данные локальных изображений в резервной копии повреждены',
         );
       }
-
-      if (assetIdsInBackup.has(asset.assetId)) {
+      if (imageAssetIdsInBackup.has(asset.assetId)) {
         throw new InvalidDashboardBackupError(
           'Резервная копия содержит дублирующиеся локальные изображения',
         );
       }
-
-      assetIdsInBackup.add(asset.assetId);
+      imageAssetIdsInBackup.add(asset.assetId);
       localImages.push(asset);
     }
 
-    for (const widget of dashboard.widgets) {
-      if (widget.type === 'image' && widget.source.type === 'local') {
-        if (!assetIdsInBackup.has(widget.source.assetId)) {
-          throw new InvalidDashboardBackupError(
-            'В резервной копии отсутствуют необходимые локальные изображения',
-          );
+    for (const workspace of dashboard.workspaces) {
+      for (const widget of workspace.widgets) {
+        if (widget.type === 'image' && widget.source.type === 'local') {
+          if (!imageAssetIdsInBackup.has(widget.source.assetId)) {
+            throw new InvalidDashboardBackupError(
+              'В резервной копии отсутствуют необходимые локальные изображения',
+            );
+          }
         }
       }
     }
@@ -318,71 +344,81 @@ export function parseDashboardBackup(value: unknown): DashboardBackupV2 {
     formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
     exportedAt: value.exportedAt,
     dashboard,
-    localWallpaper,
+    localWallpapers,
     localImages,
   };
 }
 
-export function parseDashboardBackupJson(source: string): DashboardBackupV2 {
+export function parseDashboardBackupJson(source: string): DashboardBackupV3 {
   let value: unknown;
 
   try {
     value = JSON.parse(source) as unknown;
   } catch {
-    throw new InvalidDashboardBackupError('Файл не содержит корректный JSON');
+    throw new InvalidDashboardBackupError(
+      'Файл резервной копии повреждён или содержит недопустимый JSON',
+    );
   }
 
   return parseDashboardBackup(value);
 }
 
 export async function prepareDashboardImport(
-  source: string,
+  sourceOrBackup: string | DashboardBackup,
   signal?: AbortSignal,
 ): Promise<PreparedDashboardImport> {
   throwIfAborted(signal);
-  const backup = parseDashboardBackupJson(source);
-  const wallpaper = backup.dashboard.appearance.wallpaper;
 
-  let preparedWallpaper: LocalWallpaperAssetV1 | null = null;
-  let updatedAppearance = backup.dashboard.appearance;
+  const backup =
+    typeof sourceOrBackup === 'string'
+      ? parseDashboardBackupJson(sourceOrBackup)
+      : sourceOrBackup;
 
-  if (wallpaper.type === 'url') {
-    const url = await validateWallpaperUrl(wallpaper.url, signal);
-    updatedAppearance = {
-      ...backup.dashboard.appearance,
-      wallpaper: { type: 'url', url },
-    };
-  } else if (wallpaper.type === 'local' && backup.localWallpaper) {
+  const rawWallpapers: LocalWallpaperAssetV1[] =
+    backup.formatVersion === 3
+      ? backup.localWallpapers
+      : backup.localWallpaper
+        ? [backup.localWallpaper]
+        : [];
+
+  const rawImages: LocalImageAssetV1[] =
+    backup.formatVersion === 2 || backup.formatVersion === 3
+      ? backup.localImages
+      : [];
+
+  const wallpaperIdMap = new Map<string, string>();
+  const preparedWallpapers: LocalWallpaperAssetV1[] = [];
+
+  for (const wallpaperAsset of rawWallpapers) {
+    throwIfAborted(signal);
     let bytes: Uint8Array;
 
     try {
-      bytes = await decodeWallpaperAsset(backup.localWallpaper);
+      bytes = await decodeWallpaperAsset(wallpaperAsset);
     } catch {
       throw new InvalidDashboardBackupError(
         'Данные локальных обоев не удалось декодировать',
       );
     }
 
-    await validateWallpaperBytes(bytes, backup.localWallpaper.mimeType, signal);
+    await validateWallpaperBytes(bytes, wallpaperAsset.mimeType, signal);
     throwIfAborted(signal);
 
-    const assetId = crypto.randomUUID();
-    preparedWallpaper = await encodeWallpaperAsset(
-      assetId,
-      backup.localWallpaper.mimeType,
+    const newAssetId = crypto.randomUUID();
+    wallpaperIdMap.set(wallpaperAsset.assetId, newAssetId);
+
+    const prepared = await encodeWallpaperAsset(
+      newAssetId,
+      wallpaperAsset.mimeType,
       bytes,
     );
-
-    updatedAppearance = {
-      ...backup.dashboard.appearance,
-      wallpaper: { type: 'local', assetId },
-    };
+    preparedWallpapers.push(prepared);
   }
 
-  const assetIdMap = new Map<string, string>();
+  const imageIdMap = new Map<string, string>();
   const preparedLocalImages: LocalImageAssetV1[] = [];
 
-  for (const imageAsset of backup.localImages) {
+  for (const imageAsset of rawImages) {
     throwIfAborted(signal);
     let bytes: Uint8Array;
 
@@ -402,39 +438,63 @@ export async function prepareDashboardImport(
     throwIfAborted(signal);
 
     const newAssetId = crypto.randomUUID();
-    assetIdMap.set(imageAsset.assetId, newAssetId);
+    imageIdMap.set(imageAsset.assetId, newAssetId);
 
-    const preparedAsset = await encodeWallpaperAsset(
+    const prepared = await encodeWallpaperAsset(
       newAssetId,
       imageAsset.mimeType,
       bytes,
     );
-    preparedLocalImages.push(preparedAsset);
+    preparedLocalImages.push(prepared);
   }
 
-  const updatedWidgets = backup.dashboard.widgets.map((widget) => {
-    if (widget.type === 'image' && widget.source.type === 'local') {
-      const newAssetId = assetIdMap.get(widget.source.assetId);
-      if (newAssetId) {
-        return {
-          ...widget,
-          source: {
-            ...widget.source,
-            assetId: newAssetId,
-          },
-        };
+  const updatedWorkspaces = await Promise.all(
+    backup.dashboard.workspaces.map(async (workspace) => {
+      let wallpaper = workspace.appearance.wallpaper;
+      if (wallpaper.type === 'url') {
+        throwIfAborted(signal);
+        const url = await validateWallpaperUrl(wallpaper.url, signal);
+        wallpaper = { type: 'url', url };
+      } else if (wallpaper.type === 'local') {
+        const remappedId = wallpaperIdMap.get(wallpaper.assetId);
+        if (remappedId) {
+          wallpaper = { ...wallpaper, assetId: remappedId };
+        }
       }
-    }
-    return widget;
-  });
+
+      const widgets = workspace.widgets.map((widget) => {
+        if (widget.type === 'image' && widget.source.type === 'local') {
+          const remappedId = imageIdMap.get(widget.source.assetId);
+          if (remappedId) {
+            return {
+              ...widget,
+              source: {
+                ...widget.source,
+                assetId: remappedId,
+              },
+            };
+          }
+        }
+        return widget;
+      });
+
+      return {
+        ...workspace,
+        appearance: {
+          ...workspace.appearance,
+          wallpaper,
+        },
+        widgets,
+      };
+    }),
+  );
 
   return {
     dashboard: {
       ...backup.dashboard,
-      appearance: updatedAppearance,
-      widgets: updatedWidgets,
+      workspaces: updatedWorkspaces,
     },
-    localWallpaper: preparedWallpaper,
+    localWallpapers: preparedWallpapers,
     localImages: preparedLocalImages,
   };
 }
@@ -444,78 +504,75 @@ export async function replaceDashboardFromBackup(
   preparedImport: PreparedDashboardImport,
 ): Promise<DashboardImportResult> {
   const config = migrateBackupDashboard(preparedImport.dashboard);
-  const wallpaper = config.appearance.wallpaper;
   const savedImageAssetIds: string[] = [];
+  const savedWallpaperAssetIds: string[] = [];
 
   for (const asset of preparedImport.localImages) {
     await saveImageAsset(asset);
     savedImageAssetIds.push(asset.assetId);
   }
 
-  if (wallpaper.type === 'local') {
-    const asset = parseBackupWallpaper(preparedImport.localWallpaper);
-
-    if (!asset || asset.assetId !== wallpaper.assetId) {
-      await deleteImageAssets(savedImageAssetIds);
-      throw new InvalidDashboardBackupError(
-        'Подготовленные локальные обои не совпадают с конфигурацией',
-      );
-    }
-
+  for (const asset of preparedImport.localWallpapers) {
     await saveWallpaperAsset(asset);
+    savedWallpaperAssetIds.push(asset.assetId);
+  }
 
-    try {
-      await saveDashboardConfig(config);
-    } catch (error) {
+  try {
+    await saveDashboardConfig(config);
+  } catch (error) {
+    for (const assetId of savedWallpaperAssetIds) {
       try {
-        await deleteWallpaperAsset(asset.assetId);
-      } catch {
-        // Startup cleanup removes the orphan.
-      }
-      try {
-        await deleteImageAssets(savedImageAssetIds);
+        await deleteWallpaperAsset(assetId);
       } catch {
         // Startup cleanup removes the orphans.
       }
-
-      throw error;
     }
-  } else {
-    if (preparedImport.localWallpaper !== null) {
+    try {
       await deleteImageAssets(savedImageAssetIds);
-      throw new InvalidDashboardBackupError(
-        'Подготовленный импорт содержит лишние локальные обои',
-      );
+    } catch {
+      // Startup cleanup removes the orphans.
     }
+    throw error;
+  }
 
-    try {
-      await saveDashboardConfig(config);
-    } catch (error) {
+  const activeWallpaperIds = new Set(
+    config.workspaces
+      .map((w) => w.appearance.wallpaper)
+      .filter(
+        (w): w is { type: 'local'; assetId: string } => w.type === 'local',
+      )
+      .map((w) => w.assetId),
+  );
+
+  let warning: string | null = null;
+  const currentWallpaperIds = currentConfig.workspaces
+    .map((w) => w.appearance.wallpaper)
+    .filter((w): w is { type: 'local'; assetId: string } => w.type === 'local')
+    .map((w) => w.assetId);
+
+  for (const assetId of currentWallpaperIds) {
+    if (!activeWallpaperIds.has(assetId)) {
       try {
-        await deleteImageAssets(savedImageAssetIds);
+        await deleteWallpaperAsset(assetId);
       } catch {
-        // Startup cleanup removes the orphans.
+        warning =
+          'Импорт завершён, но старые локальные обои удалить не удалось';
       }
-      throw error;
     }
   }
 
-  const activeWallpaperAssetId =
-    wallpaper.type === 'local' ? wallpaper.assetId : null;
-  const warning = await removePreviousLocalWallpaper(
-    currentConfig,
-    activeWallpaperAssetId,
-  );
   if (!warning) {
-    void cleanupOrphanedWallpaperAssets(activeWallpaperAssetId).catch(
+    void cleanupOrphanedWallpaperAssets([...activeWallpaperIds]).catch(
       () => undefined,
     );
   }
 
   const activeImageAssetIds = new Set<string>();
-  for (const widget of config.widgets) {
-    if (widget.type === 'image' && widget.source.type === 'local') {
-      activeImageAssetIds.add(widget.source.assetId);
+  for (const workspace of config.workspaces) {
+    for (const widget of workspace.widgets) {
+      if (widget.type === 'image' && widget.source.type === 'local') {
+        activeImageAssetIds.add(widget.source.assetId);
+      }
     }
   }
   await cleanupOrphanedImageAssets(activeImageAssetIds).catch(() => undefined);

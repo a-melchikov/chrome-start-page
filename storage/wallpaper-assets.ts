@@ -54,22 +54,31 @@ export async function deleteWallpaperAsset(assetId: string): Promise<void> {
 }
 
 export async function cleanupOrphanedWallpaperAssets(
-  activeAssetId: string | null,
+  activeAssetIdOrIds: string | readonly string[] | null,
 ): Promise<void> {
-  if (activeAssetId !== null && !isWallpaperAssetId(activeAssetId)) {
-    throw new InvalidWallpaperAssetError(
-      'Active wallpaper asset ID is invalid',
-    );
+  const activeIds = Array.isArray(activeAssetIdOrIds)
+    ? activeAssetIdOrIds
+    : activeAssetIdOrIds
+      ? [activeAssetIdOrIds]
+      : [];
+
+  for (const id of activeIds) {
+    if (!isWallpaperAssetId(id)) {
+      throw new InvalidWallpaperAssetError(
+        'Active wallpaper asset ID is invalid',
+      );
+    }
   }
 
+  const activeKeys = new Set(
+    activeIds.map((id) => `${WALLPAPER_SNAPSHOT_KEY_PREFIX}${id}`),
+  );
+
   const snapshot = await storage.snapshot('local');
-  const activeKey = activeAssetId
-    ? `${WALLPAPER_SNAPSHOT_KEY_PREFIX}${activeAssetId}`
-    : null;
   const orphanKeys = Object.keys(snapshot)
     .filter(
       (key) =>
-        key.startsWith(WALLPAPER_SNAPSHOT_KEY_PREFIX) && key !== activeKey,
+        key.startsWith(WALLPAPER_SNAPSHOT_KEY_PREFIX) && !activeKeys.has(key),
     )
     .map((key) => `local:${key}` as const);
 

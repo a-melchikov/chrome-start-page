@@ -12,6 +12,9 @@ function markdown(id: string, content: string, x = 0): WidgetConfig {
     type: 'markdown',
     title: id,
     content,
+    template: 'blank',
+    quickAddEnabled: false,
+    hideCompletedTasks: false,
     layout: { x, y: 0, w: 3, h: 3 },
   };
 }

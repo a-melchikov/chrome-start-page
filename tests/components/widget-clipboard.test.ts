@@ -23,6 +23,9 @@ const widgets: WidgetConfig[] = [
     type: 'markdown',
     title: 'Заметка',
     content: '# Текст',
+    template: 'blank',
+    quickAddEnabled: false,
+    hideCompletedTasks: false,
     layout: { x: 0, y: 0, w: 4, h: 3 },
   },
   {

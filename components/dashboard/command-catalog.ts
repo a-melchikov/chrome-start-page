@@ -19,7 +19,9 @@ export type PaletteCommand =
         | 'backup'
         | 'export'
         | 'themes'
-        | 'add-custom-theme';
+        | 'add-custom-theme'
+        | 'workspaces'
+        | 'add-workspace';
       label: string;
       category: string;
       keywords?: string;
@@ -28,6 +30,14 @@ export type PaletteCommand =
       id: string;
       kind: 'section';
       section: AppearanceSection;
+      label: string;
+      category: string;
+      keywords?: string;
+    }
+  | {
+      id: string;
+      kind: 'workspace';
+      workspaceId: string;
       label: string;
       category: string;
       keywords?: string;
@@ -76,6 +86,11 @@ export function buildCommandCatalog(
   config: DashboardConfig,
   isEditing: boolean,
 ): PaletteCommand[] {
+  const activeWorkspace =
+    config.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
+    config.workspaces[0];
+  const widgets = activeWorkspace?.widgets ?? [];
+
   return [
     {
       id: 'action:edit',
@@ -131,6 +146,22 @@ export function buildCommandCatalog(
       label: 'Переключить тему',
       category: 'Темы',
     },
+    {
+      id: 'action:workspaces',
+      kind: 'action',
+      action: 'workspaces',
+      label: 'Управление рабочими пространствами',
+      category: 'Рабочие пространства',
+      keywords: 'воркспейсы профили настроить создать переименовать',
+    },
+    ...config.workspaces.map((workspace): PaletteCommand => ({
+      id: `workspace:${workspace.id}`,
+      kind: 'workspace',
+      workspaceId: workspace.id,
+      label: `Переключить рабочее пространство: ${workspace.name}`,
+      category: 'Рабочие пространства',
+      keywords: `воркспейс рабочий стол профиль ${workspace.name}`,
+    })),
     ...sections.map(({ id, name }): PaletteCommand => ({
       id: `section:${id}`,
       kind: 'section',
@@ -146,7 +177,7 @@ export function buildCommandCatalog(
       category: 'Добавить виджет',
       keywords: `${definition.metadata.description} Добавить ${definition.type}`,
     })),
-    ...config.widgets.map((widget, index): PaletteCommand => ({
+    ...widgets.map((widget, index): PaletteCommand => ({
       id: `focus:${widget.id}`,
       kind: 'focus',
       widgetId: widget.id,
@@ -173,7 +204,7 @@ export function buildCommandCatalog(
       category: 'Темы',
       keywords: theme.description ?? 'собственная тема',
     })),
-    ...config.widgets.flatMap((widget) =>
+    ...widgets.flatMap((widget) =>
       widget.type === 'markdown'
         ? extractMarkdownLinks(widget.content).map(
             (link, index): PaletteCommand => ({

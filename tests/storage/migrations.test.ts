@@ -7,6 +7,20 @@ import {
   migrateDashboardConfig,
 } from '../../storage/migrations';
 
+function createTestDashboardWithWidgets(widgets: unknown[]) {
+  const config = createDefaultDashboardConfig();
+  return {
+    ...config,
+    workspaces: [
+      {
+        ...config.workspaces[0]!,
+        widgets,
+      },
+      ...config.workspaces.slice(1),
+    ],
+  };
+}
+
 describe('migrateDashboardConfig', () => {
   it('accepts the current version without changing it', () => {
     const config = createDefaultDashboardConfig();
@@ -36,31 +50,37 @@ describe('migrateDashboardConfig', () => {
       ],
     } as const;
 
-    expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 6,
-      appearance: {
-        theme: { type: 'builtin', id: 'light' },
-        backgroundColor: { type: 'custom', color: '#f4f4f5' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    const migrated = migrateDashboardConfig(legacyConfig);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces).toHaveLength(2);
+    expect(migrated.activeWorkspaceId).toBe(migrated.workspaces[0]!.id);
+    expect(migrated.workspaces[0]!.name).toBe('Основной');
+    expect(migrated.workspaces[0]!.appearance).toEqual({
+      theme: { type: 'builtin', id: 'light' },
+      backgroundColor: { type: 'custom', color: '#f4f4f5' },
+      wallpaper: { type: 'none' },
+      liquidGlass: {
+        enabled: true,
+        transparency: 40,
+        blur: 18,
+        shadow: 50,
       },
-      widgets: [
-        {
-          ...legacyConfig.widgets[0],
-          type: 'markdown',
-        },
-        {
-          ...legacyConfig.widgets[1],
-          layout: { ...legacyConfig.widgets[1].layout, h: 1 },
-        },
-      ],
-      customThemes: [],
     });
+    expect(migrated.workspaces[0]!.widgets).toEqual([
+      {
+        ...legacyConfig.widgets[0],
+        type: 'markdown',
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
+      },
+      {
+        ...legacyConfig.widgets[1],
+        layout: { ...legacyConfig.widgets[1].layout, h: 1 },
+      },
+    ]);
+    expect(migrated.workspaces[1]!.name).toBe('Работа');
+    expect(migrated.workspaces[1]!.widgets).toHaveLength(3);
   });
 
   it('migrates a v2 dashboard with no wallpaper', () => {
@@ -70,21 +90,13 @@ describe('migrateDashboardConfig', () => {
       appearance: { theme: 'dark', backgroundColor: '#123456' },
     } as const;
 
-    expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 6,
-      widgets: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#123456' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
-      },
-      customThemes: [],
+    const migrated = migrateDashboardConfig(legacyConfig);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces).toHaveLength(2);
+    expect(migrated.workspaces[0]!.widgets).toEqual([]);
+    expect(migrated.workspaces[0]!.appearance.theme).toEqual({
+      type: 'builtin',
+      id: 'dark',
     });
   });
 
@@ -110,22 +122,16 @@ describe('migrateDashboardConfig', () => {
       appearance: { theme: 'dark', backgroundColor: '#123456' },
     } as const;
 
-    expect(migrateDashboardConfig(legacyConfig)).toEqual({
-      version: 6,
-      widgets: [legacyConfig.widgets[1]],
-      appearance: {
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#123456' },
-        wallpaper: { type: 'none' },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
+    const migrated = migrateDashboardConfig(legacyConfig);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces[0]!.widgets).toEqual([
+      {
+        ...legacyConfig.widgets[1],
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
       },
-      customThemes: [],
-    });
+    ]);
   });
 
   it('migrates v3 wallpaper appearance to v5 with Liquid Glass defaults', () => {
@@ -142,24 +148,11 @@ describe('migrateDashboardConfig', () => {
       },
     } as const;
 
-    expect(migrateDashboardConfig(v3Config)).toEqual({
-      version: 6,
-      widgets: [],
-      appearance: {
-        theme: { type: 'builtin', id: 'dark' },
-        backgroundColor: { type: 'custom', color: '#123456' },
-        wallpaper: {
-          type: 'url',
-          url: 'https://example.com/wallpaper.jpg',
-        },
-        liquidGlass: {
-          enabled: true,
-          transparency: 40,
-          blur: 18,
-          shadow: 50,
-        },
-      },
-      customThemes: [],
+    const migrated = migrateDashboardConfig(v3Config);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
     });
   });
 
@@ -177,22 +170,11 @@ describe('migrateDashboardConfig', () => {
         },
       } as const;
 
-      expect(migrateDashboardConfig(v4Config)).toEqual({
-        version: 6,
-        widgets: [],
-        appearance: {
-          theme: { type: 'builtin', id: 'dark' },
-          backgroundColor: { type: 'custom', color: '#123456' },
-          wallpaper: { type: 'none' },
-          liquidGlass: {
-            enabled,
-            transparency: 40,
-            blur: 18,
-            shadow: 50,
-          },
-        },
-        customThemes: [],
-      });
+      const migrated = migrateDashboardConfig(v4Config);
+      expect(migrated.version).toBe(8);
+      expect(migrated.workspaces[0]!.appearance.liquidGlass.enabled).toBe(
+        enabled,
+      );
     },
   );
 
@@ -213,9 +195,27 @@ describe('migrateDashboardConfig', () => {
       },
     } as const;
 
-    expect(migrateDashboardConfig(v5Config)).toEqual({
+    const migrated = migrateDashboardConfig(v5Config);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces).toHaveLength(2);
+    expect(migrated.workspaces[0]!.appearance.theme).toEqual({
+      type: 'builtin',
+      id: 'dark',
+    });
+  });
+
+  it('migrates a v6 dashboard to v7 with markdown template defaults', () => {
+    const v6Config = {
       version: 6,
-      widgets: [],
+      widgets: [
+        {
+          id: 'v6-markdown',
+          type: 'markdown',
+          title: 'Заметки',
+          content: 'Текст',
+          layout: { x: 0, y: 0, w: 4, h: 3 },
+        },
+      ],
       customThemes: [],
       appearance: {
         theme: { type: 'builtin', id: 'dark' },
@@ -228,14 +228,59 @@ describe('migrateDashboardConfig', () => {
           shadow: 50,
         },
       },
+    } as const;
+
+    const migrated = migrateDashboardConfig(v6Config);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces[0]!.widgets[0]).toMatchObject({
+      type: 'markdown',
+      template: 'blank',
     });
+  });
+
+  it('migrates a v7 dashboard to v8 with workspaces and default work workspace', () => {
+    const v7Config = {
+      version: 7,
+      widgets: [
+        {
+          id: 'v7-md',
+          type: 'markdown',
+          title: 'Мои заметки',
+          content: 'Текст',
+          template: 'blank',
+          quickAddEnabled: false,
+          hideCompletedTasks: false,
+          layout: { x: 0, y: 0, w: 4, h: 4 },
+        },
+      ],
+      appearance: {
+        theme: { type: 'builtin', id: 'dark' },
+        backgroundColor: { type: 'custom', color: '#123456' },
+        wallpaper: { type: 'none' },
+        liquidGlass: {
+          enabled: true,
+          transparency: 40,
+          blur: 18,
+          shadow: 50,
+        },
+      },
+      customThemes: [],
+    };
+    const migrated = migrateDashboardConfig(v7Config);
+    expect(migrated.version).toBe(8);
+    expect(migrated.workspaces).toHaveLength(2);
+    expect(migrated.workspaces[0]!.name).toBe('Основной');
+    expect(migrated.workspaces[0]!.widgets).toEqual(v7Config.widgets);
+    expect(migrated.workspaces[1]!.name).toBe('Работа');
+    expect(migrated.workspaces[1]!.widgets).toHaveLength(3);
+    expect(migrated.activeWorkspaceId).toBe(migrated.workspaces[0]!.id);
   });
 
   it('rejects an unsupported version', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        version: 7,
+        version: 99,
       }),
     ).toThrow(UnsupportedDashboardConfigVersionError);
   });
@@ -246,13 +291,20 @@ describe('migrateDashboardConfig', () => {
     { type: 'local', assetId: 'not-a-uuid' },
     { type: 'unknown' },
   ])('rejects invalid wallpaper config %#', (wallpaper) => {
+    const config = createDefaultDashboardConfig();
     expect(() =>
       migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        appearance: {
-          ...createDefaultDashboardConfig().appearance,
-          wallpaper,
-        },
+        ...config,
+        workspaces: [
+          {
+            ...config.workspaces[0]!,
+            appearance: {
+              ...config.workspaces[0]!.appearance,
+              wallpaper,
+            },
+          },
+          ...config.workspaces.slice(1),
+        ],
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
@@ -288,7 +340,10 @@ describe('migrateDashboardConfig', () => {
       },
     };
     const result = migrateDashboardConfig(v5Config);
-    expect(result.appearance.theme).toEqual({ type: 'builtin', id: theme });
+    expect(result.workspaces[0]!.appearance.theme).toEqual({
+      type: 'builtin',
+      id: theme,
+    });
   });
 
   it.each([
@@ -309,19 +364,32 @@ describe('migrateDashboardConfig', () => {
     const config = createDefaultDashboardConfig();
     const result = migrateDashboardConfig({
       ...config,
-      appearance: {
-        ...config.appearance,
-        theme: { type: 'builtin', id: theme },
-      },
+      workspaces: [
+        {
+          ...config.workspaces[0]!,
+          appearance: {
+            ...config.workspaces[0]!.appearance,
+            theme: { type: 'builtin', id: theme },
+          },
+        },
+      ],
     });
-    expect(result.appearance.theme).toEqual({ type: 'builtin', id: theme });
+    expect(result.workspaces[0]!.appearance.theme).toEqual({
+      type: 'builtin',
+      id: theme,
+    });
   });
 
   it('rejects malformed current-version data', () => {
     expect(() =>
       migrateDashboardConfig({
         ...createDefaultDashboardConfig(),
-        appearance: { theme: 'unknown', backgroundColor: '#18181b' },
+        workspaces: [
+          {
+            ...createDefaultDashboardConfig().workspaces[0]!,
+            appearance: { theme: 'unknown', backgroundColor: '#18181b' },
+          },
+        ],
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
@@ -342,10 +410,15 @@ describe('migrateDashboardConfig', () => {
     expect(() =>
       migrateDashboardConfig({
         ...config,
-        appearance: {
-          ...config.appearance,
-          liquidGlass: { enabled: true, ...values },
-        },
+        workspaces: [
+          {
+            ...config.workspaces[0]!,
+            appearance: {
+              ...config.workspaces[0]!.appearance,
+              liquidGlass: { enabled: true, ...values },
+            },
+          },
+        ],
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
@@ -356,100 +429,89 @@ describe('migrateDashboardConfig', () => {
     expect(() =>
       migrateDashboardConfig({
         ...config,
-        appearance: {
-          ...config.appearance,
-          liquidGlass: {
-            ...config.appearance.liquidGlass,
-            enabled: 'yes',
+        workspaces: [
+          {
+            ...config.workspaces[0]!,
+            appearance: {
+              ...config.workspaces[0]!.appearance,
+              liquidGlass: {
+                ...config.workspaces[0]!.appearance.liquidGlass,
+                enabled: 'yes',
+              },
+            },
           },
-        },
+        ],
       }),
     ).toThrow(InvalidDashboardConfigError);
   });
 
   it('normalizes a saved SearchWidget to the compact height', () => {
-    const config = {
-      ...createDefaultDashboardConfig(),
-      widgets: [
-        {
-          id: 'search-widget',
-          type: 'search',
-          title: 'Поиск',
-          engine: 'duckduckgo',
-          layout: { x: 0, y: 0, w: 6, h: 3 },
-        },
-      ],
-    } as const;
+    const config = createTestDashboardWithWidgets([
+      {
+        id: 'search-widget',
+        type: 'search',
+        title: 'Поиск',
+        engine: 'duckduckgo',
+        layout: { x: 0, y: 0, w: 6, h: 3 },
+      },
+    ]);
 
-    expect(migrateDashboardConfig(config)).toEqual({
-      ...config,
-      widgets: [
-        {
-          ...config.widgets[0],
-          layout: { ...config.widgets[0].layout, h: 1 },
-        },
-      ],
-    });
+    const migrated = migrateDashboardConfig(config);
+    expect(migrated.workspaces[0]!.widgets[0]!.layout.h).toBe(1);
   });
 
   it('rejects a MarkdownWidget without string content', () => {
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'markdown-widget',
             type: 'markdown',
             content: null,
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
   it('rejects a SearchWidget with an unknown engine', () => {
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'search-widget',
             type: 'search',
             engine: 'unknown',
             layout: { x: 0, y: 0, w: 6, h: 1 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
   it('accepts a valid PomodoroWidget config', () => {
-    const validConfig = {
-      ...createDefaultDashboardConfig(),
-      widgets: [
-        {
-          id: 'pomodoro-widget',
-          type: 'pomodoro',
-          title: 'Помодоро',
-          workDuration: 25,
-          shortBreakDuration: 5,
-          longBreakDuration: 15,
-          longBreakInterval: 4,
-          soundEnabled: true,
-          layout: { x: 0, y: 0, w: 4, h: 3 },
-        },
-      ],
-    };
+    const validConfig = createTestDashboardWithWidgets([
+      {
+        id: 'pomodoro-widget',
+        type: 'pomodoro',
+        title: 'Помодоро',
+        workDuration: 25,
+        shortBreakDuration: 5,
+        longBreakDuration: 15,
+        longBreakInterval: 4,
+        soundEnabled: true,
+        layout: { x: 0, y: 0, w: 4, h: 3 },
+      },
+    ]);
 
     expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
   });
 
   it('rejects a PomodoroWidget with invalid durations or sound flag', () => {
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'pomodoro-widget',
             type: 'pomodoro',
@@ -460,14 +522,13 @@ describe('migrateDashboardConfig', () => {
             soundEnabled: true,
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'pomodoro-widget',
             type: 'pomodoro',
@@ -478,103 +539,96 @@ describe('migrateDashboardConfig', () => {
             soundEnabled: 'yes',
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
   it('rejects widgets with invalid, empty, or oversized widget IDs', () => {
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: '',
             type: 'markdown',
             content: 'text',
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'a'.repeat(65),
             type: 'markdown',
             content: 'text',
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: '../path-traversal',
             type: 'markdown',
             content: 'text',
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'widget<script>',
             type: 'markdown',
             content: 'text',
             layout: { x: 0, y: 0, w: 4, h: 3 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
   it('accepts valid image widgets with none, url, and local sources', () => {
-    const validConfig = {
-      ...createDefaultDashboardConfig(),
-      widgets: [
-        {
-          id: 'img-1',
-          type: 'image' as const,
-          source: { type: 'none' as const },
-          objectPosition: 'center' as const,
-          layout: { x: 0, y: 0, w: 4, h: 4 },
+    const validConfig = createTestDashboardWithWidgets([
+      {
+        id: 'img-1',
+        type: 'image' as const,
+        source: { type: 'none' as const },
+        objectPosition: 'center' as const,
+        layout: { x: 0, y: 0, w: 4, h: 4 },
+      },
+      {
+        id: 'img-2',
+        type: 'image' as const,
+        source: {
+          type: 'url' as const,
+          url: 'https://example.com/photo.webp',
         },
-        {
-          id: 'img-2',
-          type: 'image' as const,
-          source: {
-            type: 'url' as const,
-            url: 'https://example.com/photo.webp',
-          },
-          objectPosition: 'top-left' as const,
-          altText: 'Красивое фото',
-          layout: { x: 4, y: 0, w: 6, h: 4 },
+        objectPosition: 'top-left' as const,
+        altText: 'Красивое фото',
+        layout: { x: 4, y: 0, w: 6, h: 4 },
+      },
+      {
+        id: 'img-3',
+        type: 'image' as const,
+        source: {
+          type: 'local' as const,
+          assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
         },
-        {
-          id: 'img-3',
-          type: 'image' as const,
-          source: {
-            type: 'local' as const,
-            assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
-          },
-          objectPosition: 'bottom' as const,
-          layout: { x: 0, y: 4, w: 4, h: 4 },
-        },
-      ],
-    };
+        objectPosition: 'bottom' as const,
+        layout: { x: 0, y: 4, w: 4, h: 4 },
+      },
+    ]);
 
     expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
   });
@@ -582,9 +636,8 @@ describe('migrateDashboardConfig', () => {
   it('rejects image widgets with invalid sources or positions', () => {
     // Insecure HTTP url
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'img-bad-url',
             type: 'image',
@@ -592,15 +645,14 @@ describe('migrateDashboardConfig', () => {
             objectPosition: 'center',
             layout: { x: 0, y: 0, w: 4, h: 4 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid local assetId
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'img-bad-asset',
             type: 'image',
@@ -608,15 +660,14 @@ describe('migrateDashboardConfig', () => {
             objectPosition: 'center',
             layout: { x: 0, y: 0, w: 4, h: 4 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid object position
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'img-bad-pos',
             type: 'image',
@@ -624,46 +675,43 @@ describe('migrateDashboardConfig', () => {
             objectPosition: 'diagonal-center',
             layout: { x: 0, y: 0, w: 4, h: 4 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
-  it('accepts valid clock widgets in v5 config', () => {
-    const validConfig = {
-      ...createDefaultDashboardConfig(),
-      widgets: [
-        {
-          id: 'clock-local',
-          type: 'clock' as const,
-          timeFormat: '24h' as const,
-          showTime: true,
-          showSeconds: false,
-          showDate: true,
-          dateFormat: 'full' as const,
-          showDayOfWeek: true,
-          timezone: 'local',
-          showTimezoneName: true,
-          showTimezoneAbbr: false,
-          layout: { x: 0, y: 0, w: 4, h: 2 },
-        },
-        {
-          id: 'clock-custom',
-          type: 'clock' as const,
-          title: 'Лондон',
-          timeFormat: '12h' as const,
-          showTime: true,
-          showSeconds: true,
-          showDate: false,
-          dateFormat: 'numeric' as const,
-          showDayOfWeek: false,
-          timezone: 'Europe/London',
-          showTimezoneName: false,
-          showTimezoneAbbr: true,
-          layout: { x: 4, y: 0, w: 2, h: 2 },
-        },
-      ],
-    };
+  it('accepts valid clock widgets in v8 config', () => {
+    const validConfig = createTestDashboardWithWidgets([
+      {
+        id: 'clock-local',
+        type: 'clock' as const,
+        timeFormat: '24h' as const,
+        showTime: true,
+        showSeconds: false,
+        showDate: true,
+        dateFormat: 'full' as const,
+        showDayOfWeek: true,
+        timezone: 'local',
+        showTimezoneName: true,
+        showTimezoneAbbr: false,
+        layout: { x: 0, y: 0, w: 4, h: 2 },
+      },
+      {
+        id: 'clock-custom',
+        type: 'clock' as const,
+        title: 'Лондон',
+        timeFormat: '12h' as const,
+        showTime: true,
+        showSeconds: true,
+        showDate: false,
+        dateFormat: 'numeric' as const,
+        showDayOfWeek: false,
+        timezone: 'Europe/London',
+        showTimezoneName: false,
+        showTimezoneAbbr: true,
+        layout: { x: 4, y: 0, w: 2, h: 2 },
+      },
+    ]);
 
     expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
   });
@@ -671,9 +719,8 @@ describe('migrateDashboardConfig', () => {
   it('rejects clock widgets with invalid formats or timezone', () => {
     // Invalid timeFormat
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'clock-bad-time-format',
             type: 'clock',
@@ -688,15 +735,14 @@ describe('migrateDashboardConfig', () => {
             showTimezoneAbbr: false,
             layout: { x: 0, y: 0, w: 4, h: 2 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid dateFormat
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'clock-bad-date-format',
             type: 'clock',
@@ -711,15 +757,14 @@ describe('migrateDashboardConfig', () => {
             showTimezoneAbbr: false,
             layout: { x: 0, y: 0, w: 4, h: 2 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid timezone
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'clock-bad-tz',
             type: 'clock',
@@ -734,15 +779,14 @@ describe('migrateDashboardConfig', () => {
             showTimezoneAbbr: false,
             layout: { x: 0, y: 0, w: 4, h: 2 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 
-  it('accepts valid weather widgets in v5 config', () => {
-    const migrated = migrateDashboardConfig({
-      ...createDefaultDashboardConfig(),
-      widgets: [
+  it('accepts valid weather widgets in v8 config', () => {
+    const migrated = migrateDashboardConfig(
+      createTestDashboardWithWidgets([
         {
           id: 'weather-unset',
           type: 'weather',
@@ -773,21 +817,20 @@ describe('migrateDashboardConfig', () => {
           },
           layout: { x: 0, y: 5, w: 5, h: 5 },
         },
-      ],
-    });
+      ]),
+    );
 
-    expect(migrated.widgets).toHaveLength(3);
-    expect(migrated.widgets[0]?.type).toBe('weather');
-    expect(migrated.widgets[1]?.type).toBe('weather');
-    expect(migrated.widgets[2]?.type).toBe('weather');
+    expect(migrated.workspaces[0]!.widgets).toHaveLength(3);
+    expect(migrated.workspaces[0]!.widgets[0]?.type).toBe('weather');
+    expect(migrated.workspaces[0]!.widgets[1]?.type).toBe('weather');
+    expect(migrated.workspaces[0]!.widgets[2]?.type).toBe('weather');
   });
 
   it('rejects weather widgets with invalid mode, coordinates, or timezone', () => {
     // Invalid mode
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'weather-bad-mode',
             type: 'weather',
@@ -795,15 +838,14 @@ describe('migrateDashboardConfig', () => {
             location: { type: 'unset' },
             layout: { x: 0, y: 0, w: 5, h: 5 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid latitude
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'weather-bad-lat',
             type: 'weather',
@@ -820,15 +862,14 @@ describe('migrateDashboardConfig', () => {
             },
             layout: { x: 0, y: 0, w: 5, h: 5 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
 
     // Invalid city timezone ('local' is disallowed for city)
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        widgets: [
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
           {
             id: 'weather-bad-tz',
             type: 'weather',
@@ -845,8 +886,8 @@ describe('migrateDashboardConfig', () => {
             },
             layout: { x: 0, y: 0, w: 5, h: 5 },
           },
-        ],
-      }),
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 });

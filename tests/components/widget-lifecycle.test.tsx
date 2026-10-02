@@ -31,6 +31,10 @@ async function enableEditMode(user: User) {
 async function addMarkdownWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
   await user.click(screen.getByRole('button', { name: 'Markdown' }));
+  const templateButton = await screen.findByRole('button', {
+    name: /Пустой лист/,
+  });
+  await user.click(templateButton);
 }
 
 async function addSearchWidget(user: User) {
@@ -58,8 +62,16 @@ async function addWeatherWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Погода' }));
 }
 
-async function getStoredConfig(): Promise<DashboardConfig | null> {
-  return storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
+async function getStoredConfig() {
+  const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
+  if (!config) return null;
+  const activeWorkspace =
+    config.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
+    config.workspaces[0];
+  return {
+    ...config,
+    widgets: activeWorkspace?.widgets ?? [],
+  };
 }
 
 describe('widget lifecycle', () => {
@@ -510,6 +522,39 @@ describe('widget lifecycle', () => {
     expect(onWidgetEnterEnd).toHaveBeenCalledOnce();
   });
 
+  it('renders rounded translucent buttons for configured image widget without box wrapper', () => {
+    const widget: WidgetConfig = {
+      id: 'img-test',
+      type: 'image',
+      source: { type: 'url', url: 'https://example.com/photo.jpg' },
+      objectPosition: '50% 50%',
+      layout: { x: 0, y: 0, w: 4, h: 4 },
+    };
+    render(
+      <WidgetHost
+        isEditing={true}
+        widget={widget}
+        onRequestEdit={vi.fn()}
+        onRequestDelete={vi.fn()}
+      />,
+    );
+
+    const editBtn = screen.getByRole('button', {
+      name: 'Редактировать виджет «Изображение»',
+    });
+    const deleteBtn = screen.getByRole('button', {
+      name: 'Удалить виджет «Изображение»',
+    });
+
+    expect(editBtn).toHaveClass('!rounded-full');
+    expect(editBtn).toHaveClass('backdrop-blur-md');
+    expect(deleteBtn).toHaveClass('!rounded-full');
+    expect(deleteBtn).toHaveClass('backdrop-blur-md');
+    expect(deleteBtn.parentElement?.parentElement).not.toHaveClass(
+      'bg-theme-surface/85',
+    );
+  });
+
   it('creates, edits and immediately persists a ClockWidget', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -580,7 +625,10 @@ describe('widget lifecycle', () => {
     expect(
       screen.getByRole('button', { name: 'Удалить виджет «Погода»' })
         .parentElement?.parentElement,
-    ).toHaveClass('bg-theme-surface-elevated');
+    ).not.toHaveClass('bg-theme-surface-elevated');
+    expect(
+      screen.getByRole('button', { name: 'Удалить виджет «Погода»' }),
+    ).toHaveClass('text-white/85');
 
     expect(
       await screen.findByRole('dialog', { name: 'Настройки погоды' }),
@@ -601,5 +649,9 @@ describe('widget lifecycle', () => {
         screen.queryByRole('dialog', { name: 'Настройки погоды' }),
       ).not.toBeInTheDocument();
     });
+
+    expect(
+      screen.getByRole('button', { name: 'Редактировать виджет «Погода»' }),
+    ).toHaveClass('text-white/85');
   });
 });

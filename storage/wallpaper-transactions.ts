@@ -12,26 +12,65 @@ export interface WallpaperTransactionResult {
   warning: string | null;
 }
 
+function getTargetWorkspace(current: DashboardConfig, workspaceId?: string) {
+  const targetId = workspaceId ?? current.activeWorkspaceId;
+  return (
+    current.workspaces.find((w) => w.id === targetId) ?? current.workspaces[0]
+  );
+}
+
 function withWallpaper(
   current: DashboardConfig,
   wallpaper: WallpaperConfig,
+  workspaceId?: string,
 ): DashboardConfig {
+  const targetId = workspaceId ?? current.activeWorkspaceId;
   return {
     ...current,
-    appearance: {
-      ...current.appearance,
-      wallpaper,
-    },
+    workspaces: current.workspaces.map((w) =>
+      w.id === targetId
+        ? {
+            ...w,
+            appearance: {
+              ...w.appearance,
+              wallpaper,
+            },
+          }
+        : w,
+    ),
   };
+}
+
+function collectAllWallpaperAssetIds(config: DashboardConfig): string[] {
+  const ids: string[] = [];
+  for (const w of config.workspaces) {
+    if (w.appearance.wallpaper.type === 'local') {
+      ids.push(w.appearance.wallpaper.assetId);
+    }
+  }
+  return ids;
 }
 
 async function removePreviousLocalAsset(
   current: DashboardConfig,
   nextLocalAssetId: string | null,
+  workspaceId?: string,
 ): Promise<string | null> {
-  const previous = current.appearance.wallpaper;
+  const target = getTargetWorkspace(current, workspaceId);
+  if (!target) return null;
+  const previous = target.appearance.wallpaper;
 
   if (previous.type !== 'local' || previous.assetId === nextLocalAssetId) {
+    return null;
+  }
+
+  const isUsedElsewhere = current.workspaces.some(
+    (w) =>
+      w.id !== target.id &&
+      w.appearance.wallpaper.type === 'local' &&
+      w.appearance.wallpaper.assetId === previous.assetId,
+  );
+  if (isUsedElsewhere) {
     return null;
   }
 
@@ -46,13 +85,18 @@ async function removePreviousLocalAsset(
 export async function installLocalWallpaper(
   current: DashboardConfig,
   asset: LocalWallpaperAssetV1,
+  workspaceId?: string,
 ): Promise<WallpaperTransactionResult> {
   await saveWallpaperAsset(asset);
 
-  const nextConfig = withWallpaper(current, {
-    type: 'local',
-    assetId: asset.assetId,
-  });
+  const nextConfig = withWallpaper(
+    current,
+    {
+      type: 'local',
+      assetId: asset.assetId,
+    },
+    workspaceId,
+  );
 
   try {
     await saveDashboardConfig(nextConfig);
@@ -67,9 +111,15 @@ export async function installLocalWallpaper(
     throw error;
   }
 
-  const warning = await removePreviousLocalAsset(current, asset.assetId);
+  const warning = await removePreviousLocalAsset(
+    current,
+    asset.assetId,
+    workspaceId,
+  );
   if (!warning) {
-    void cleanupOrphanedWallpaperAssets(asset.assetId).catch(() => undefined);
+    void cleanupOrphanedWallpaperAssets(
+      collectAllWallpaperAssetIds(nextConfig),
+    ).catch(() => undefined);
   }
 
   return {
@@ -81,13 +131,16 @@ export async function installLocalWallpaper(
 export async function installUrlWallpaper(
   current: DashboardConfig,
   url: string,
+  workspaceId?: string,
 ): Promise<WallpaperTransactionResult> {
-  const nextConfig = withWallpaper(current, { type: 'url', url });
+  const nextConfig = withWallpaper(current, { type: 'url', url }, workspaceId);
   await saveDashboardConfig(nextConfig);
 
-  const warning = await removePreviousLocalAsset(current, null);
+  const warning = await removePreviousLocalAsset(current, null, workspaceId);
   if (!warning) {
-    void cleanupOrphanedWallpaperAssets(null).catch(() => undefined);
+    void cleanupOrphanedWallpaperAssets(
+      collectAllWallpaperAssetIds(nextConfig),
+    ).catch(() => undefined);
   }
 
   return {
@@ -98,13 +151,16 @@ export async function installUrlWallpaper(
 
 export async function removeWallpaper(
   current: DashboardConfig,
+  workspaceId?: string,
 ): Promise<WallpaperTransactionResult> {
-  const nextConfig = withWallpaper(current, { type: 'none' });
+  const nextConfig = withWallpaper(current, { type: 'none' }, workspaceId);
   await saveDashboardConfig(nextConfig);
 
-  const warning = await removePreviousLocalAsset(current, null);
+  const warning = await removePreviousLocalAsset(current, null, workspaceId);
   if (!warning) {
-    void cleanupOrphanedWallpaperAssets(null).catch(() => undefined);
+    void cleanupOrphanedWallpaperAssets(
+      collectAllWallpaperAssetIds(nextConfig),
+    ).catch(() => undefined);
   }
 
   return {

@@ -80,6 +80,20 @@ export async function saveHistoryImageLease(
   }
 }
 
+export function collectAllWorkspaceImageAssetIds(
+  workspaces: readonly {
+    widgets: readonly { type: string; source?: unknown }[];
+  }[],
+): Set<string> {
+  const allIds = new Set<string>();
+  for (const workspace of workspaces) {
+    for (const id of collectLocalImageAssetIds(workspace.widgets)) {
+      allIds.add(id);
+    }
+  }
+  return allIds;
+}
+
 export async function releaseClosedTabImageLease(tabId: number): Promise<void> {
   const lease = await storage.getItem<unknown>(
     `${HISTORY_IMAGE_LEASE_PREFIX}${tabId}`,
@@ -90,7 +104,7 @@ export async function releaseClosedTabImageLease(tabId: number): Promise<void> {
     const config = await readStoredDashboardConfig();
     if (config) {
       await cleanupOrphanedImageAssets(
-        collectLocalImageAssetIds(config.widgets),
+        collectAllWorkspaceImageAssetIds(config.workspaces),
       );
     }
   });

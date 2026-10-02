@@ -16,6 +16,7 @@ import {
   DASHBOARD_STORAGE_KEY,
   saveDashboardConfig,
 } from '../../storage/dashboard-storage';
+import { createDefaultDashboardConfig } from '../../storage/defaults';
 import type { DashboardConfig } from '../../storage/schema';
 import type { MarkdownWidgetConfig } from '../../widgets/markdown/types';
 
@@ -30,26 +31,24 @@ function createMarkdownWidget(
     type: 'markdown',
     title,
     content,
+    template: 'blank',
+    quickAddEnabled: false,
+    hideCompletedTasks: false,
     layout: { x: 0, y, w: 4, h: 3 },
   };
 }
 
 async function seedWidgets(widgets: MarkdownWidgetConfig[]) {
+  const config = createDefaultDashboardConfig();
   await saveDashboardConfig({
-    version: 6,
-    widgets,
-    customThemes: [],
-    appearance: {
-      theme: { type: 'builtin', id: 'system' },
-      backgroundColor: { type: 'custom', color: '#18181b' },
-      wallpaper: { type: 'none' },
-      liquidGlass: {
-        enabled: true,
-        transparency: 40,
-        blur: 18,
-        shadow: 50,
+    ...config,
+    workspaces: [
+      {
+        ...config.workspaces[0]!,
+        widgets,
       },
-    },
+      ...config.workspaces.slice(1),
+    ],
   });
 }
 
@@ -57,7 +56,10 @@ async function getStoredMarkdownWidget(
   index = 0,
 ): Promise<MarkdownWidgetConfig | undefined> {
   const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
-  const widget = config?.widgets[index];
+  const activeWorkspace =
+    config?.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
+    config?.workspaces[0];
+  const widget = activeWorkspace?.widgets[index];
   return widget?.type === 'markdown' ? widget : undefined;
 }
 
