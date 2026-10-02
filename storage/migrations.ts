@@ -94,6 +94,10 @@ function isWallpaperConfig(value: unknown): value is WallpaperConfig {
     return true;
   }
 
+  if (value.enabled !== undefined && typeof value.enabled !== 'boolean') {
+    return false;
+  }
+
   if (value.type === 'url') {
     return isAbsoluteHttpsUrl(value.url);
   }
@@ -781,10 +785,26 @@ function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
       return normalized;
     });
 
+    let appearance = workspace.appearance;
+    if (
+      appearance.wallpaper.type !== 'none' &&
+      appearance.wallpaper.enabled === undefined
+    ) {
+      workspaceChanged = true;
+      appearance = {
+        ...appearance,
+        wallpaper: {
+          ...appearance.wallpaper,
+          enabled: true,
+        },
+      };
+    }
+
     if (workspaceChanged) {
       hasChanges = true;
       return {
         ...workspace,
+        appearance,
         widgets,
       };
     }

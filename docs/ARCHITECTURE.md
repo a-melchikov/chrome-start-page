@@ -181,7 +181,10 @@ storage transaction begins it is allowed to finish atomically.
 ## Wallpaper Pipeline
 
 `AppearanceConfig.wallpaper` is a discriminated union: no wallpaper, an HTTPS
-URL, or a local asset UUID. Remote URLs are validated by browser image loading
+URL, or a local asset UUID, each optionally supporting an `enabled` flag.
+Disabled wallpapers retain their configuration and local assets without
+rendering the background layer, allowing seamless toggling via the appearance
+dialog or command palette. Remote URLs are validated by browser image loading
 without broad host permissions or an extension `fetch`. Local files support
 PNG, JPEG, WebP, GIF, AVIF, and SVG; signatures/content and browser decoding are
 checked before the persisted config changes.

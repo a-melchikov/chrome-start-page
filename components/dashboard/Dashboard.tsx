@@ -70,6 +70,7 @@ interface DashboardProps {
     signal?: AbortSignal,
   ) => Promise<DashboardImportResult>;
   onRemoveWallpaper: () => Promise<void>;
+  onSetWallpaperEnabled: (enabled: boolean) => Promise<void>;
   onRemoveWidget: (widgetId: string) => void;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
@@ -127,6 +128,7 @@ export function Dashboard({
   onFlushWidgetUpdates,
   onImportDashboard,
   onRemoveWallpaper,
+  onSetWallpaperEnabled,
   onRemoveWidget,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
@@ -415,6 +417,7 @@ export function Dashboard({
         onPasteSelection={(source) => void pasteSelection(source)}
         onRedo={onRedo}
         onRemoveWallpaper={onRemoveWallpaper}
+        onSetWallpaperEnabled={onSetWallpaperEnabled}
         onRequestDeleteSelection={requestGroupDelete}
         onSelectAll={() =>
           setSelectedWidgetIds(

@@ -32,6 +32,7 @@ function renderDialog(
     onFlushAppearancePreview: vi.fn(),
     onOpenChange: vi.fn(),
     onRemoveWallpaper: vi.fn().mockResolvedValue(undefined),
+    onSetWallpaperEnabled: vi.fn().mockResolvedValue(undefined),
     onSetLocalWallpaper: vi.fn().mockResolvedValue(undefined),
     onSetUrlWallpaper: vi.fn().mockResolvedValue(undefined),
     ...overrides,
@@ -333,5 +334,68 @@ describe('AppearanceDialog wallpaper controls', () => {
       'sr-only',
     );
     expect(screen.queryByText(/файл не выбран/i)).not.toBeInTheDocument();
+  });
+
+  it('renders toggle switch for active wallpaper and handles toggle', async () => {
+    const user = userEvent.setup();
+    const { props } = renderDialog({
+      appearance: {
+        ...appearance,
+        wallpaper: {
+          type: 'url',
+          url: 'https://example.com/wallpaper.jpg',
+          enabled: true,
+        },
+      },
+      wallpaperPreviewSrc: 'https://example.com/wallpaper.jpg',
+    });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
+    expect(toggle).toBeVisible();
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+    expect(props.onSetWallpaperEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('displays disabled badge and dimmed opacity when wallpaper is disabled', async () => {
+    const user = userEvent.setup();
+    renderDialog({
+      appearance: {
+        ...appearance,
+        wallpaper: {
+          type: 'local',
+          assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
+          enabled: false,
+        },
+      },
+      wallpaperPreviewSrc: 'blob:wallpaper',
+    });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
+    expect(toggle).toBeVisible();
+    expect(toggle).not.toBeChecked();
+
+    expect(screen.getByText('Отключено')).toBeVisible();
+    expect(screen.getByTestId('wallpaper-preview').parentElement).toHaveClass(
+      'opacity-60',
+    );
+  });
+
+  it('does not display toggle switch when wallpaper is none', async () => {
+    const user = userEvent.setup();
+    renderDialog({
+      appearance: {
+        ...appearance,
+        wallpaper: { type: 'none' },
+      },
+    });
+
+    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    expect(
+      screen.queryByRole('switch', { name: 'Показывать обои' }),
+    ).not.toBeInTheDocument();
   });
 });

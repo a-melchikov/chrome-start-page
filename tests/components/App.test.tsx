@@ -656,6 +656,7 @@ describe('App', () => {
     const previousWallpaper = {
       type: 'url' as const,
       url: 'https://example.com/previous.jpg',
+      enabled: true,
     };
     const config = createDefaultDashboardConfig();
     config.workspaces[0]!.appearance = {

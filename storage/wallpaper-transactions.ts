@@ -94,6 +94,7 @@ export async function installLocalWallpaper(
     {
       type: 'local',
       assetId: asset.assetId,
+      enabled: true,
     },
     workspaceId,
   );
@@ -133,7 +134,11 @@ export async function installUrlWallpaper(
   url: string,
   workspaceId?: string,
 ): Promise<WallpaperTransactionResult> {
-  const nextConfig = withWallpaper(current, { type: 'url', url }, workspaceId);
+  const nextConfig = withWallpaper(
+    current,
+    { type: 'url', url, enabled: true },
+    workspaceId,
+  );
   await saveDashboardConfig(nextConfig);
 
   const warning = await removePreviousLocalAsset(current, null, workspaceId);
@@ -146,6 +151,33 @@ export async function installUrlWallpaper(
   return {
     config: nextConfig,
     warning,
+  };
+}
+
+export async function setWallpaperEnabled(
+  current: DashboardConfig,
+  enabled: boolean,
+  workspaceId?: string,
+): Promise<WallpaperTransactionResult> {
+  const target = getTargetWorkspace(current, workspaceId);
+  if (!target || target.appearance.wallpaper.type === 'none') {
+    return {
+      config: current,
+      warning: null,
+    };
+  }
+
+  const nextWallpaper: WallpaperConfig = {
+    ...target.appearance.wallpaper,
+    enabled,
+  };
+
+  const nextConfig = withWallpaper(current, nextWallpaper, workspaceId);
+  await saveDashboardConfig(nextConfig);
+
+  return {
+    config: nextConfig,
+    warning: null,
   };
 }
 

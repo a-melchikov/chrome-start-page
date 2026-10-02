@@ -32,6 +32,7 @@ import {
   installLocalWallpaper,
   installUrlWallpaper,
   removeWallpaper as removeWallpaperTransaction,
+  setWallpaperEnabled as setWallpaperEnabledTransaction,
   type WallpaperTransactionResult,
 } from '../storage/wallpaper-transactions';
 import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
@@ -113,6 +114,7 @@ export interface UseDashboardConfigResult {
   removeWidget: (widgetId: string) => void;
   setLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   setUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
+  setWallpaperEnabled: (enabled: boolean) => Promise<void>;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
   updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
@@ -709,6 +711,16 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     () =>
       runWallpaperOperation(async () => {
         await enqueueWallpaperTransaction(removeWallpaperTransaction);
+      }),
+    [enqueueWallpaperTransaction, runWallpaperOperation],
+  );
+
+  const setWallpaperEnabled = useCallback(
+    (enabled: boolean) =>
+      runWallpaperOperation(async () => {
+        await enqueueWallpaperTransaction((currentConfig) =>
+          setWallpaperEnabledTransaction(currentConfig, enabled),
+        );
       }),
     [enqueueWallpaperTransaction, runWallpaperOperation],
   );
@@ -1609,6 +1621,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     removeWidget,
     setLocalWallpaper,
     setUrlWallpaper,
+    setWallpaperEnabled,
     updateAppearance,
     updateWidget,
     updateWidgetLayouts,

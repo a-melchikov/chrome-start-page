@@ -16,8 +16,12 @@ export type BackgroundColorConfig =
 
 export type WallpaperConfig =
   | { type: 'none' }
-  | { type: 'url'; url: string }
-  | { type: 'local'; assetId: string };
+  | { type: 'url'; url: string; enabled?: boolean }
+  | { type: 'local'; assetId: string; enabled?: boolean };
+
+export function isWallpaperEnabled(wallpaper: WallpaperConfig): boolean {
+  return wallpaper.type !== 'none' && wallpaper.enabled !== false;
+}
 
 export function isWallpaperAssetId(value: unknown): value is string {
   return (

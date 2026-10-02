@@ -134,4 +134,67 @@ describe('CommandPalette', () => {
       ),
     );
   });
+
+  it('shows toggle wallpaper command when wallpaper is configured', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const configWithWallpaper = createDefaultDashboardConfig();
+    configWithWallpaper.workspaces[0]!.appearance.wallpaper = {
+      type: 'url',
+      url: 'https://example.com/bg.jpg',
+      enabled: true,
+    };
+
+    const { rerender } = render(
+      <CommandPalette
+        config={configWithWallpaper}
+        isEditing={false}
+        open
+        onOpenChange={vi.fn()}
+        onSelect={onSelect}
+      />,
+    );
+
+    const input = screen.getByRole('combobox', { name: 'Поиск команд' });
+    await user.type(input, 'обои');
+    const option = screen.getByRole('option', { name: /Отключить обои/ });
+    expect(option).toBeInTheDocument();
+    await user.click(option);
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'action',
+        action: 'toggle-wallpaper',
+      }),
+    );
+
+    // When wallpaper is disabled
+    const disabledConfig = {
+      ...configWithWallpaper,
+      workspaces: [
+        {
+          ...configWithWallpaper.workspaces[0]!,
+          appearance: {
+            ...configWithWallpaper.workspaces[0]!.appearance,
+            wallpaper: {
+              type: 'url' as const,
+              url: 'https://example.com/bg.jpg',
+              enabled: false,
+            },
+          },
+        },
+      ],
+    };
+    rerender(
+      <CommandPalette
+        config={disabledConfig}
+        isEditing={false}
+        open
+        onOpenChange={vi.fn()}
+        onSelect={onSelect}
+      />,
+    );
+    expect(
+      screen.getByRole('option', { name: /Включить обои/ }),
+    ).toBeInTheDocument();
+  });
 });

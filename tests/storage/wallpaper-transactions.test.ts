@@ -16,6 +16,7 @@ import {
   installLocalWallpaper,
   installUrlWallpaper,
   removeWallpaper,
+  setWallpaperEnabled,
 } from '../../storage/wallpaper-transactions';
 
 const OLD_ID = '8dc04e26-6465-4e84-bc05-633c0e28415b';
@@ -73,7 +74,7 @@ describe('wallpaper storage transactions', () => {
     );
 
     expect(result).toEqual({
-      config: createConfig({ type: 'local', assetId: NEW_ID }),
+      config: createConfig({ type: 'local', assetId: NEW_ID, enabled: true }),
       warning: null,
     });
     await expect(loadWallpaperAsset(NEW_ID)).resolves.toEqual(
@@ -94,6 +95,7 @@ describe('wallpaper storage transactions', () => {
     expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'local',
       assetId: NEW_ID,
+      enabled: true,
     });
     await expect(loadWallpaperAsset(OLD_ID)).resolves.toBeNull();
     await expect(loadWallpaperAsset(NEW_ID)).resolves.toEqual(
@@ -124,6 +126,7 @@ describe('wallpaper storage transactions', () => {
     expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'local',
       assetId: NEW_ID,
+      enabled: true,
     });
     // OLD_ID must still exist because workspace 2 uses it
     await expect(loadWallpaperAsset(OLD_ID)).resolves.toEqual(
@@ -172,6 +175,7 @@ describe('wallpaper storage transactions', () => {
     expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.svg',
+      enabled: true,
     });
     await expect(loadWallpaperAsset(OLD_ID)).resolves.toBeNull();
   });
@@ -205,5 +209,48 @@ describe('wallpaper storage transactions', () => {
     await expect(loadWallpaperAsset(OLD_ID)).resolves.toEqual(
       createAsset(OLD_ID),
     );
+  });
+
+  it('disables wallpaper without deleting local asset', async () => {
+    await saveWallpaperAsset(createAsset(OLD_ID));
+    const current = createConfig({
+      type: 'local',
+      assetId: OLD_ID,
+      enabled: true,
+    });
+    await saveDashboardConfig(current);
+
+    const result = await setWallpaperEnabled(current, false);
+
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'local',
+      assetId: OLD_ID,
+      enabled: false,
+    });
+    await expect(loadWallpaperAsset(OLD_ID)).resolves.toEqual(
+      createAsset(OLD_ID),
+    );
+    await expect(loadDashboardConfig()).resolves.toEqual(result.config);
+  });
+
+  it('re-enables disabled wallpaper', async () => {
+    const current = createConfig({
+      type: 'url',
+      url: 'https://example.com/bg.jpg',
+      enabled: false,
+    });
+    const result = await setWallpaperEnabled(current, true);
+
+    expect(result.config.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'url',
+      url: 'https://example.com/bg.jpg',
+      enabled: true,
+    });
+  });
+
+  it('ignores setWallpaperEnabled when wallpaper is none', async () => {
+    const current = createConfig({ type: 'none' });
+    const result = await setWallpaperEnabled(current, false);
+    expect(result.config).toEqual(current);
   });
 });

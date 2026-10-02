@@ -65,9 +65,8 @@ Last updated: 2026-10-02
   Визуальная сцена занимает всю карточку, с мягкими тенями и локальным
   затемнением текста; четыре показателя остаются доступны даже в размере 3×3.
 - Light/dark/system themes, arbitrary persisted background, and local or HTTPS
-
-  wallpaper rendered full-screen with cover cropping.
-
+  wallpaper rendered full-screen with cover cropping, with support for temporary
+  toggling (enabled/disabled) without deleting stored assets or URLs.
 - Local PNG/JPEG/WebP/GIF/AVIF/SVG validation, conditional lossless compression
   above 6 MiB, transactional asset replacement, and original-byte fallback
   under `unlimitedStorage`.
@@ -76,7 +75,8 @@ Last updated: 2026-10-02
   Russian UI.
 - Compact appearance dialog with initially collapsed Theme, Background,
   Wallpaper, and Widgets sections; wallpaper sources are nested as Local and
-  URL controls.
+  URL controls, with an instant toggle switch and inactive badge preview,
+  as well as Command Palette toggle integration.
 - Включённый по умолчанию статический Liquid Glass для карточек, Search и
   верхней панели управления с
   ровной theme-aware подложкой, blur/saturation, тонкой световой кромкой и

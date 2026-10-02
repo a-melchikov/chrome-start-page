@@ -1,4 +1,8 @@
-import type { DashboardConfig, WidgetType } from '../../storage/schema';
+import {
+  isWallpaperEnabled,
+  type DashboardConfig,
+  type WidgetType,
+} from '../../storage/schema';
 import { THEMES } from '../../themes/registry';
 import type { BuiltinThemeId, ThemeRef } from '../../themes/types';
 import { extractMarkdownLinks } from '../../widgets/markdown/extract-links';
@@ -21,7 +25,8 @@ export type PaletteCommand =
         | 'themes'
         | 'add-custom-theme'
         | 'workspaces'
-        | 'add-workspace';
+        | 'add-workspace'
+        | 'toggle-wallpaper';
       label: string;
       category: string;
       keywords?: string;
@@ -90,6 +95,11 @@ export function buildCommandCatalog(
     config.workspaces.find((w) => w.id === config.activeWorkspaceId) ??
     config.workspaces[0];
   const widgets = activeWorkspace?.widgets ?? [];
+  const wallpaperConfig = activeWorkspace?.appearance.wallpaper;
+  const hasWallpaper = Boolean(
+    wallpaperConfig && wallpaperConfig.type !== 'none',
+  );
+  const wallpaperEnabled = hasWallpaper && isWallpaperEnabled(wallpaperConfig!);
 
   return [
     {
@@ -146,6 +156,18 @@ export function buildCommandCatalog(
       label: 'Переключить тему',
       category: 'Темы',
     },
+    ...(hasWallpaper
+      ? [
+          {
+            id: 'action:toggle-wallpaper' as const,
+            kind: 'action' as const,
+            action: 'toggle-wallpaper' as const,
+            label: wallpaperEnabled ? 'Отключить обои' : 'Включить обои',
+            category: 'Оформление',
+            keywords: 'обои включить выключить фон изображение wallpaper',
+          },
+        ]
+      : []),
     {
       id: 'action:workspaces',
       kind: 'action',

@@ -454,7 +454,7 @@ export async function prepareDashboardImport(
       if (wallpaper.type === 'url') {
         throwIfAborted(signal);
         const url = await validateWallpaperUrl(wallpaper.url, signal);
-        wallpaper = { type: 'url', url };
+        wallpaper = { ...wallpaper, type: 'url', url };
       } else if (wallpaper.type === 'local') {
         const remappedId = wallpaperIdMap.get(wallpaper.assetId);
         if (remappedId) {

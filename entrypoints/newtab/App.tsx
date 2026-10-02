@@ -15,6 +15,7 @@ import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
 import { DEFAULT_APPEARANCE } from '../../storage/defaults';
+import { isWallpaperEnabled } from '../../storage/schema';
 
 import {
   applyThemeVariables,
@@ -66,6 +67,7 @@ export function App() {
     removeWidget,
     setLocalWallpaper,
     setUrlWallpaper,
+    setWallpaperEnabled,
     updateAppearance,
     updateWidget,
     updateWidgetLayouts,
@@ -124,11 +126,15 @@ export function App() {
     isCustom,
   } = resolved;
 
+  const wallpaperActive = isWallpaperEnabled(appearance.wallpaper);
   const wallpaperImage = useWallpaperImage(appearance.wallpaper);
   const visibleError =
     error ??
-    (wallpaperImage.sourceType === 'local' ? wallpaperImage.error : null);
+    (wallpaperActive && wallpaperImage.sourceType === 'local'
+      ? wallpaperImage.error
+      : null);
   const remoteWallpaperError =
+    wallpaperActive &&
     wallpaperImage.sourceType === 'url' &&
     failedRemoteWallpaperSrc === wallpaperImage.src
       ? 'Не удалось загрузить обои по ссылке'
@@ -256,7 +262,7 @@ export function App() {
       style={dashboardStyle}
     >
       <WallpaperLayer
-        src={wallpaperImage.src}
+        src={wallpaperActive ? wallpaperImage.src : null}
         onLoad={() => setFailedRemoteWallpaperSrc(null)}
         onLoadError={() => {
           if (wallpaperImage.sourceType === 'url') {
@@ -336,6 +342,7 @@ export function App() {
             return result;
           }}
           onRemoveWallpaper={removeWallpaper}
+          onSetWallpaperEnabled={setWallpaperEnabled}
           onRemoveWidget={removeWidget}
           onSetLocalWallpaper={setLocalWallpaper}
           onSetUrlWallpaper={setUrlWallpaper}

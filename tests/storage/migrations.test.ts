@@ -153,6 +153,7 @@ describe('migrateDashboardConfig', () => {
     expect(migrated.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
+      enabled: true,
     });
   });
 
@@ -288,7 +289,13 @@ describe('migrateDashboardConfig', () => {
   it.each([
     { type: 'url', url: 'http://example.com/wallpaper.jpg' },
     { type: 'url', url: 'not a url' },
+    { type: 'url', url: 'https://example.com/wallpaper.jpg', enabled: 'yes' },
     { type: 'local', assetId: 'not-a-uuid' },
+    {
+      type: 'local',
+      assetId: '8dc04e26-6465-4e84-bc05-633c0e28415b',
+      enabled: 1,
+    },
     { type: 'unknown' },
   ])('rejects invalid wallpaper config %#', (wallpaper) => {
     const config = createDefaultDashboardConfig();
@@ -307,6 +314,22 @@ describe('migrateDashboardConfig', () => {
         ],
       }),
     ).toThrow(InvalidDashboardConfigError);
+  });
+
+  it('preserves wallpaper enabled=false in v8 config', () => {
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.appearance.wallpaper = {
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
+      enabled: false,
+    };
+
+    const migrated = migrateDashboardConfig(config);
+    expect(migrated.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
+      enabled: false,
+    });
   });
 
   it.each([

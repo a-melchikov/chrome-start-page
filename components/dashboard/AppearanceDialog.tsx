@@ -3,7 +3,10 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Button, Dialog, Input } from '../ui';
 import { classNames } from '../ui/class-names';
 import { CopyIcon, PencilIcon, TrashIcon } from '../icons';
-import type { AppearanceConfig } from '../../storage/schema';
+import {
+  isWallpaperEnabled,
+  type AppearanceConfig,
+} from '../../storage/schema';
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
@@ -23,6 +26,7 @@ interface AppearanceDialogProps {
   onClearWallpaperError: () => void;
   onFlushAppearancePreview: () => void;
   onRemoveWallpaper: () => Promise<void>;
+  onSetWallpaperEnabled: (enabled: boolean) => Promise<void>;
   onSetLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   onSetUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   onSelectTheme?: (themeRef: ThemeRef) => void;
@@ -48,6 +52,7 @@ export function AppearanceDialog({
   onClearWallpaperError,
   onFlushAppearancePreview,
   onRemoveWallpaper,
+  onSetWallpaperEnabled,
   onSetLocalWallpaper,
   onSetUrlWallpaper,
   onSelectTheme,
@@ -458,8 +463,34 @@ export function AppearanceDialog({
                 Изображение заполнит весь экран; края могут быть обрезаны.
               </p>
 
+              {appearance.wallpaper.type !== 'none' ? (
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                  <span className="text-sm font-medium text-theme-text-primary">
+                    Показывать обои
+                  </span>
+                  <input
+                    aria-label="Показывать обои"
+                    checked={isWallpaperEnabled(appearance.wallpaper)}
+                    className="size-5 accent-theme-accent"
+                    disabled={isWallpaperUpdating}
+                    role="switch"
+                    type="checkbox"
+                    onChange={(event) =>
+                      void runWallpaperAction(() =>
+                        onSetWallpaperEnabled(event.target.checked),
+                      )
+                    }
+                  />
+                </label>
+              ) : null}
+
               {wallpaperPreviewSrc ? (
-                <div className="overflow-hidden rounded-lg border border-theme-border bg-theme-surface-muted">
+                <div
+                  className={classNames(
+                    'relative overflow-hidden rounded-lg border border-theme-border bg-theme-surface-muted',
+                    !isWallpaperEnabled(appearance.wallpaper) && 'opacity-60',
+                  )}
+                >
                   <img
                     aria-hidden="true"
                     alt=""
@@ -469,6 +500,13 @@ export function AppearanceDialog({
                     referrerPolicy="no-referrer"
                     src={wallpaperPreviewSrc}
                   />
+                  {!isWallpaperEnabled(appearance.wallpaper) ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-theme-surface/40 backdrop-blur-xs">
+                      <span className="rounded-md border border-theme-border bg-theme-surface px-2.5 py-1 text-xs font-medium text-theme-text-secondary shadow-sm">
+                        Отключено
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

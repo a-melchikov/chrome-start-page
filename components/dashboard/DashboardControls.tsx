@@ -5,11 +5,12 @@ import type {
   DashboardBackupDownload,
   DashboardImportResult,
 } from '../../storage/dashboard-backup';
-import type {
-  AppearanceConfig,
-  DashboardConfig,
-  WidgetType,
-  WorkspaceConfig,
+import {
+  isWallpaperEnabled,
+  type AppearanceConfig,
+  type DashboardConfig,
+  type WidgetType,
+  type WorkspaceConfig,
 } from '../../storage/schema';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
@@ -82,6 +83,7 @@ interface DashboardControlsProps {
     signal?: AbortSignal,
   ) => Promise<DashboardImportResult>;
   onRemoveWallpaper: () => Promise<void>;
+  onSetWallpaperEnabled: (enabled: boolean) => Promise<void>;
   onMoveSelection: (deltaX: number, deltaY: number, toEdge: boolean) => void;
   onPasteSelection: (source: string) => void;
   onRedo: () => void;
@@ -136,6 +138,7 @@ export function DashboardControls({
   onFlushAppearancePreview,
   onImportDashboard,
   onRemoveWallpaper,
+  onSetWallpaperEnabled,
   onMoveSelection,
   onPasteSelection,
   onRedo,
@@ -288,6 +291,10 @@ export function DashboardControls({
       }
       if (command.action === 'add-workspace') {
         onAddWorkspace?.();
+      }
+      if (command.action === 'toggle-wallpaper') {
+        const currentEnabled = isWallpaperEnabled(appearance.wallpaper);
+        void onSetWallpaperEnabled(!currentEnabled);
       }
       return;
     }
@@ -512,6 +519,7 @@ export function DashboardControls({
             if (!open) setRequestedSection(null);
           }}
           onRemoveWallpaper={onRemoveWallpaper}
+          onSetWallpaperEnabled={onSetWallpaperEnabled}
           onSetLocalWallpaper={onSetLocalWallpaper}
           onSetUrlWallpaper={onSetUrlWallpaper}
           onSelectTheme={onSelectTheme}
@@ -574,7 +582,9 @@ export function DashboardControls({
             isCommandDisabled={(command) =>
               isWallpaperUpdating &&
               command.kind === 'action' &&
-              (command.action === 'backup' || command.action === 'export')
+              (command.action === 'backup' ||
+                command.action === 'export' ||
+                command.action === 'toggle-wallpaper')
             }
           />
         </Suspense>

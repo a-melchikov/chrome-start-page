@@ -84,7 +84,10 @@ function createConfig(
       hideCompletedTasks: false,
     },
   ];
-  config.workspaces[0]!.appearance.wallpaper = wallpaper;
+  config.workspaces[0]!.appearance.wallpaper =
+    wallpaper.type === 'none'
+      ? { type: 'none' }
+      : { enabled: true, ...wallpaper };
   return config;
 }
 
@@ -363,6 +366,25 @@ describe('dashboard backup format', () => {
     expect(prepared.dashboard.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
+      enabled: true,
+    });
+  });
+
+  it('preserves disabled wallpaper state when preparing import', async () => {
+    const config = createConfig();
+    config.workspaces[0]!.appearance.wallpaper = {
+      type: 'url',
+      url: 'https://example.com/disabled.jpg',
+      enabled: false,
+    };
+    const source = JSON.stringify(createEnvelope(config));
+
+    const prepared = await prepareDashboardImport(source);
+
+    expect(prepared.dashboard.workspaces[0]!.appearance.wallpaper).toEqual({
+      type: 'url',
+      url: 'https://example.com/disabled.jpg',
+      enabled: false,
     });
   });
 

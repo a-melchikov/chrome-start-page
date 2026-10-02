@@ -195,6 +195,7 @@ describe('useDashboardConfig layout persistence', () => {
     ).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
+      enabled: true,
     });
     expect(dashboard.result.current.wallpaperError).toBeNull();
     await expect(
@@ -292,9 +293,50 @@ describe('useDashboardConfig layout persistence', () => {
     expect(stored?.workspaces[0]?.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
+      enabled: true,
     });
     expect(stored?.workspaces[0]?.widgets[0]).toMatchObject({
       content: 'После изменения',
+    });
+  });
+
+  it('toggles wallpaper enabled state through setWallpaperEnabled', async () => {
+    const dashboard = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(dashboard.result.current.config).not.toBeNull());
+
+    await act(async () => {
+      await dashboard.result.current.setUrlWallpaper(
+        'https://example.com/wallpaper.jpg',
+      );
+    });
+
+    expect(
+      dashboard.result.current.activeWorkspace?.appearance.wallpaper,
+    ).toEqual({
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
+      enabled: true,
+    });
+
+    await act(async () => {
+      await dashboard.result.current.setWallpaperEnabled(false);
+    });
+
+    expect(
+      dashboard.result.current.activeWorkspace?.appearance.wallpaper,
+    ).toEqual({
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
+      enabled: false,
+    });
+
+    const stored = await storage.getItem<DashboardConfig>(
+      DASHBOARD_STORAGE_KEY,
+    );
+    expect(stored?.workspaces[0]?.appearance.wallpaper).toEqual({
+      type: 'url',
+      url: 'https://example.com/wallpaper.jpg',
+      enabled: false,
     });
   });
 
