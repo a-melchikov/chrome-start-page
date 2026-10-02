@@ -215,6 +215,22 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m15 6-6 6 6 6" />
+    </BaseIcon>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </BaseIcon>
+  );
+}
+
 export function CheckIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

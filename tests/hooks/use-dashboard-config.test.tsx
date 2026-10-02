@@ -565,7 +565,8 @@ describe('useDashboardConfig layout persistence', () => {
     const current = createDefaultDashboardConfig();
     const importedId = '11111111-1111-4111-8111-111111111111';
     const imported: DashboardConfig = {
-      version: 8,
+      version: 9,
+      toolbar: { mode: 'top-right' },
       activeWorkspaceId: importedId,
       workspaces: [
         {
@@ -803,5 +804,58 @@ describe('useDashboardConfig layout persistence', () => {
 
     const newNames = dashboard.result.current.workspaces.map((w) => w.name);
     expect(newNames).toEqual([initialNames[1], initialNames[0]]);
+  });
+});
+
+describe('global toolbar persistence', () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  it('combines toolbar settings with pending widget and glass edits and avoids duplicate saves', async () => {
+    const config = createDefaultDashboardConfig();
+    config.workspaces[0]!.widgets = [
+      {
+        id: 'note',
+        type: 'markdown',
+        title: 'Заметка',
+        content: 'До',
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
+        layout: { x: 0, y: 0, w: 4, h: 3 },
+      },
+    ];
+    await saveDashboardConfig(config);
+    const { result } = renderHook(() => useDashboardConfig());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => {
+      result.current.updateWidget({
+        ...config.workspaces[0]!.widgets[0]!,
+        type: 'markdown',
+        content: 'После',
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
+      });
+      result.current.previewAppearance({
+        liquidGlass: {
+          ...config.workspaces[0]!.appearance.liquidGlass,
+          blur: 23,
+        },
+      });
+      result.current.updateToolbar({ mode: 'left-collapsible' });
+    });
+    await waitFor(async () =>
+      expect((await loadDashboardConfig()).toolbar.mode).toBe(
+        'left-collapsible',
+      ),
+    );
+    const saved = await loadDashboardConfig();
+    expect(saved.workspaces[0]!.widgets[0]).toMatchObject({ content: 'После' });
+    expect(saved.workspaces[0]!.appearance.liquidGlass.blur).toBe(23);
+    expect(result.current.canUndo).toBe(false);
+    const save = vi.spyOn(fakeBrowser.storage.local, 'set');
+    act(() => result.current.updateToolbar({ mode: 'left-collapsible' }));
+    expect(save).not.toHaveBeenCalled();
+    save.mockRestore();
   });
 });

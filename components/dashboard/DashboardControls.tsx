@@ -1,5 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 
+import { useDashboardToolbar } from '../../hooks/use-dashboard-toolbar';
+import { DashboardToolbar } from './DashboardToolbar';
+import { classNames } from '../ui/class-names';
+
 import { useDashboardShortcuts } from '../../hooks/use-dashboard-shortcuts';
 import type {
   DashboardBackupDownload,
@@ -8,6 +12,7 @@ import type {
 import {
   isWallpaperEnabled,
   type AppearanceConfig,
+  type ToolbarConfig,
   type DashboardConfig,
   type WidgetType,
   type WorkspaceConfig,
@@ -55,7 +60,11 @@ const CommandPalette = lazy(() =>
 
 interface DashboardControlsProps {
   appearance: AppearanceConfig;
+  toolbar: ToolbarConfig;
+  onToolbarChange: (toolbar: ToolbarConfig) => void;
   config: DashboardConfig | null;
+  configEpoch: number;
+  isLayoutInteracting: boolean;
   backupError: string | null;
   canManageWidgets: boolean;
   canUndo: boolean;
@@ -113,7 +122,11 @@ interface DashboardControlsProps {
 
 export function DashboardControls({
   appearance,
+  toolbar,
+  onToolbarChange,
   config,
+  configEpoch,
+  isLayoutInteracting,
   backupError,
   canManageWidgets,
   canUndo,
@@ -171,6 +184,14 @@ export function DashboardControls({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [hasOpenedPalette, setHasOpenedPalette] = useState(false);
+  const isLeft = toolbar.mode !== 'top-right';
+  const toolbarState = useDashboardToolbar({
+    mode: toolbar.mode,
+    isEditing,
+    resetEpoch: configEpoch,
+    onCollapse: () => setIsWorkspaceMenuOpen(false),
+  });
+
   const [requestedSection, setRequestedSection] = useState<{
     section: AppearanceSection;
     token: number;
@@ -237,7 +258,12 @@ export function DashboardControls({
       setIsBackupOpen(true);
     },
     onOpenPalette: openPalette,
-    onOpenWorkspaceMenu: () => setIsWorkspaceMenuOpen((open) => !open),
+    onToggleToolbar:
+      toolbar.mode === 'left-collapsible' ? toolbarState.toggle : undefined,
+    onOpenWorkspaceMenu: () => {
+      toolbarState.expand();
+      setIsWorkspaceMenuOpen((open) => !open);
+    },
     selectedCount,
     onClearSelection,
     onCopySelection,
@@ -341,9 +367,22 @@ export function DashboardControls({
         message={paletteFeedback}
         role="status"
       />
-      <div className="dashboard-toolbar liquid-glass-surface fixed top-4 right-4 z-10 flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2 rounded-xl p-1">
+      <DashboardToolbar
+        mode={toolbar.mode}
+        isOpen={toolbarState.isOpen}
+        toolbarId={toolbarState.toolbarId}
+        panelRef={toolbarState.panelRef}
+        revealRef={toolbarState.revealRef}
+        isInteracting={isLayoutInteracting}
+        canManage={canManageWidgets}
+        onExpand={() => toolbarState.expand(true)}
+        onCollapse={() => toolbarState.collapse()}
+      >
         {workspaces && workspaces.length > 0 && onSwitchWorkspace ? (
           <WorkspaceSelector
+            compact={isLeft}
+            placement={isLeft ? 'right' : 'below-end'}
+            toolbarOwner={toolbarState.toolbarId}
             workspaces={workspaces}
             activeWorkspaceId={activeWorkspaceId ?? null}
             canManage={canManageWidgets}
@@ -385,14 +424,23 @@ export function DashboardControls({
             <RotateCwIcon className="size-6" />
           </IconButton>
           {selectedCount > 0 ? (
-            <div className="flex items-center gap-1 rounded-lg border border-theme-border px-2 py-0.5">
-              <span className="whitespace-nowrap text-xs text-theme-text-secondary">
-                Выбрано: {selectedCount}
+            <div
+              className={classNames(
+                'toolbar-selection flex items-center gap-1 rounded-lg border border-theme-border',
+                isLeft ? 'w-10 border-0 py-1' : 'px-2 py-0.5',
+              )}
+            >
+              <span
+                aria-label={`Выбрано виджетов: ${selectedCount}`}
+                title={`Выбрано: ${selectedCount}`}
+                className="max-w-full truncate whitespace-nowrap text-xs text-theme-text-secondary"
+              >
+                {isLeft ? selectedCount : `Выбрано: ${selectedCount}`}
               </span>
               <IconButton
                 aria-label="Копировать выбранные виджеты"
                 disabled={!canManageWidgets}
-                size="xs"
+                size={isLeft ? 'small' : 'xs'}
                 title="Копировать (Ctrl+C)"
                 variant="ghost"
                 onClick={onCopySelection}
@@ -402,7 +450,7 @@ export function DashboardControls({
               <IconButton
                 aria-label="Дублировать выбранные виджеты"
                 disabled={!canManageWidgets}
-                size="xs"
+                size={isLeft ? 'small' : 'xs'}
                 title="Дублировать (Ctrl+D или D)"
                 variant="ghost"
                 onClick={onDuplicateSelection}
@@ -412,7 +460,7 @@ export function DashboardControls({
               <IconButton
                 aria-label="Удалить выбранные виджеты"
                 disabled={!canManageWidgets}
-                size="xs"
+                size={isLeft ? 'small' : 'xs'}
                 title="Удалить (Delete)"
                 variant="danger-ghost"
                 onClick={onRequestDeleteSelection}
@@ -422,6 +470,8 @@ export function DashboardControls({
             </div>
           ) : null}
           <Button
+            aria-label="Добавить виджет"
+            className={isLeft ? 'size-10 shrink-0 p-0' : undefined}
             disabled={!canManageWidgets}
             size="small"
             title="Добавить виджет (A)"
@@ -429,7 +479,7 @@ export function DashboardControls({
             onClick={() => setIsAddWidgetOpen(true)}
           >
             <PlusIcon className="size-7" />
-            Добавить виджет
+            {!isLeft && 'Добавить виджет'}
           </Button>
           <IconButton
             aria-label="Настройки оформления"
@@ -499,11 +549,14 @@ export function DashboardControls({
         >
           <PencilIcon className="size-7" />
         </IconButton>
-      </div>
+      </DashboardToolbar>
 
       <Suspense fallback={null}>
         <AppearanceDialog
           appearance={appearance}
+          toolbar={toolbar}
+          onToolbarChange={onToolbarChange}
+          returnFocusFallback={toolbarState.getReturnFocus}
           customThemes={config?.customThemes ?? []}
           requestedSection={requestedSection}
           isWallpaperUpdating={isWallpaperUpdating}

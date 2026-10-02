@@ -26,6 +26,7 @@ export type DialogProps = Omit<
   size?: DialogSize;
   showCloseButton?: boolean;
   onExited?: () => void;
+  returnFocusFallback?: () => HTMLElement | null;
 };
 
 export type DialogSize = 'compact' | 'default' | 'fullscreen' | 'launcher';
@@ -40,6 +41,7 @@ export function Dialog({
   size = 'default',
   showCloseButton = true,
   onExited,
+  returnFocusFallback,
   className,
   children,
   onKeyDown,
@@ -79,9 +81,12 @@ export function Dialog({
     } else if (!open && dialog.open) {
       dialog.close();
 
-      if (returnFocusRef.current?.isConnected) {
-        returnFocusRef.current.focus({ preventScroll: true });
-      }
+      const previous = returnFocusRef.current;
+      const returnTarget =
+        previous?.isConnected && !previous.closest('[inert]')
+          ? previous
+          : returnFocusFallback?.();
+      returnTarget?.focus({ preventScroll: true });
 
       returnFocusRef.current = null;
 
@@ -103,7 +108,7 @@ export function Dialog({
     return () => {
       cancelled = true;
     };
-  }, [open, onExited]);
+  }, [open, onExited, returnFocusFallback]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

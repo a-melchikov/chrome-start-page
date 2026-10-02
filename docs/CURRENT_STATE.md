@@ -4,11 +4,18 @@ Last updated: 2026-10-02
 
 ## Implemented
 
+- Глобальная настройка панели управления: справа сверху, слева постоянно или
+  слева со скрытием; раздел в «Оформлении» и команда палитры. Левая панель 56 px
+  по центру viewport, кнопки 40 px, стекло активного пространства, popup пространств
+  справа и верхний отступ сетки 24 px. Скрываемая панель раскрывается кнопкой
+  после hover или M, закрывается кнопкой/внешним кликом/M; редактирование доступно
+  при скрытой панели. Состояние раскрытия не сохраняется; настройки мигрируют в v9.
+
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
-- Version 8 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
+- Version 9 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
   isolated `widgets`, `layout`, `appearance` (`theme`, `backgroundColor`, `wallpaper`, `liquidGlass`) per workspace, global shared `customThemes`,
   full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.
-- Auto-migration pipeline v1–v7 -> v8 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
+- Auto-migration pipeline v1–v8 -> v9 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
 - Global extensible theme system and design tokens (`themes/`, `themes.css`,
   Tailwind CSS 4 `@theme`) with 13 curated presets: System, Light, Dark,
   Tokyo Night, Rainy Tokyo, Cozy Lofi Night, Catppuccin Mocha, Catppuccin Latte,
@@ -88,10 +95,10 @@ Last updated: 2026-10-02
   обычные карточки и bare Search без внешней капсулы. CSS-fallback
   сохраняет tint, рамку и тень без `backdrop-filter`.
 - Separate «Импорт и экспорт» dialog in global edit mode. Export downloads a
-  versioned JSON backup (format v2) with the complete dashboard, embedded local
+  versioned JSON backup (format v3) with the complete dashboard, embedded local
   wallpaper, and all local widget images; confirmed import validates the file
   and atomically replaces the current state with rollback protection and fresh
-  local asset IDs. Backups in format v1 remain fully supported.
+  local asset IDs. Backups in formats v1 and v2 remain fully supported.
 - Automated tests for storage/migrations, wallpaper codecs/assets/transactions,
   backup format/import transactions, image assets/validation, state persistence,
   widget lifecycle, layout constraints, Markdown/security/tasks/editor, Search

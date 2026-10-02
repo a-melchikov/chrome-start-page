@@ -35,6 +35,8 @@ import {
 } from './widget-display';
 
 interface WidgetCanvasProps {
+  topPadding?: 24 | 80;
+  onInteractionChange?: (interacting: boolean) => void;
   editingWidgetId: string | null;
   isEditing: boolean;
   newWidgetIds: ReadonlySet<string>;
@@ -69,6 +71,8 @@ const INTERACTIVE_SELECTOR =
   'button, input, textarea, select, a, [contenteditable], [role="slider"], .react-resizable-handle, [data-no-drag]';
 
 export function WidgetCanvas({
+  topPadding = 80,
+  onInteractionChange,
   editingWidgetId,
   isEditing,
   newWidgetIds,
@@ -115,6 +119,21 @@ export function WidgetCanvas({
     return () => window.removeEventListener('resize', measureWidth);
   }, [measureWidth]);
 
+  useEffect(() => {
+    const cancelInteraction = () => {
+      groupDragRef.current = null;
+      setPreviewWidgets(null);
+      onInteractionChange?.(false);
+    };
+    window.addEventListener('blur', cancelInteraction);
+    window.addEventListener('pointercancel', cancelInteraction);
+    return () => {
+      window.removeEventListener('blur', cancelInteraction);
+      window.removeEventListener('pointercancel', cancelInteraction);
+      onInteractionChange?.(false);
+    };
+  }, [onInteractionChange]);
+
   const confirmDelete = () => {
     if (!widgetPendingDelete) return;
     onRemoveWidget(widgetPendingDelete.id);
@@ -150,6 +169,7 @@ export function WidgetCanvas({
       lastWidgets: widgets,
       moved: false,
     };
+    onInteractionChange?.(true);
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget
       .querySelector<HTMLElement>('[data-widget-id]')
@@ -193,6 +213,7 @@ export function WidgetCanvas({
     const drag = groupDragRef.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     groupDragRef.current = null;
+    onInteractionChange?.(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -210,7 +231,8 @@ export function WidgetCanvas({
     <>
       <section
         aria-label="Виджеты"
-        className="overflow-x-auto px-6 pt-20 pb-6"
+        className="overflow-x-auto px-6 pb-6"
+        style={{ paddingTop: topPadding }}
         onPointerDown={(event) => {
           if (
             isEditing &&
@@ -248,8 +270,16 @@ export function WidgetCanvas({
                 handles: ['se'],
               }}
               width={getDashboardGridWidth(width)}
-              onDragStop={persistGridLayout}
-              onResizeStop={persistGridLayout}
+              onDragStart={() => onInteractionChange?.(true)}
+              onResizeStart={() => onInteractionChange?.(true)}
+              onDragStop={(layout) => {
+                onInteractionChange?.(false);
+                persistGridLayout(layout);
+              }}
+              onResizeStop={(layout) => {
+                onInteractionChange?.(false);
+                persistGridLayout(layout);
+              }}
             >
               {widgets.map((widget) => {
                 const constraints = getWidgetDefinition(widget.type)
@@ -273,6 +303,9 @@ export function WidgetCanvas({
                     onPointerMove={handlePointerMove}
                     onPointerUp={(event) => finishGroupDrag(event)}
                     onPointerCancel={(event) => finishGroupDrag(event, true)}
+                    onLostPointerCapture={(event) =>
+                      finishGroupDrag(event, true)
+                    }
                   >
                     <WidgetHost
                       isEditing={isEditing}

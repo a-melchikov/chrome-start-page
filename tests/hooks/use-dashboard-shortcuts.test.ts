@@ -82,6 +82,58 @@ describe('useDashboardShortcuts', () => {
     return event;
   }
 
+  describe('toolbar shortcut', () => {
+    it('handles M only when a collapsible toolbar callback is supplied', () => {
+      const toggle = vi.fn();
+      const { rerender } = renderHook(
+        (options) => useDashboardShortcuts(options),
+        {
+          initialProps: {
+            ...defaultOptions,
+            onToggleToolbar: toggle,
+          } as DashboardShortcutsOptions,
+        },
+      );
+      expect(fireKey('KeyM').defaultPrevented).toBe(true);
+      expect(toggle).toHaveBeenCalledOnce();
+      rerender({ ...defaultOptions, onToggleToolbar: undefined });
+      expect(fireKey('KeyM').defaultPrevented).toBe(false);
+    });
+
+    it('ignores repeat, modifiers, editable targets, dialogs, and management locks', () => {
+      const toggle = vi.fn();
+      const { rerender } = renderHook(
+        (options) => useDashboardShortcuts(options),
+        {
+          initialProps: {
+            ...defaultOptions,
+            onToggleToolbar: toggle,
+          } as DashboardShortcutsOptions,
+        },
+      );
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'KeyM', repeat: true }),
+      );
+      fireKey('KeyM', { shiftKey: true });
+      fireKey('KeyM', { ctrlKey: true });
+      const input = document.createElement('input');
+      document.body.append(input);
+      fireKey('KeyM', { target: input });
+      const dialog = document.createElement('dialog');
+      dialog.open = true;
+      document.body.append(dialog);
+      fireKey('KeyM');
+      dialog.remove();
+      rerender({
+        ...defaultOptions,
+        canManageWidgets: false,
+        onToggleToolbar: toggle,
+      });
+      fireKey('KeyM');
+      expect(toggle).not.toHaveBeenCalled();
+    });
+  });
+
   describe('editing toggle (KeyE)', () => {
     it('toggles editing on KeyE when shortcuts are enabled', () => {
       renderHook(() => useDashboardShortcuts(defaultOptions));

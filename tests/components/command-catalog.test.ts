@@ -43,7 +43,7 @@ describe('command catalog', () => {
     );
     expect(
       commands.filter((command) => command.kind === 'section'),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
     expect(
       commands.filter((command) => command.kind === 'workspace'),
     ).toHaveLength(2);

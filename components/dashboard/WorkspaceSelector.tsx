@@ -1,6 +1,8 @@
+import { createPortal } from 'react-dom';
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -19,6 +21,9 @@ import { classNames } from '../ui/class-names';
 import { IconButton } from '../ui';
 
 interface WorkspaceSelectorProps {
+  compact?: boolean;
+  placement?: 'below-end' | 'right';
+  toolbarOwner?: string;
   workspaces: readonly WorkspaceConfig[];
   activeWorkspaceId: string | null;
   canManage: boolean;
@@ -33,6 +38,9 @@ interface WorkspaceSelectorProps {
 }
 
 export function WorkspaceSelector({
+  compact = false,
+  placement = 'below-end',
+  toolbarOwner,
   workspaces,
   activeWorkspaceId,
   canManage,
@@ -46,6 +54,15 @@ export function WorkspaceSelector({
   onOpenManager,
 }: WorkspaceSelectorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  const bindContainer = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    if (node)
+      setPortalRoot(
+        node.closest<HTMLElement>('.dashboard-root') ?? document.body,
+      );
+  }, []);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameText, setRenameText] = useState('');
@@ -65,14 +82,16 @@ export function WorkspaceSelector({
     const handleClickOutside = (event: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(event.target as Node) &&
+        !menuRef.current?.contains(event.target as Node) &&
+        !document.querySelector('dialog[open]')
       ) {
         closeMenu();
       }
     };
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !document.querySelector('dialog[open]')) {
         event.preventDefault();
         event.stopPropagation();
         closeMenu();
@@ -87,6 +106,28 @@ export function WorkspaceSelector({
       document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [isOpen, closeMenu]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || placement !== 'right' || !portalRoot) return;
+    const positionMenu = () => {
+      const menu = menuRef.current;
+      const anchor = triggerRef.current;
+      if (!menu || !anchor) return;
+      const bounds = anchor.getBoundingClientRect();
+      const width = Math.min(280, window.innerWidth - 32);
+      menu.style.width = `${width}px`;
+      menu.style.maxHeight = `${Math.max(0, window.innerHeight - 32)}px`;
+      menu.style.left = `${Math.max(16, Math.min(bounds.right + 8, window.innerWidth - width - 16))}px`;
+      menu.style.top = `${Math.max(16, Math.min(bounds.top, window.innerHeight - menu.getBoundingClientRect().height - 16))}px`;
+    };
+    positionMenu();
+    window.addEventListener('resize', positionMenu);
+    document.addEventListener('scroll', positionMenu, true);
+    return () => {
+      window.removeEventListener('resize', positionMenu);
+      document.removeEventListener('scroll', positionMenu, true);
+    };
+  }, [isOpen, placement, portalRoot, workspaces, renamingId]);
 
   const startRename = (workspace: WorkspaceConfig) => {
     setRenamingId(workspace.id);
@@ -111,8 +152,157 @@ export function WorkspaceSelector({
     }
   };
 
+  const menu = isOpen ? (
+    <div
+      ref={menuRef}
+      data-toolbar-owner={toolbarOwner}
+      role="menu"
+      aria-orientation="vertical"
+      aria-labelledby="workspace-selector-trigger"
+      className={classNames(
+        'dashboard-popover-surface liquid-glass-surface z-50 rounded-xl p-1.5',
+        placement === 'right'
+          ? 'fixed overflow-y-auto'
+          : 'absolute top-full right-0 mt-1.5 min-w-[240px] max-w-[280px]',
+      )}
+    >
+      <div
+        role="heading"
+        aria-level={2}
+        className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-theme-text-muted"
+      >
+        Рабочие пространства
+      </div>
+
+      <div className="max-h-[260px] overflow-y-auto space-y-0.5 py-1">
+        {workspaces.map((workspace) => {
+          const isActive = workspace.id === activeWorkspace?.id;
+          const isRenaming = renamingId === workspace.id;
+
+          if (isRenaming) {
+            return (
+              <div
+                key={workspace.id}
+                className="flex items-center gap-1.5 px-2 py-1"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  maxLength={64}
+                  value={renameText}
+                  onChange={(e) => setRenameText(e.target.value)}
+                  onBlur={finishRename}
+                  onKeyDown={handleRenameKeyDown}
+                  className="w-full rounded border border-theme-accent bg-theme-surface-muted/80 px-2 py-0.5 text-xs text-theme-text-primary focus:outline-none"
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={workspace.id}
+              className={classNames(
+                'group flex items-center justify-between rounded-lg px-2 py-1 text-xs transition-colors',
+                isActive
+                  ? 'bg-theme-surface-muted/60 font-medium text-theme-text-primary'
+                  : 'text-theme-text-secondary hover:bg-theme-surface-hover/60 hover:text-theme-text-primary',
+              )}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onSwitchWorkspace(workspace.id);
+                  closeMenu();
+                }}
+                className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer py-0.5"
+              >
+                {isActive ? (
+                  <CheckIcon className="size-3.5 shrink-0 text-theme-accent" />
+                ) : (
+                  <span className="size-3.5 shrink-0" />
+                )}
+                <span className="truncate">{workspace.name}</span>
+              </button>
+
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <IconButton
+                  aria-label="Переименовать"
+                  size="xs"
+                  title="Переименовать"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startRename(workspace);
+                  }}
+                >
+                  <PencilIcon className="size-3.5" />
+                </IconButton>
+                <IconButton
+                  aria-label="Дублировать"
+                  size="xs"
+                  title="Дублировать"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicateWorkspace(workspace.id);
+                  }}
+                >
+                  <DuplicateIcon className="size-3.5" />
+                </IconButton>
+                {workspaces.length > 1 && (
+                  <IconButton
+                    aria-label="Удалить"
+                    size="xs"
+                    title="Удалить"
+                    variant="danger-ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteWorkspace(workspace.id);
+                    }}
+                  >
+                    <TrashIcon className="size-3.5" />
+                  </IconButton>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="my-1 border-t border-theme-border/40" />
+
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          onAddWorkspace();
+          closeMenu();
+        }}
+        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
+      >
+        <PlusIcon className="size-3.5 shrink-0" />
+        <span>Создать пространство</span>
+      </button>
+
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          closeMenu();
+          onOpenManager();
+        }}
+        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
+      >
+        <LayersIcon className="size-3.5 shrink-0" />
+        <span>Управление пространствами...</span>
+      </button>
+    </div>
+  ) : null;
+
   return (
-    <div ref={containerRef} className="relative inline-block text-left">
+    <div ref={bindContainer} className="relative inline-block text-left">
       <button
         ref={triggerRef}
         type="button"
@@ -121,7 +311,11 @@ export function WorkspaceSelector({
         aria-expanded={isOpen}
         aria-label={`Пространство: ${activeWorkspace?.name ?? 'Пространство'}`}
         disabled={!canManage}
-        title="Рабочие пространства (W)"
+        title={
+          compact
+            ? `Пространство: ${activeWorkspace?.name ?? 'Пространство'} (W)`
+            : 'Рабочие пространства (W)'
+        }
         onClick={() => {
           if (isOpen) {
             closeMenu();
@@ -130,163 +324,37 @@ export function WorkspaceSelector({
           }
         }}
         className={classNames(
-          'flex items-center gap-1.5 rounded-lg border border-theme-border/60 bg-theme-surface/50 px-2.5 py-1 text-sm font-medium text-theme-text-primary shadow-xs transition-colors hover:bg-theme-surface-hover hover:border-theme-border focus-visible:outline-2 focus-visible:outline-theme-accent disabled:opacity-50 disabled:pointer-events-none',
+          compact
+            ? 'flex size-10 shrink-0 items-center justify-center rounded-md text-theme-text-primary hover:bg-theme-surface-elevated focus-visible:outline-2 focus-visible:outline-theme-ring disabled:opacity-50 disabled:pointer-events-none'
+            : 'flex items-center gap-1.5 rounded-lg border border-theme-border/60 bg-theme-surface/50 px-2.5 py-1 text-sm font-medium text-theme-text-primary shadow-xs transition-colors hover:bg-theme-surface-hover hover:border-theme-border focus-visible:outline-2 focus-visible:outline-theme-accent disabled:opacity-50 disabled:pointer-events-none',
           isOpen && 'bg-theme-surface-muted/80 border-theme-border',
         )}
       >
-        <LayersIcon className="size-4 shrink-0 text-theme-text-secondary" />
-        <span className="max-w-[120px] truncate text-left">
-          {activeWorkspace?.name ?? 'Пространство'}
-        </span>
-        <ChevronDownIcon
-          className={classNames(
-            'size-3.5 shrink-0 text-theme-text-muted transition-transform duration-200',
-            isOpen && 'rotate-180',
-          )}
+        <LayersIcon
+          className={
+            compact ? 'size-7' : 'size-4 shrink-0 text-theme-text-secondary'
+          }
         />
+        {!compact && (
+          <>
+            <span className="max-w-[120px] truncate text-left">
+              {activeWorkspace?.name ?? 'Пространство'}
+            </span>
+            <ChevronDownIcon
+              className={classNames(
+                'size-3.5 shrink-0 text-theme-text-muted transition-transform duration-200',
+                isOpen && 'rotate-180',
+              )}
+            />
+          </>
+        )}
       </button>
 
-      {isOpen && (
-        <div
-          role="menu"
-          aria-orientation="vertical"
-          aria-labelledby="workspace-selector-trigger"
-          className="dashboard-popover-surface liquid-glass-surface absolute top-full right-0 mt-1.5 z-50 min-w-[240px] max-w-[280px] rounded-xl p-1.5"
-        >
-          <div
-            role="heading"
-            aria-level={2}
-            className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-theme-text-muted"
-          >
-            Рабочие пространства
-          </div>
-
-          <div className="max-h-[260px] overflow-y-auto space-y-0.5 py-1">
-            {workspaces.map((workspace) => {
-              const isActive = workspace.id === activeWorkspace?.id;
-              const isRenaming = renamingId === workspace.id;
-
-              if (isRenaming) {
-                return (
-                  <div
-                    key={workspace.id}
-                    className="flex items-center gap-1.5 px-2 py-1"
-                  >
-                    <input
-                      autoFocus
-                      type="text"
-                      maxLength={64}
-                      value={renameText}
-                      onChange={(e) => setRenameText(e.target.value)}
-                      onBlur={finishRename}
-                      onKeyDown={handleRenameKeyDown}
-                      className="w-full rounded border border-theme-accent bg-theme-surface-muted/80 px-2 py-0.5 text-xs text-theme-text-primary focus:outline-none"
-                    />
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={workspace.id}
-                  className={classNames(
-                    'group flex items-center justify-between rounded-lg px-2 py-1 text-xs transition-colors',
-                    isActive
-                      ? 'bg-theme-surface-muted/60 font-medium text-theme-text-primary'
-                      : 'text-theme-text-secondary hover:bg-theme-surface-hover/60 hover:text-theme-text-primary',
-                  )}
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      onSwitchWorkspace(workspace.id);
-                      closeMenu();
-                    }}
-                    className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer py-0.5"
-                  >
-                    {isActive ? (
-                      <CheckIcon className="size-3.5 shrink-0 text-theme-accent" />
-                    ) : (
-                      <span className="size-3.5 shrink-0" />
-                    )}
-                    <span className="truncate">{workspace.name}</span>
-                  </button>
-
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <IconButton
-                      aria-label="Переименовать"
-                      size="xs"
-                      title="Переименовать"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startRename(workspace);
-                      }}
-                    >
-                      <PencilIcon className="size-3.5" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Дублировать"
-                      size="xs"
-                      title="Дублировать"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDuplicateWorkspace(workspace.id);
-                      }}
-                    >
-                      <DuplicateIcon className="size-3.5" />
-                    </IconButton>
-                    {workspaces.length > 1 && (
-                      <IconButton
-                        aria-label="Удалить"
-                        size="xs"
-                        title="Удалить"
-                        variant="danger-ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteWorkspace(workspace.id);
-                        }}
-                      >
-                        <TrashIcon className="size-3.5" />
-                      </IconButton>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="my-1 border-t border-theme-border/40" />
-
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onAddWorkspace();
-              closeMenu();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
-          >
-            <PlusIcon className="size-3.5 shrink-0" />
-            <span>Создать пространство</span>
-          </button>
-
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              closeMenu();
-              onOpenManager();
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"
-          >
-            <LayersIcon className="size-3.5 shrink-0" />
-            <span>Управление пространствами...</span>
-          </button>
-        </div>
-      )}
+      {placement === 'right'
+        ? portalRoot && menu
+          ? createPortal(menu, portalRoot)
+          : null
+        : menu}
     </div>
   );
 }

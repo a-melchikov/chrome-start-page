@@ -50,7 +50,7 @@ The dashboard has light/dark/system themes, including the warm light presets
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
 draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
 behavior, restoration after Chrome restarts, and full versioned JSON backup and
-restore (format v2) with embedded local wallpaper and image assets.
+restore (format v3) with embedded local wallpaper and image assets.
 
 Поиск команд появляется по центру сверху только после `Ctrl+K`, `/` вне полей
 ввода или нажатия на лупу. Под полем сразу раскрывается список на слегка
@@ -172,3 +172,24 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 No unfinished product requirement is recorded. README lists Google Calendar as
 a roadmap idea; confirm scope with the user before starting it. See
 `docs/CURRENT_STATE.md` for the latest handoff status.
+
+## Положение панели управления
+
+В закрытом по умолчанию разделе «Панель управления» окна «Оформление» доступен
+общий для всех пространств выбор: справа сверху (по умолчанию), слева постоянно
+или слева со скрытием. Раздел доступен также через палитру команд.
+
+Левая панель состоит из иконок, находится по центру viewport поверх виджетов и
+использует Liquid Glass активного пространства. Она не изменяет ширину сетки;
+верхний отступ сетки уменьшается с 80 до 24 px без изменения сохранённых координат.
+
+В скрываемом режиме наведение в зону 12 × 160 px по центру левого края показывает
+стрелку. Клик раскрывает панель, кнопка сворачивания, внешний клик или M закрывают
+её; уход мыши не закрывает. Вход в редактирование раскрывает панель, но позволяет
+свернуть её и продолжить работу. M не действует при вводе текста и в диалогах.
+Диалоги сохраняют раскрытие и возвращают фокус. Escape сохраняет прежнее поведение.
+
+Схема v9 хранит только `toolbar.mode` в корне конфигурации; v1–v8 мигрируют
+автоматически с `top-right`. Раскрытие не записывается в storage: новая вкладка,
+перезагрузка, импорт или принятие внешней конфигурации начинают со скрытой панели.
+Переключение пространства сохраняет раскрытие. Резервные копии v3 переносят настройку.

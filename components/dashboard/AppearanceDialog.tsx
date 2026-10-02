@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import { Button, Dialog, Input } from '../ui';
+import { Button, Dialog, Input, Select } from '../ui';
 import { classNames } from '../ui/class-names';
 import { CopyIcon, PencilIcon, TrashIcon } from '../icons';
 import {
   isWallpaperEnabled,
   type AppearanceConfig,
+  type ToolbarConfig,
 } from '../../storage/schema';
+import { isToolbarConfig } from '../../storage/migrations';
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
@@ -14,6 +16,9 @@ import type { AppearanceSection } from './command-catalog';
 
 interface AppearanceDialogProps {
   appearance: AppearanceConfig;
+  toolbar: ToolbarConfig;
+  onToolbarChange: (toolbar: ToolbarConfig) => void;
+  returnFocusFallback?: () => HTMLElement | null;
   customThemes?: readonly CustomTheme[];
   requestedSection?: { section: AppearanceSection; token: number } | null;
   isWallpaperUpdating: boolean;
@@ -40,6 +45,9 @@ const ACCEPTED_WALLPAPER_FILES =
 
 export function AppearanceDialog({
   appearance,
+  toolbar,
+  onToolbarChange,
+  returnFocusFallback,
   customThemes = [],
   requestedSection,
   isWallpaperUpdating,
@@ -162,6 +170,7 @@ export function AppearanceDialog({
         description="Настройте тему, фон, обои и оформление виджетов новой вкладки."
         open={open}
         title="Оформление"
+        returnFocusFallback={returnFocusFallback}
         onOpenChange={(nextOpen) =>
           nextOpen ? onOpenChange(true) : closeDialog()
         }
@@ -677,6 +686,47 @@ export function AppearanceDialog({
                 onCommit={onFlushAppearancePreview}
                 onReset={(liquidGlass) => onAppearanceChange({ liquidGlass })}
               />
+            </div>
+          </details>
+          <details
+            data-appearance-section="toolbar"
+            className="group rounded-lg border border-theme-border bg-theme-surface"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
+              Панель управления
+              <span
+                aria-hidden="true"
+                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
+              >
+                ›
+              </span>
+            </summary>
+            <div className="space-y-3 px-4 pb-4 pt-1">
+              <label className="block space-y-2 text-sm">
+                <span>Расположение и видимость</span>
+                <Select
+                  aria-label="Расположение и видимость"
+                  value={toolbar.mode}
+                  options={[
+                    { value: 'top-right', label: 'Справа сверху' },
+                    { value: 'left-fixed', label: 'Слева — всегда видна' },
+                    { value: 'left-collapsible', label: 'Слева — скрываемая' },
+                  ]}
+                  onValueChange={(mode) => {
+                    const next = { mode };
+                    if (isToolbarConfig(next)) onToolbarChange(next);
+                  }}
+                />
+              </label>
+              <p className="text-sm text-theme-text-secondary">
+                Настройка применяется ко всем рабочим пространствам.
+              </p>
+              {toolbar.mode === 'left-collapsible' && (
+                <p className="text-sm text-theme-text-secondary">
+                  Подведите курсор к середине левого края и нажмите стрелку.
+                  Клавиша M открывает и скрывает панель.
+                </p>
+              )}
             </div>
           </details>
         </div>

@@ -292,7 +292,8 @@ describe('App', () => {
     const user = userEvent.setup();
     const currentId = '11111111-1111-4111-8111-111111111111';
     const current: DashboardConfig = {
-      version: 8,
+      version: 9,
+      toolbar: { mode: 'top-right' },
       activeWorkspaceId: currentId,
       customThemes: [],
       workspaces: [
@@ -327,7 +328,8 @@ describe('App', () => {
     };
     const importedId = '22222222-2222-4222-8222-222222222222';
     const imported: DashboardConfig = {
-      version: 8,
+      version: 9,
+      toolbar: { mode: 'top-right' },
       activeWorkspaceId: importedId,
       customThemes: [],
       workspaces: [

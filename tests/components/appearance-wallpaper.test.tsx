@@ -22,6 +22,8 @@ function renderDialog(
 ) {
   const props: React.ComponentProps<typeof AppearanceDialog> = {
     appearance,
+    toolbar: { mode: 'top-right' },
+    onToolbarChange: vi.fn(),
     isWallpaperUpdating: false,
     open: true,
     wallpaperError: null,

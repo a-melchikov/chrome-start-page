@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import { describe, expect, it } from 'vitest';
 
 import { createDefaultDashboardConfig } from '../../storage/defaults';
@@ -51,7 +52,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(legacyConfig);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces).toHaveLength(2);
     expect(migrated.activeWorkspaceId).toBe(migrated.workspaces[0]!.id);
     expect(migrated.workspaces[0]!.name).toBe('Основной');
@@ -91,7 +92,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(legacyConfig);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces).toHaveLength(2);
     expect(migrated.workspaces[0]!.widgets).toEqual([]);
     expect(migrated.workspaces[0]!.appearance.theme).toEqual({
@@ -123,7 +124,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(legacyConfig);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces[0]!.widgets).toEqual([
       {
         ...legacyConfig.widgets[1],
@@ -149,7 +150,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(v3Config);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces[0]!.appearance.wallpaper).toEqual({
       type: 'url',
       url: 'https://example.com/wallpaper.jpg',
@@ -172,7 +173,7 @@ describe('migrateDashboardConfig', () => {
       } as const;
 
       const migrated = migrateDashboardConfig(v4Config);
-      expect(migrated.version).toBe(8);
+      expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
       expect(migrated.workspaces[0]!.appearance.liquidGlass.enabled).toBe(
         enabled,
       );
@@ -197,7 +198,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(v5Config);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces).toHaveLength(2);
     expect(migrated.workspaces[0]!.appearance.theme).toEqual({
       type: 'builtin',
@@ -232,7 +233,7 @@ describe('migrateDashboardConfig', () => {
     } as const;
 
     const migrated = migrateDashboardConfig(v6Config);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces[0]!.widgets[0]).toMatchObject({
       type: 'markdown',
       template: 'blank',
@@ -268,7 +269,7 @@ describe('migrateDashboardConfig', () => {
       customThemes: [],
     };
     const migrated = migrateDashboardConfig(v7Config);
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces).toHaveLength(2);
     expect(migrated.workspaces[0]!.name).toBe('Основной');
     expect(migrated.workspaces[0]!.widgets).toEqual(v7Config.widgets);
@@ -911,6 +912,52 @@ describe('migrateDashboardConfig', () => {
           },
         ]),
       ),
+    ).toThrow(InvalidDashboardConfigError);
+  });
+});
+
+describe('toolbar configuration migration', () => {
+  it('adds the top-right default to v8 without altering workspace data', () => {
+    const current = createDefaultDashboardConfig();
+    const legacy = {
+      version: 8,
+      workspaces: current.workspaces,
+      activeWorkspaceId: current.activeWorkspaceId,
+      customThemes: current.customThemes,
+    };
+    const migrated = migrateDashboardConfig(legacy);
+    expect(migrated).toEqual({
+      ...legacy,
+      version: DASHBOARD_CONFIG_VERSION,
+      toolbar: { mode: 'top-right' },
+    });
+    expect(migrated.workspaces).toBe(legacy.workspaces);
+  });
+
+  it.each(['top-right', 'left-fixed', 'left-collapsible'] as const)(
+    'preserves a valid current toolbar mode %s',
+    (mode) => {
+      const config = { ...createDefaultDashboardConfig(), toolbar: { mode } };
+      expect(migrateDashboardConfig(config)).toBe(config);
+    },
+  );
+
+  it.each([undefined, null, {}, { mode: 'left' }, { mode: 1 }, 'top-right'])(
+    'rejects malformed current toolbar settings: %j',
+    (toolbar) => {
+      expect(() =>
+        migrateDashboardConfig({ ...createDefaultDashboardConfig(), toolbar }),
+      ).toThrow(InvalidDashboardConfigError);
+    },
+  );
+
+  it('validates legacy v8 before adding toolbar defaults', () => {
+    expect(() =>
+      migrateDashboardConfig({
+        ...createDefaultDashboardConfig(),
+        version: 8,
+        workspaces: [],
+      }),
     ).toThrow(InvalidDashboardConfigError);
   });
 });

@@ -40,6 +40,7 @@ import { DEFAULT_APPEARANCE, DEFAULT_LIQUID_GLASS } from '../storage/defaults';
 import type {
   AppearanceConfig,
   DashboardConfig,
+  ToolbarConfig,
   WidgetConfig,
   WorkspaceConfig,
 } from '../storage/schema';
@@ -83,6 +84,7 @@ export interface UseDashboardConfigResult {
   canRedo: boolean;
   conflict: boolean;
   historyEpoch: number;
+  configEpoch: number;
   isWidgetActionProcessing: boolean;
   addWidget: (widget: WidgetConfig) => void;
   copyWidgets: (ids: readonly string[]) => Promise<string>;
@@ -115,6 +117,7 @@ export interface UseDashboardConfigResult {
   setLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   setUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   setWallpaperEnabled: (enabled: boolean) => Promise<void>;
+  updateToolbar: (toolbar: ToolbarConfig) => void;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
   updateWidgetLayouts: (widgets: readonly WidgetConfig[]) => void;
@@ -257,6 +260,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
   });
   const [conflict, setConflict] = useState(false);
   const [historyEpoch, setHistoryEpoch] = useState(0);
+  const [configEpoch, setConfigEpoch] = useState(0);
   const [isWidgetActionProcessing, setIsWidgetActionProcessing] =
     useState(false);
   const configRef = useRef<DashboardConfig | null>(null);
@@ -557,6 +561,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
               acceptedConfigRef.current = external;
               configRef.current = external;
               setConfig(external);
+              setConfigEpoch((epoch) => epoch + 1);
               clearHistory();
             }
           },
@@ -821,6 +826,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
         if (isMountedRef.current) {
           setConfig(result.config);
+          setConfigEpoch((epoch) => epoch + 1);
           setError(null);
           setWallpaperError(null);
         }
@@ -892,6 +898,14 @@ export function useDashboardConfig(): UseDashboardConfigResult {
       enqueueConfigSave(nextConfig);
     },
     [enqueueConfigSave, syncHistoryImageLease],
+  );
+
+  const updateToolbar = useCallback(
+    (toolbar: ToolbarConfig) => {
+      if (configRef.current?.toolbar.mode === toolbar.mode) return;
+      commitConfig((current) => ({ ...current, toolbar: { ...toolbar } }));
+    },
+    [commitConfig],
   );
 
   const updateAppearance = useCallback(
@@ -1568,6 +1582,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         externalConfigRef.current = null;
         conflictRef.current = false;
         setConfig(resolved);
+        setConfigEpoch((epoch) => epoch + 1);
         setConflict(false);
         setError(null);
         clearHistory();
@@ -1599,6 +1614,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     canRedo: historyAvailability.canRedo,
     conflict,
     historyEpoch,
+    configEpoch,
     isWidgetActionProcessing,
     addWidget,
     copyWidgets,
@@ -1623,6 +1639,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     setUrlWallpaper,
     setWallpaperEnabled,
     updateAppearance,
+    updateToolbar,
     updateWidget,
     updateWidgetLayouts,
     saveCustomTheme,

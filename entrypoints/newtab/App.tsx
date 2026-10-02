@@ -14,7 +14,7 @@ import { MotionNotice } from '../../components/ui/MotionNotice';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
-import { DEFAULT_APPEARANCE } from '../../storage/defaults';
+import { DEFAULT_APPEARANCE, DEFAULT_TOOLBAR } from '../../storage/defaults';
 import { isWallpaperEnabled } from '../../storage/schema';
 
 import {
@@ -45,6 +45,7 @@ export function App() {
     canRedo,
     conflict,
     historyEpoch,
+    configEpoch,
     isWidgetActionProcessing,
     addWidget,
     copyWidgets,
@@ -69,6 +70,7 @@ export function App() {
     setUrlWallpaper,
     setWallpaperEnabled,
     updateAppearance,
+    updateToolbar,
     updateWidget,
     updateWidgetLayouts,
     saveCustomTheme,
@@ -304,6 +306,9 @@ export function App() {
       >
         <Dashboard
           appearance={appearance}
+          toolbar={config?.toolbar ?? DEFAULT_TOOLBAR}
+          onToolbarChange={updateToolbar}
+          configEpoch={configEpoch}
           backupError={backupError}
           config={config}
           canUndo={canUndo}

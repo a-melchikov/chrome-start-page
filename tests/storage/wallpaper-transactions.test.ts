@@ -37,7 +37,8 @@ function createAsset(assetId: string): LocalWallpaperAssetV1 {
 
 function createConfig(wallpaper: WallpaperConfig): DashboardConfig {
   return {
-    version: 8,
+    version: 9,
+    toolbar: { mode: 'top-right' },
     activeWorkspaceId: WORKSPACE_ID,
     workspaces: [
       {

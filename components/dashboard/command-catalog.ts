@@ -10,7 +10,7 @@ import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import { getWidgetDisplayName } from './widget-display';
 
 export type AppearanceSection =
-  'theme' | 'background' | 'wallpaper' | 'widgets';
+  'theme' | 'background' | 'wallpaper' | 'widgets' | 'toolbar';
 
 export type PaletteCommand =
   | {
@@ -85,6 +85,7 @@ const sections: readonly { id: AppearanceSection; name: string }[] = [
   { id: 'background', name: 'Фон' },
   { id: 'wallpaper', name: 'Обои' },
   { id: 'widgets', name: 'Виджеты' },
+  { id: 'toolbar', name: 'Панель управления' },
 ];
 
 export function buildCommandCatalog(

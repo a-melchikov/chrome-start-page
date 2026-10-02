@@ -42,6 +42,7 @@ describe('widget self writes', () => {
     // Chrome may return equivalent objects with a different property order.
     await storage.setItem(DASHBOARD_STORAGE_KEY, {
       version: saved.version,
+      toolbar: saved.toolbar,
       customThemes: saved.customThemes,
       activeWorkspaceId: saved.activeWorkspaceId,
       workspaces: saved.workspaces,

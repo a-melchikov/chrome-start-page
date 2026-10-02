@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
@@ -17,7 +18,7 @@ describe('dashboard storage', () => {
   it('creates and persists the default config when storage is empty', async () => {
     const config = await loadDashboardConfig();
 
-    expect(config.version).toBe(8);
+    expect(config.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(config.workspaces).toHaveLength(2);
     expect(config.activeWorkspaceId).toBe(config.workspaces[0]!.id);
     expect(config.workspaces[0]!.name).toBe('Основной');
@@ -30,7 +31,8 @@ describe('dashboard storage', () => {
   it('saves and loads a config without losing widget data', async () => {
     const workspaceId = '12c8b540-4847-45b3-98b7-d13b00833041';
     const config: DashboardConfig = {
-      version: 8,
+      version: 9,
+      toolbar: { mode: 'top-right' },
       activeWorkspaceId: workspaceId,
       workspaces: [
         {
@@ -111,7 +113,7 @@ describe('dashboard storage', () => {
 
     const migrated = await loadDashboardConfig();
 
-    expect(migrated.version).toBe(8);
+    expect(migrated.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(migrated.workspaces).toHaveLength(2);
     expect(migrated.activeWorkspaceId).toBe(migrated.workspaces[0]!.id);
     expect(migrated.workspaces[0]!.name).toBe('Основной');

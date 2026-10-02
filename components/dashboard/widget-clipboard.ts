@@ -1,5 +1,5 @@
 import { loadImageAsset } from '../../storage/image-assets';
-import { DEFAULT_APPEARANCE } from '../../storage/defaults';
+import { DEFAULT_APPEARANCE, DEFAULT_TOOLBAR } from '../../storage/defaults';
 import { migrateDashboardConfig } from '../../storage/migrations';
 import {
   DASHBOARD_CONFIG_VERSION,
@@ -107,6 +107,7 @@ export function parseWidgetClipboard(source: string): WidgetClipboardPayload {
     const clipWorkspaceId = '00000000-0000-4000-8000-000000000000';
     const migrated = migrateDashboardConfig({
       version: DASHBOARD_CONFIG_VERSION,
+      toolbar: { ...DEFAULT_TOOLBAR },
       activeWorkspaceId: clipWorkspaceId,
       workspaces: [
         {

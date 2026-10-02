@@ -3,6 +3,7 @@ import {
   type AppearanceConfig,
   type DashboardConfig,
   type LiquidGlassConfig,
+  type ToolbarConfig,
   type WorkspaceConfig,
 } from './schema';
 import { createDefaultSearchWidget } from '../widgets/search/defaults';
@@ -15,6 +16,8 @@ export const DEFAULT_LIQUID_GLASS: Readonly<LiquidGlassConfig> = {
   blur: 18,
   shadow: 50,
 };
+
+export const DEFAULT_TOOLBAR: Readonly<ToolbarConfig> = { mode: 'top-right' };
 
 export const DEFAULT_APPEARANCE: Readonly<AppearanceConfig> = {
   theme: { type: 'builtin', id: 'system' },
@@ -84,6 +87,7 @@ export function createDefaultDashboardConfig(): DashboardConfig {
 
   return {
     version: DASHBOARD_CONFIG_VERSION,
+    toolbar: { ...DEFAULT_TOOLBAR },
     activeWorkspaceId: workspaces[0]!.id,
     workspaces,
     customThemes: [],

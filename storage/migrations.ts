@@ -3,6 +3,7 @@ import {
   type BackgroundColorConfig,
   type DashboardConfig,
   type LiquidGlassConfig,
+  type ToolbarConfig,
   type WallpaperConfig,
   type WidgetConfig,
   type WorkspaceConfig,
@@ -19,7 +20,11 @@ import {
 import { isSearchEngine } from '../widgets/search/engines';
 import { isMarkdownTemplateId } from '../widgets/markdown/templates';
 import type { WeatherLocation } from '../widgets/weather/types';
-import { DEFAULT_LIQUID_GLASS, createDefaultWorkWorkspace } from './defaults';
+import {
+  DEFAULT_LIQUID_GLASS,
+  DEFAULT_TOOLBAR,
+  createDefaultWorkWorkspace,
+} from './defaults';
 import {
   ALL_CUSTOM_THEME_COLOR_KEYS,
   type BuiltinThemeId,
@@ -602,9 +607,21 @@ export function isWorkspaceConfig(
   return true;
 }
 
-export function isDashboardConfigV8(value: unknown): value is DashboardConfig {
+type DashboardConfigV8 = Omit<DashboardConfig, 'version' | 'toolbar'> & {
+  version: 8;
+};
+
+export function isToolbarConfig(value: unknown): value is ToolbarConfig {
+  return (
+    isRecord(value) &&
+    (value.mode === 'top-right' ||
+      value.mode === 'left-fixed' ||
+      value.mode === 'left-collapsible')
+  );
+}
+
+function isWorkspaceDashboard(value: unknown): boolean {
   if (!isRecord(value)) return false;
-  if (value.version !== DASHBOARD_CONFIG_VERSION) return false;
   const customThemes = value.customThemes;
   if (!isValidCustomThemesList(customThemes)) return false;
   if (
@@ -624,6 +641,21 @@ export function isDashboardConfigV8(value: unknown): value is DashboardConfig {
     return false;
   }
   return true;
+}
+
+export function isDashboardConfigV8(
+  value: unknown,
+): value is DashboardConfigV8 {
+  return isRecord(value) && value.version === 8 && isWorkspaceDashboard(value);
+}
+
+export function isDashboardConfigV9(value: unknown): value is DashboardConfig {
+  return (
+    isRecord(value) &&
+    value.version === DASHBOARD_CONFIG_VERSION &&
+    isWorkspaceDashboard(value) &&
+    isToolbarConfig(value.toolbar)
+  );
 }
 
 function isLegacyWidgetConfig(value: unknown): boolean {
@@ -692,7 +724,7 @@ function normalizeLegacyWidgets(widgets: readonly unknown[]): WidgetConfig[] {
   });
 }
 
-function wrapLegacyToDashboardConfigV8(
+function wrapLegacyToDashboardConfig(
   widgets: WidgetConfig[],
   appearance: {
     theme: ThemeRef;
@@ -713,6 +745,7 @@ function wrapLegacyToDashboardConfigV8(
   const workWorkspace = createDefaultWorkWorkspace(workWorkspaceId);
   return normalizeDashboardConfig({
     version: DASHBOARD_CONFIG_VERSION,
+    toolbar: { ...DEFAULT_TOOLBAR },
     activeWorkspaceId: primaryWorkspaceId,
     workspaces: [primaryWorkspace, workWorkspace],
     customThemes,
@@ -822,7 +855,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets),
       {
         theme: {
@@ -845,7 +878,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets.filter(isWidgetConfigV6)),
       {
         theme: {
@@ -868,7 +901,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets),
       {
         theme: {
@@ -893,7 +926,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
 
     const { liquidGlassEnabled, ...appearance } = value.appearance;
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets),
       {
         theme: { type: 'builtin', id: appearance.theme as BuiltinThemeId },
@@ -913,7 +946,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets),
       {
         theme: {
@@ -936,7 +969,7 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       normalizeLegacyWidgets(value.widgets),
       value.appearance,
       value.customThemes,
@@ -948,15 +981,24 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       throw new InvalidDashboardConfigError();
     }
 
-    return wrapLegacyToDashboardConfigV8(
+    return wrapLegacyToDashboardConfig(
       value.widgets,
       value.appearance,
       value.customThemes,
     );
   }
 
+  if (version === 8) {
+    if (!isDashboardConfigV8(value)) throw new InvalidDashboardConfigError();
+    return normalizeDashboardConfig({
+      ...value,
+      version: DASHBOARD_CONFIG_VERSION,
+      toolbar: { ...DEFAULT_TOOLBAR },
+    });
+  }
+
   if (version === DASHBOARD_CONFIG_VERSION) {
-    if (!isDashboardConfigV8(value)) {
+    if (!isDashboardConfigV9(value)) {
       throw new InvalidDashboardConfigError();
     }
 

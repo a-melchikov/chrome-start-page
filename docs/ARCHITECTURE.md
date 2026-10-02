@@ -52,7 +52,7 @@ Renderer-derived state is not persisted.
 
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 7 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 9 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`,
 `template` (`'blank' | 'tasks' | 'daily-plan' | 'links' | 'draft'`),
@@ -118,6 +118,8 @@ Current migration behavior:
   widgets and appearance data are preserved;
 - v6 configs migrate to v7 by assigning default `template: 'blank'`,
   `quickAddEnabled: false`, and `hideCompletedTasks: false` to all markdown widgets;
+- v7 получает рабочие пространства в v8; v8 → v9 сохраняет все пространства,
+  активный ID, темы и ресурсы и добавляет `toolbar: { mode: 'top-right' }`;
 - current and legacy SearchWidget layouts are normalized to `h: 1`;
 - malformed and unsupported/future versions throw explicit errors.
 
@@ -157,12 +159,12 @@ finish before the replacement commit.
 ## Backup Format and Restore
 
 `storage/dashboard-backup.ts` owns the JSON wire format independently of the
-persisted dashboard schema. Format v2 contains the marker
-`chrome-start-page-backup`, `formatVersion: 2`, an ISO export timestamp, a
-`DashboardConfig`, the referenced `LocalWallpaperAssetV1` or `null`, and
-an array of `localImages: LocalWallpaperAssetV1[]`. Format v1 backups without
-`localImages` remain fully supported and restore cleanly. Only this envelope
-is accepted; nested dashboard data still passes through the normal migration boundary.
+persisted dashboard schema. Текущий формат v3 содержит маркер
+`chrome-start-page-backup`, `formatVersion: 3`, время экспорта, `DashboardConfig`,
+массивы `localWallpapers` и `localImages` для всех пространств. Форматы v1/v2
+с единственными `localWallpaper` остаются совместимыми. Вложенная конфигурация
+всегда проходит обычную миграцию; глобальный `toolbar` переносится внутри неё
+без повышения версии оболочки backup.
 
 Local wallpaper and image data are decoded, checked against config asset IDs, and
 browser-validated before any write. Import assigns fresh UUIDs to all local
@@ -392,3 +394,28 @@ geocoding without API keys:
 Host permissions include `https://api.open-meteo.com/*` and
 `https://geocoding-api.open-meteo.com/*`. Static assets in `public/` are
 bundled, and generated `.wxt/` and `.output/` directories are never source files.
+
+## Панель управления
+
+Схема v9 хранит глобальный `toolbar: ToolbarConfig` в корне `DashboardConfig`:
+`top-right`, `left-fixed` или `left-collapsible`. Настройка не принадлежит
+оформлению пространства. `updateToolbar` использует общую очередь немедленных
+записей и объединяет изменения с ожидающими правками виджетов и стекла.
+
+`DashboardControls` владеет действиями и диалогами. `DashboardToolbar` отвечает
+за оболочку, геометрию и анимацию; `useDashboardToolbar` — за временное раскрытие,
+фокус и клик снаружи. Одна копия кнопок используется во всех режимах.
+`configEpoch` сбрасывает раскрытие при импорте или принятии внешней конфигурации;
+он отделён от `historyEpoch`, который меняется также при переключении пространства.
+
+Левая панель накладывается на сетку, имеет ширину 56 px и отступ 8 px. Высота
+ограничена viewport; список действий прокручивается отдельно от кнопки сворачивания.
+Сетка получает верхний отступ 24 px вместо 80 px, её ширина и координаты не меняются.
+`WidgetCanvas` передаёт временное состояние drag/resize для отключения зоны раскрытия.
+
+Компактный `WorkspaceSelector` открывает popup справа через portal внутри
+`.dashboard-root`, сохраняя переменные темы и стекло. Позиция учитывает viewport,
+resize и прокрутку. Обработчики внешнего клика учитывают popup как часть панели.
+Скрытая панель использует `inert` и `aria-hidden`; стрелка доступна через Tab.
+`Dialog.returnFocusFallback` — необязательная функция получения доступной цели,
+если прежний элемент удалён или оказался внутри `inert` после смены режима.

@@ -14,6 +14,7 @@ describe('createDefaultDashboardConfig', () => {
     expect(config.workspaces[0]!.widgets).toHaveLength(0);
     expect(config.workspaces[1]!.widgets).toHaveLength(3);
     expect(config.customThemes).toEqual([]);
+    expect(config.toolbar).toEqual({ mode: 'top-right' });
   });
 
   it('uses the standard Liquid Glass controls for workspaces', () => {
@@ -31,6 +32,7 @@ describe('createDefaultDashboardConfig', () => {
     const secondConfig = createDefaultDashboardConfig();
 
     expect(firstConfig).not.toBe(secondConfig);
+    expect(firstConfig.toolbar).not.toBe(secondConfig.toolbar);
     expect(firstConfig.workspaces).not.toBe(secondConfig.workspaces);
     expect(firstConfig.workspaces[0]!.widgets).not.toBe(
       secondConfig.workspaces[0]!.widgets,

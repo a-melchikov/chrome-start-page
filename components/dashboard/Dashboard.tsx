@@ -6,6 +6,7 @@ import type {
 } from '../../storage/dashboard-backup';
 import type {
   AppearanceConfig,
+  ToolbarConfig,
   DashboardConfig,
   WidgetConfig,
   WidgetType,
@@ -30,12 +31,15 @@ import {
 
 interface DashboardProps {
   appearance: AppearanceConfig;
+  toolbar: ToolbarConfig;
+  onToolbarChange: (toolbar: ToolbarConfig) => void;
   backupError: string | null;
   config: DashboardConfig | null;
   canUndo: boolean;
   canRedo: boolean;
   conflict: boolean;
   historyEpoch: number;
+  configEpoch: number;
   isBackupProcessing: boolean;
   isLoading: boolean;
   isWallpaperUpdating: boolean;
@@ -97,12 +101,15 @@ interface DashboardProps {
 
 export function Dashboard({
   appearance,
+  toolbar,
+  onToolbarChange,
   backupError,
   config,
   canUndo,
   canRedo,
   conflict,
   historyEpoch,
+  configEpoch,
   isBackupProcessing,
   isLoading,
   isWallpaperUpdating,
@@ -149,6 +156,7 @@ export function Dashboard({
   onDeleteWorkspace,
   onReorderWorkspaces,
 }: DashboardProps) {
+  const [isLayoutInteracting, setIsLayoutInteracting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
   const [newWidgetIds, setNewWidgetIds] = useState<ReadonlySet<string>>(
@@ -347,6 +355,8 @@ export function Dashboard({
       {config ? (
         <WidgetCanvas
           key={activeWorkspaceId ?? 'default'}
+          topPadding={toolbar.mode === 'top-right' ? 80 : 24}
+          onInteractionChange={setIsLayoutInteracting}
           editingWidgetId={editingWidgetId}
           isEditing={canEditSelection}
           newWidgetIds={newWidgetIds}
@@ -371,6 +381,10 @@ export function Dashboard({
 
       <DashboardControls
         appearance={appearance}
+        toolbar={toolbar}
+        onToolbarChange={onToolbarChange}
+        configEpoch={configEpoch}
+        isLayoutInteracting={isLayoutInteracting}
         backupError={backupError}
         canManageWidgets={
           !isLoading &&

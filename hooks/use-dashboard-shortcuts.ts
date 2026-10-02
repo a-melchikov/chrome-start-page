@@ -11,6 +11,7 @@ export interface DashboardShortcutsOptions {
   onOpenAppearance: () => void;
   onOpenBackup: () => void;
   onOpenPalette: () => void;
+  onToggleToolbar?: () => void;
   onOpenWorkspaceMenu?: () => void;
   selectedCount?: number;
   onClearSelection?: () => void;
@@ -56,6 +57,7 @@ export function useDashboardShortcuts({
   onOpenBackup,
   onOpenPalette,
   onOpenWorkspaceMenu,
+  onToggleToolbar,
   selectedCount = 0,
   onClearSelection,
   onCopySelection,
@@ -190,6 +192,17 @@ export function useDashboardShortcuts({
         return;
       }
 
+      if (
+        event.code === 'KeyM' &&
+        !event.shiftKey &&
+        !event.repeat &&
+        onToggleToolbar
+      ) {
+        event.preventDefault();
+        onToggleToolbar();
+        return;
+      }
+
       // Toggle edit mode: 'E'
       if (event.code === 'KeyE') {
         event.preventDefault();
@@ -310,6 +323,7 @@ export function useDashboardShortcuts({
     onOpenBackup,
     onOpenPalette,
     onOpenWorkspaceMenu,
+    onToggleToolbar,
     selectedCount,
     onClearSelection,
     onCopySelection,

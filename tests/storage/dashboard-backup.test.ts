@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
@@ -237,7 +238,7 @@ describe('dashboard backup format', () => {
       }),
     );
 
-    expect(parsed.dashboard.version).toBe(8);
+    expect(parsed.dashboard.version).toBe(DASHBOARD_CONFIG_VERSION);
     expect(parsed.dashboard.workspaces[0]!.widgets[0]).toMatchObject({
       id: 'legacy-links',
       type: 'markdown',
@@ -622,5 +623,36 @@ describe('dashboard backup replacement transaction', () => {
     expect(stored.workspaces[0]!.widgets[0]).toEqual(
       clockConfig.workspaces[0]!.widgets[0],
     );
+  });
+});
+
+describe('toolbar backup compatibility', () => {
+  it.each(['top-right', 'left-fixed', 'left-collapsible'] as const)(
+    'exports and imports %s with the existing v3 envelope',
+    (mode) => {
+      const config = createConfig();
+      config.toolbar = { mode };
+      const parsed = parseDashboardBackupJson(
+        JSON.stringify(createEnvelope(config)),
+      );
+      expect(parsed.dashboard.toolbar).toEqual({ mode });
+      expect(parsed.formatVersion).toBe(3);
+      expect(parsed.dashboard.version).toBe(DASHBOARD_CONFIG_VERSION);
+    },
+  );
+
+  it('imports a v3 backup containing schema v8 with the top-right default', () => {
+    const config = createConfig();
+    const legacy = {
+      version: 8,
+      workspaces: config.workspaces,
+      activeWorkspaceId: config.activeWorkspaceId,
+      customThemes: config.customThemes,
+    };
+    const parsed = parseDashboardBackupJson(
+      JSON.stringify(createEnvelope(legacy)),
+    );
+    expect(parsed.dashboard.toolbar).toEqual({ mode: 'top-right' });
+    expect(parsed.dashboard.workspaces).toEqual(config.workspaces);
   });
 });

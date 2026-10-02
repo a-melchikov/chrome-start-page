@@ -220,6 +220,96 @@
     }
   }
 
+  .dashboard-toolbar-left {
+    left: 8px;
+    top: 50%;
+    width: 56px;
+    max-height: calc(100dvh - 32px);
+    padding: 7px;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(-50%);
+    transition:
+      opacity 160ms ease-out,
+      transform 160ms ease-out;
+  }
+
+  .dashboard-toolbar-left[data-open='false'] {
+    opacity: 0;
+    transform: translate(-72px, -50%);
+    pointer-events: none;
+  }
+
+  .dashboard-toolbar-left button {
+    padding: 0;
+  }
+
+  .dashboard-toolbar-left [data-toolbar-actions] {
+    scrollbar-width: none;
+    overflow-x: hidden;
+  }
+
+  .dashboard-toolbar-left [data-toolbar-actions] button:focus-visible {
+    outline: 2px solid var(--theme-ring);
+    outline-offset: -2px;
+    box-shadow: none;
+  }
+
+  .dashboard-toolbar-left .edit-controls,
+  .dashboard-toolbar-left .toolbar-selection {
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .dashboard-toolbar-reveal {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    z-index: 30;
+    width: 12px;
+    height: 160px;
+    max-height: 100dvh;
+    transform: translateY(-50%);
+  }
+
+  .dashboard-toolbar-reveal-button {
+    padding: 0;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 32px;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease-out;
+  }
+
+  .dashboard-toolbar-reveal:hover .dashboard-toolbar-reveal-button,
+  .dashboard-toolbar-reveal:focus-within .dashboard-toolbar-reveal-button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dashboard-toolbar-reveal[data-visible='false'],
+  .dashboard-toolbar-reveal[data-interacting='true'] {
+    pointer-events: none;
+  }
+
+  .dashboard-toolbar-reveal[data-visible='false']
+    .dashboard-toolbar-reveal-button,
+  .dashboard-toolbar-reveal[data-interacting='true']
+    .dashboard-toolbar-reveal-button {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-toolbar-left,
+    .dashboard-toolbar-reveal-button {
+      transition: none;
+    }
+  }
+
   .edit-controls {
     display: none;
     opacity: 0;

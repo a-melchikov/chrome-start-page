@@ -4,7 +4,7 @@
 
 Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
 new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `8`; current widget types:
+Russian-language. Current persisted schema version: `9`; current widget types:
 `markdown`, `search`, `pomodoro`, `image`, `clock`, and `weather`.
 
 Source code and configuration are the source of truth for implementation state.
@@ -85,6 +85,10 @@ specification.
   The effect is static, theme-aware, and can be configured or disabled from the
   collapsed «Виджеты» appearance section. The top dashboard toolbar uses the
   same glass tint as widget cards when enabled; dialogs remain opaque.
+- Toolbar position is global across workspaces. Left modes overlay widgets and
+  use 24 px top canvas padding; top-right uses 80 px. Collapsible mode reveals
+  only its trigger on edge hover/focus, opens on click or M, and remains usable
+  during editing. Drag/resize disables the reveal zone.
 - Escape closes the active dialog; with no dialog open, Escape exits global edit
   mode. Preserve focus restoration and accessible names.
 
@@ -98,10 +102,11 @@ specification.
   memory and flush after input completion, dialog close, `pagehide`, or
   unmount. Widget editor changes are debounced and must flush on finish,
   Escape, `pagehide`, and unmount. Preserve queued write ordering.
-- Schema v8 supports independent workspaces / profiles (`workspaces: WorkspaceConfig[]`,
+- Schema v9 supports independent workspaces / profiles (`workspaces: WorkspaceConfig[]`,
   `activeWorkspaceId: string`), custom user themes (`customThemes`), typed theme references
   (`appearance.theme: ThemeRef`), background override modes (`backgroundColor: BackgroundColorConfig`),
-  and auto-migrates v1–v7 configs. V5 introduced grouped `appearance.liquidGlass` settings.
+  and auto-migrates v1–v8 configs. V9 adds global `toolbar.mode` (`top-right`,
+  `left-fixed`, `left-collapsible`); toolbar visibility is ephemeral. V5 introduced grouped `appearance.liquidGlass` settings.
   V1 `links` widgets migrate to `markdown` without losing ID, title, content, or layout.
 - Search widget height is normalized to `1` during load/save.
 
