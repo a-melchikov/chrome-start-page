@@ -176,11 +176,13 @@ export function DashboardControls({
   onReorderWorkspaces,
 }: DashboardControlsProps) {
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [hasOpenedAppearance, setHasOpenedAppearance] = useState(false);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
   const [isMarkdownTemplateOpen, setIsMarkdownTemplateOpen] = useState(false);
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
   const [isWorkspaceManagerOpen, setIsWorkspaceManagerOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [hasOpenedBackup, setHasOpenedBackup] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [hasOpenedPalette, setHasOpenedPalette] = useState(false);
@@ -197,10 +199,15 @@ export function DashboardControls({
     token: number;
   } | null>(null);
   const [paletteFeedback, setPaletteFeedback] = useState<string | null>(null);
+  const [themeEditorOpener, setThemeEditorOpener] =
+    useState<HTMLElement | null>(null);
 
   const [prevReopenToken, setPrevReopenToken] = useState(
     reopenAppearanceToken ?? 0,
   );
+
+  if (isAppearanceOpen && !hasOpenedAppearance) setHasOpenedAppearance(true);
+  if (isBackupOpen && !hasOpenedBackup) setHasOpenedBackup(true);
 
   if (reopenAppearanceToken && reopenAppearanceToken > prevReopenToken) {
     setPrevReopenToken(reopenAppearanceToken);
@@ -209,6 +216,11 @@ export function DashboardControls({
   }
 
   const handleOpenThemeEditor = (themeToEdit?: CustomTheme) => {
+    setThemeEditorOpener(
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null,
+    );
     setIsAppearanceOpen(false);
     setRequestedSection(null);
     onOpenThemeEditor?.(themeToEdit);
@@ -552,43 +564,52 @@ export function DashboardControls({
       </DashboardToolbar>
 
       <Suspense fallback={null}>
-        <AppearanceDialog
-          appearance={appearance}
-          toolbar={toolbar}
-          onToolbarChange={onToolbarChange}
-          returnFocusFallback={toolbarState.getReturnFocus}
-          customThemes={config?.customThemes ?? []}
-          requestedSection={requestedSection}
-          isWallpaperUpdating={isWallpaperUpdating}
-          open={isAppearanceOpen}
-          wallpaperError={wallpaperError}
-          wallpaperPreviewSrc={wallpaperPreviewSrc}
-          onAppearanceChange={onAppearanceChange}
-          onAppearancePreview={onAppearancePreview}
-          onClearWallpaperError={onClearWallpaperError}
-          onFlushAppearancePreview={onFlushAppearancePreview}
-          onOpenChange={(open) => {
-            setIsAppearanceOpen(open);
-            if (!open) setRequestedSection(null);
-          }}
-          onRemoveWallpaper={onRemoveWallpaper}
-          onSetWallpaperEnabled={onSetWallpaperEnabled}
-          onSetLocalWallpaper={onSetLocalWallpaper}
-          onSetUrlWallpaper={onSetUrlWallpaper}
-          onSelectTheme={onSelectTheme}
-          onOpenThemeEditor={handleOpenThemeEditor}
-          onDuplicateCustomTheme={onDuplicateCustomTheme}
-          onDeleteCustomTheme={onDeleteCustomTheme}
-        />
-        <BackupDialog
-          error={backupError}
-          isProcessing={isBackupProcessing}
-          open={isBackupOpen}
-          onClearError={onClearBackupError}
-          onExport={onExportDashboard}
-          onImport={onImportDashboard}
-          onOpenChange={setIsBackupOpen}
-        />
+        {hasOpenedAppearance && (
+          <AppearanceDialog
+            appearance={appearance}
+            toolbar={toolbar}
+            onToolbarChange={onToolbarChange}
+            returnFocusFallback={toolbarState.getReturnFocus}
+            requestedFocus={
+              requestedSection?.token === reopenAppearanceToken
+                ? themeEditorOpener
+                : null
+            }
+            customThemes={config?.customThemes ?? []}
+            requestedSection={requestedSection}
+            isWallpaperUpdating={isWallpaperUpdating}
+            open={isAppearanceOpen}
+            wallpaperError={wallpaperError}
+            wallpaperPreviewSrc={wallpaperPreviewSrc}
+            onAppearanceChange={onAppearanceChange}
+            onAppearancePreview={onAppearancePreview}
+            onClearWallpaperError={onClearWallpaperError}
+            onFlushAppearancePreview={onFlushAppearancePreview}
+            onOpenChange={(open) => {
+              setIsAppearanceOpen(open);
+              if (!open) setRequestedSection(null);
+            }}
+            onRemoveWallpaper={onRemoveWallpaper}
+            onSetWallpaperEnabled={onSetWallpaperEnabled}
+            onSetLocalWallpaper={onSetLocalWallpaper}
+            onSetUrlWallpaper={onSetUrlWallpaper}
+            onSelectTheme={onSelectTheme}
+            onOpenThemeEditor={handleOpenThemeEditor}
+            onDuplicateCustomTheme={onDuplicateCustomTheme}
+            onDeleteCustomTheme={onDeleteCustomTheme}
+          />
+        )}
+        {hasOpenedBackup && (
+          <BackupDialog
+            error={backupError}
+            isProcessing={isBackupProcessing}
+            open={isBackupOpen}
+            onClearError={onClearBackupError}
+            onExport={onExportDashboard}
+            onImport={onImportDashboard}
+            onOpenChange={setIsBackupOpen}
+          />
+        )}
       </Suspense>
       <AddWidgetDialog
         open={isAddWidgetOpen}

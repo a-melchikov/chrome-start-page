@@ -138,7 +138,7 @@ export function ShortcutsHelpDialog({
                     {item.keys.map((key, index) => (
                       <span key={key} className="flex items-center gap-1.5">
                         {index > 0 && item.separator ? (
-                          <span className="text-xs text-theme-text-muted">
+                          <span className="text-xs text-theme-text-secondary">
                             {item.separator}
                           </span>
                         ) : null}

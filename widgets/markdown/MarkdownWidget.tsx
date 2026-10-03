@@ -46,7 +46,7 @@ export function MarkdownWidget({ config, onChange }: MarkdownWidgetProps) {
               'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] transition-colors',
               config.hideCompletedTasks
                 ? 'bg-theme-accent/15 font-medium text-theme-accent'
-                : 'text-theme-text-muted hover:bg-theme-surface-muted hover:text-theme-text-primary',
+                : 'text-theme-text-secondary hover:bg-theme-surface-muted hover:text-theme-text-primary',
             )}
             title={
               config.hideCompletedTasks

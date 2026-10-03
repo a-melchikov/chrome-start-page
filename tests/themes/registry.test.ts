@@ -26,6 +26,27 @@ function contrastRatio(first: string, second: string): number {
 }
 
 describe('theme registry', () => {
+  it('keeps meaningful small text readable on every built-in opaque surface', () => {
+    for (const theme of THEMES) {
+      for (const text of [
+        theme.tokens.textPrimary,
+        theme.tokens.textSecondary,
+      ]) {
+        for (const surface of [
+          theme.tokens.canvasBg,
+          theme.tokens.surfaceBg,
+          theme.tokens.surfaceElevated,
+          theme.tokens.surfaceMuted,
+        ]) {
+          expect(
+            contrastRatio(text, surface),
+            `${theme.id}: ${text} on ${surface}`,
+          ).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
+
   it('registers all 13 themes with complete tokens', () => {
     expect(THEMES.length).toBe(13);
 

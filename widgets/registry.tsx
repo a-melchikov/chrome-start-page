@@ -126,7 +126,7 @@ function defineWidget<TConfig extends WidgetConfig>(
       definition.isConfig(config) ? (
         <Suspense
           fallback={
-            <p className="text-sm text-theme-text-muted" role="status">
+            <p className="text-sm text-theme-text-secondary" role="status">
               Загрузка…
             </p>
           }

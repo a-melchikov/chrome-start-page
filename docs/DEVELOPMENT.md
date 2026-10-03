@@ -75,3 +75,16 @@ Both paths are generated and ignored by Git.
 - `PLAN.md` is an obsolete, untracked bootstrap plan and is intentionally
   excluded from Prettier. Current requirements live in code, README, and the
   context documents.
+
+## Проверка переходов интерфейса
+
+`motion` используется точечно для раскрывающихся разделов и всплывающих
+поверхностей. Импортировать `m` из `motion/react-m`; `MotionProvider` загружает
+`domAnimation` асинхронно. Не использовать полный `motion` или `domMax` на
+стартовом экране и не оборачивать элементы сетки в layout-анимации.
+
+После UI-изменений выполнять `pnpm check` и Chrome smoke check. Проверять
+Tab/стрелки/Escape, быстрые повторные раскрытия, возврат фокуса, системное
+уменьшение движения и окно высотой 400 px. При недоступной странице расширения
+HTTP-оболочка реального `App` с WXT fake-browser подходит для визуальной проверки,
+но не подтверждает работу реальных Chrome permissions и persistent storage.

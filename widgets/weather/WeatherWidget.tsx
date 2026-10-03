@@ -102,13 +102,13 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         aria-label="Погода не настроена"
         className="relative flex h-full w-full select-none flex-col items-center justify-center p-6 text-center"
       >
-        <div className="mb-2 rounded-full border border-theme-border/60 bg-theme-surface-elevated/40 p-2 text-theme-text-muted">
+        <div className="mb-2 rounded-full border border-theme-border/60 bg-theme-surface-elevated/40 p-2 text-theme-text-secondary">
           <WeatherConditionIcon code={null} isDay={true} className="size-6" />
         </div>
         <p className="text-sm font-medium text-theme-text-primary">
           Погода не настроена
         </p>
-        <p className="mt-1 max-w-[200px] text-xs text-theme-text-muted">
+        <p className="mt-1 max-w-[200px] text-xs text-theme-text-secondary">
           Включите режим правки и откройте настройки, чтобы выбрать город или
           местоположение
         </p>
@@ -127,7 +127,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         <p className="text-xs font-medium text-theme-danger">
           Требуется доступ к сервису погоды
         </p>
-        <p className="mt-1 max-w-[220px] text-xs text-theme-text-muted">
+        <p className="mt-1 max-w-[220px] text-xs text-theme-text-secondary">
           Для загрузки прогноза разрешите доступ к api.open-meteo.com
         </p>
         <Button
@@ -151,7 +151,9 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         className="relative flex h-full w-full select-none flex-col items-center justify-center p-6 text-center"
       >
         <div className="size-6 animate-spin rounded-full border-2 border-theme-accent border-t-transparent" />
-        <p className="mt-2 text-xs text-theme-text-muted">Загрузка прогноза…</p>
+        <p className="mt-2 text-xs text-theme-text-secondary">
+          Загрузка прогноза…
+        </p>
       </div>
     );
   }
@@ -167,7 +169,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
         <p className="text-xs font-medium text-theme-danger">
           Не удалось получить погоду
         </p>
-        <p className="mt-1 max-w-[220px] text-xs text-theme-text-muted">
+        <p className="mt-1 max-w-[220px] text-xs text-theme-text-secondary">
           {error}
         </p>
         <Button
@@ -217,14 +219,14 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
       </button>
     ) : loading ? (
       <span
-        className={`shrink-0 text-[10px] ${isVisual ? 'text-white/85' : 'text-theme-text-muted'}`}
+        className={`shrink-0 text-[10px] ${isVisual ? 'text-white/85' : 'text-theme-text-secondary'}`}
         role="status"
       >
         Обновление…
       </span>
     ) : fetchedAt ? (
       <span
-        className={`shrink-0 text-[10px] ${isVisual ? 'text-white/85' : 'text-theme-text-muted'}`}
+        className={`shrink-0 text-[10px] ${isVisual ? 'text-white/85' : 'text-theme-text-secondary'}`}
       >
         {isVisual
           ? formatRelativeUpdate(fetchedAt).toLocaleLowerCase('ru-RU')
@@ -274,7 +276,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                 {updateStatus}
               </div>
             ) : (
-              <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] leading-tight text-theme-text-muted">
+              <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] leading-tight text-theme-text-secondary">
                 {config.location.type === 'city' && config.location.country ? (
                   <span className="min-w-0 truncate">
                     {[config.location.region, config.location.country]
@@ -351,7 +353,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
               className={`flex min-w-0 items-center gap-1 ${isVisual ? 'text-white/95' : 'text-theme-text-secondary'}`}
             >
               <ThermometerIcon
-                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-muted'}`}
+                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-secondary'}`}
               />
               <span className={isVisual ? 'whitespace-nowrap' : 'truncate'}>
                 {formatTemperature(todayDaily?.min)} /{' '}
@@ -364,7 +366,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
               className={`flex min-w-0 items-center gap-1 ${isVisual ? 'text-white/95' : 'text-theme-text-secondary'}`}
             >
               <WindIcon
-                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-muted'}`}
+                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-secondary'}`}
               />
               <span className={isVisual ? 'whitespace-nowrap' : 'truncate'}>
                 {formatWindSpeed(current.windSpeed)}{' '}
@@ -377,7 +379,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
               className={`flex min-w-0 items-center gap-1 ${isVisual ? 'text-white/95' : 'text-theme-text-secondary'}`}
             >
               <DropletIcon
-                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-muted'}`}
+                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-secondary'}`}
               />
               <span className={isVisual ? 'whitespace-nowrap' : 'truncate'}>
                 {formatHumidity(current.humidity)}
@@ -389,7 +391,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
               className={`flex min-w-0 items-center gap-1 ${isVisual ? 'text-white/95' : 'text-theme-text-secondary'}`}
             >
               <GaugeIcon
-                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-muted'}`}
+                className={`${isVisual ? (dimensions.width < 280 ? 'size-3.5' : 'size-4') : 'size-3.5'} shrink-0 ${isVisual ? 'text-white/80' : 'text-theme-text-secondary'}`}
               />
               <span className={isVisual ? 'whitespace-nowrap' : 'truncate'}>
                 {formatPressure(current.pressure)}
@@ -403,7 +405,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                   className={`flex min-w-0 items-center gap-1.5 ${isVisual ? 'text-white/85' : 'text-theme-text-secondary'}`}
                 >
                   <SunMediumIcon
-                    className={`size-3.5 shrink-0 ${isVisual ? 'text-white/65' : 'text-theme-text-muted'}`}
+                    className={`size-3.5 shrink-0 ${isVisual ? 'text-white/65' : 'text-theme-text-secondary'}`}
                   />
                   <span className="truncate">
                     УФ {formatUvIndex(current.uv)}
@@ -413,7 +415,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                   className={`flex min-w-0 items-center gap-1.5 ${isVisual ? 'text-white/85' : 'text-theme-text-secondary'}`}
                 >
                   <EyeIcon
-                    className={`size-3.5 shrink-0 ${isVisual ? 'text-white/65' : 'text-theme-text-muted'}`}
+                    className={`size-3.5 shrink-0 ${isVisual ? 'text-white/65' : 'text-theme-text-secondary'}`}
                   />
                   <span className="truncate">
                     {formatVisibility(current.visibility)}
@@ -434,7 +436,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             }
           >
             <div
-              className={`mb-1 text-[11px] font-medium ${isVisual ? 'text-white/75' : 'text-theme-text-muted'}`}
+              className={`mb-1 text-[11px] font-medium ${isVisual ? 'text-white/75' : 'text-theme-text-secondary'}`}
             >
               По часам
             </div>
@@ -445,7 +447,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                   className={`flex min-w-[44px] shrink-0 flex-col items-center rounded-md border py-1.5 text-center ${isVisual ? 'border-white/15 bg-white/10' : 'border-theme-border/30 bg-theme-surface/40'}`}
                 >
                   <span
-                    className={`text-[10px] ${isVisual ? 'text-white/70' : 'text-theme-text-muted'}`}
+                    className={`text-[10px] ${isVisual ? 'text-white/70' : 'text-theme-text-secondary'}`}
                   >
                     {formatHourSlot(hour.time, timezone)}
                   </span>
@@ -479,7 +481,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             }
           >
             <div
-              className={`mb-1 text-[11px] font-medium ${isVisual ? 'text-white/75' : 'text-theme-text-muted'}`}
+              className={`mb-1 text-[11px] font-medium ${isVisual ? 'text-white/75' : 'text-theme-text-secondary'}`}
             >
               На 5 дней
             </div>
@@ -503,7 +505,9 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
                     <span className="w-20 text-right text-[11px] tabular-nums">
                       <span
                         className={
-                          isVisual ? 'text-white/65' : 'text-theme-text-muted'
+                          isVisual
+                            ? 'text-white/65'
+                            : 'text-theme-text-secondary'
                         }
                       >
                         {formatTemperature(day.min)}

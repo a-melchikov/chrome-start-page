@@ -68,7 +68,7 @@ export function ClockWidget({ config }: ClockWidgetProps) {
         ) : null}
 
         {tzAbbr ? (
-          <div className="widget-clock-sub font-normal text-theme-text-muted">
+          <div className="widget-clock-sub font-normal text-theme-text-secondary">
             {tzAbbr}
           </div>
         ) : null}

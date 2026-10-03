@@ -113,43 +113,34 @@
 
 @layer components {
   :where(.dashboard-root[data-theme-motion='true'])
-    :where([class*='bg-theme-'], [class*='border-theme-']) {
+    :where([class*='bg-theme-'], [class*='border-theme-']):not(
+      .dashboard-toolbar-left
+    ):not([data-motion-popover]) {
     transition-property: background-color, border-color, color;
     transition-duration: 200ms;
     transition-timing-function: ease-out;
   }
 
-  @keyframes dashboard-enter {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @keyframes widget-enter {
     from {
       opacity: 0;
-      transform: scale(0.985);
     }
-
     to {
       opacity: 1;
-      transform: scale(1);
     }
   }
 
-  .dashboard-workspace {
-    opacity: 0;
+  @keyframes workspace-switch {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
-  .dashboard-workspace--ready {
-    opacity: 1;
-    animation: dashboard-enter 200ms ease-out backwards;
+  .workspace-switch {
+    animation: workspace-switch 160ms ease-out;
   }
 
   .new-widget {
@@ -183,13 +174,13 @@
     opacity: 0;
     transform: scale(0.985);
     transition:
-      opacity 200ms ease-out,
-      transform 200ms ease-out,
-      display 200ms allow-discrete,
-      overlay 200ms allow-discrete,
-      background-color 200ms ease-out,
-      border-color 200ms ease-out,
-      color 200ms ease-out;
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      display 180ms allow-discrete,
+      overlay 180ms allow-discrete,
+      background-color 180ms ease-out,
+      border-color 180ms ease-out,
+      color 180ms ease-out;
   }
 
   .dashboard-dialog[open] {
@@ -200,9 +191,9 @@
   .dashboard-dialog::backdrop {
     opacity: 0;
     transition:
-      opacity 200ms ease-out,
-      display 200ms allow-discrete,
-      overlay 200ms allow-discrete;
+      opacity 180ms ease-out,
+      display 180ms allow-discrete,
+      overlay 180ms allow-discrete;
   }
 
   .dashboard-dialog[open]::backdrop {
@@ -230,8 +221,11 @@
     flex-direction: column;
     transform: translateY(-50%);
     transition:
-      opacity 160ms ease-out,
-      transform 160ms ease-out;
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      background-color 200ms ease-out,
+      border-color 200ms ease-out,
+      color 200ms ease-out;
   }
 
   .dashboard-toolbar-left[data-open='false'] {
@@ -425,7 +419,8 @@
   }
 
   .dashboard-root[data-theme-motion='true'],
-  :where(.dashboard-root[data-theme-motion='true']) .dashboard-toolbar,
+  :where(.dashboard-root[data-theme-motion='true'])
+    .dashboard-toolbar:not(.dashboard-toolbar-left),
   :where(.dashboard-root[data-theme-motion='true']) .dashboard-popover-surface,
   :where(.dashboard-root[data-theme-motion='true']) .widget-card-surface,
   :where(.dashboard-root[data-theme-motion='true']) .widget-search-surface {
@@ -719,4 +714,73 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-dialog,
+  .dashboard-dialog[open] {
+    transform: none;
+    transition:
+      opacity 80ms ease-out,
+      display 80ms allow-discrete,
+      overlay 80ms allow-discrete;
+    transition-duration: 80ms !important;
+  }
+  .dashboard-dialog::backdrop {
+    transition:
+      opacity 80ms ease-out,
+      display 80ms allow-discrete,
+      overlay 80ms allow-discrete;
+    transition-duration: 80ms !important;
+  }
+  .dashboard-toolbar-left {
+    transition: opacity 80ms ease-out;
+    transition-duration: 80ms !important;
+  }
+  .new-widget,
+  .workspace-switch {
+    animation-duration: 80ms !important;
+  }
+  @starting-style {
+    .dashboard-dialog[open] {
+      transform: none;
+    }
+  }
+}
+
+/* Keep controls readable over arbitrary wallpaper without changing glass sliders. */
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  :is(.dashboard-popover-surface, .dashboard-toolbar-reveal-button) {
+  background-color: var(--theme-surface-bg);
+}
+
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  :is(.dashboard-toolbar, .edit-controls)
+  button.bg-transparent:not([class*='text-white']),
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  .dashboard-toolbar
+  button:not([aria-pressed='true']) {
+  background-color: var(--theme-surface-bg);
+}
+
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  :is(.dashboard-toolbar, .edit-controls)
+  button.bg-transparent:not([class*='text-white']):hover,
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  .dashboard-toolbar
+  button:not([aria-pressed='true']):hover {
+  background-color: var(--theme-surface-elevated);
+}
+
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  .widget-card-surface:not(:has(.weather-visual))
+  :where(.text-theme-text-secondary):not(button):not(svg) {
+  color: var(--theme-text-primary);
+}
+
+.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+  .widget-search-surface
+  input::placeholder {
+  color: var(--theme-text-primary);
+  opacity: 0.8;
 }

@@ -72,6 +72,7 @@ export function Dialog({
       }
 
       dialog.showModal();
+      dialog.scrollTop = 0;
       const focusTarget =
         dialog.querySelector<HTMLElement>('[data-dialog-initial-focus]') ??
         dialog.querySelector<HTMLElement>(
@@ -83,7 +84,9 @@ export function Dialog({
 
       const previous = returnFocusRef.current;
       const returnTarget =
-        previous?.isConnected && !previous.closest('[inert]')
+        previous?.isConnected &&
+        !previous.closest('[inert]') &&
+        (!previous.closest('dialog') || previous.closest('dialog')?.open)
           ? previous
           : returnFocusFallback?.();
       returnTarget?.focus({ preventScroll: true });
@@ -116,6 +119,14 @@ export function Dialog({
     return () => {
       if (dialog?.open) {
         dialog.close();
+        const previous = returnFocusRef.current;
+        if (
+          previous?.isConnected &&
+          !previous.closest('[inert]') &&
+          (!previous.closest('dialog') || previous.closest('dialog')?.open)
+        ) {
+          previous.focus({ preventScroll: true });
+        }
       }
     };
   }, []);
@@ -146,17 +157,19 @@ export function Dialog({
     <dialog
       {...props}
       ref={dialogRef}
+      inert={!open}
+      aria-hidden={!open || undefined}
       aria-describedby={description ? descriptionId : undefined}
       aria-labelledby={titleId}
       className={classNames(
         'dashboard-dialog p-0 text-theme-text-primary',
         isFullscreen
-          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-hidden rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
+          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-clip rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
           : isLauncher
             ? 'fixed top-[4.5rem] left-1/2 m-0 max-h-[calc(100dvh-5rem)] w-[min(30rem,calc(100vw-2rem))] max-w-none -translate-x-1/2 overflow-visible border-0 bg-transparent shadow-none backdrop:bg-black/20 min-[36rem]:top-4 min-[36rem]:max-h-[calc(100dvh-2rem)] min-[36rem]:w-[min(30rem,calc(100vw-22.25rem))]'
             : isCompact
-              ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50'
-              : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50',
+              ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50'
+              : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50',
         className,
       )}
       onCancel={handleCancel}

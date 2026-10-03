@@ -164,4 +164,71 @@ describe('Select', () => {
     expect(listbox).toHaveClass('w-full', 'mt-1.5');
     expect(listbox).not.toHaveClass('absolute');
   });
+  it('announces the active enabled option, skips disabled entries, and keeps options out of Tab order', async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <>
+        <Select
+          aria-label="Вариант"
+          onValueChange={onValueChange}
+          options={[
+            {
+              value: 'disabled-first',
+              label: 'Недоступный первый',
+              disabled: true,
+            },
+            { value: 'a', label: 'Первый' },
+            {
+              value: 'disabled-middle',
+              label: 'Недоступный средний',
+              disabled: true,
+            },
+            { value: 'b', label: 'Последний' },
+          ]}
+        />
+        <button>Далее</button>
+      </>,
+    );
+    const trigger = screen.getByRole('combobox');
+    await user.click(trigger);
+    const active = () =>
+      document.getElementById(
+        trigger.getAttribute('aria-activedescendant') ?? '',
+      );
+    expect(active()).toHaveTextContent('Первый');
+    await user.keyboard('{ArrowDown}');
+    expect(active()).toHaveTextContent('Последний');
+    await user.keyboard('{Home}');
+    expect(active()).toHaveTextContent('Первый');
+    await user.keyboard('{End}{Enter}');
+    expect(onValueChange).toHaveBeenCalledWith('b');
+    expect(trigger).toHaveFocus();
+    await user.click(trigger);
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Далее' })).toHaveFocus();
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('handles an empty or entirely disabled list without selecting a value', async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const { rerender } = render(
+      <Select options={[]} onValueChange={onValueChange} />,
+    );
+    await user.click(screen.getByRole('combobox'));
+    await user.keyboard('{ArrowDown}{End}{Enter}');
+    expect(onValueChange).not.toHaveBeenCalled();
+    rerender(
+      <Select
+        options={[{ value: 'x', label: 'Недоступно', disabled: true }]}
+        onValueChange={onValueChange}
+      />,
+    );
+    await user.keyboard('{Home}{ArrowUp}{Enter}');
+    expect(screen.getByRole('combobox')).not.toHaveAttribute(
+      'aria-activedescendant',
+    );
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
 });

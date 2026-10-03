@@ -4,6 +4,7 @@ import { Button, Input } from '../../components/ui';
 import { searchCities } from './api';
 import { WeatherWidget } from './WeatherWidget';
 import type { WeatherLocation, WeatherWidgetConfig } from './types';
+import { Popover } from '../../components/ui/Popover';
 
 const MIN_CITY_QUERY_LENGTH = 2;
 
@@ -19,6 +20,9 @@ export function WeatherWidgetEditor({
   onRequestFinish,
 }: WeatherWidgetEditorProps) {
   const searchInputId = useId();
+  const listboxId = useId();
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<
     Extract<WeatherLocation, { type: 'city' }>[]
@@ -53,6 +57,7 @@ export function WeatherWidgetEditor({
         const results = await searchCities(trimmed, controller.signal);
         if (!controller.signal.aborted) {
           setSearchResults(results);
+          setSuggestionsOpen(results.length > 0);
           setSelectedIndex(results.length > 0 ? 0 : -1);
           setIsSearching(false);
         }
@@ -74,6 +79,11 @@ export function WeatherWidgetEditor({
     };
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (suggestionsOpen)
+      optionRefs.current[selectedIndex]?.scrollIntoView?.({ block: 'nearest' });
+  }, [suggestionsOpen, selectedIndex]);
+
   const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearchQuery(val);
@@ -93,12 +103,21 @@ export function WeatherWidgetEditor({
       location: city,
     });
     setSearchQuery('');
+    setSuggestionsOpen(false);
     setSearchResults([]);
     setSelectedIndex(-1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (searchResults.length === 0) return;
+
+    if (!suggestionsOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSuggestionsOpen(true);
+      }
+      return;
+    }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -117,8 +136,11 @@ export function WeatherWidgetEditor({
         handleSelectCity(city);
       }
     } else if (e.key === 'Escape') {
-      setSearchResults([]);
-      setSelectedIndex(-1);
+      e.preventDefault();
+      e.stopPropagation();
+      setSuggestionsOpen(false);
+    } else if (e.key === 'Tab') {
+      setSuggestionsOpen(false);
     }
   };
 
@@ -126,7 +148,7 @@ export function WeatherWidgetEditor({
     <div className="space-y-4 text-theme-text-primary">
       {/* Live Preview */}
       <div className="rounded-xl border border-theme-border/60 bg-theme-surface/50 p-3 shadow-xs">
-        <div className="mb-2 text-xs font-medium text-theme-text-muted">
+        <div className="mb-2 text-xs font-medium text-theme-text-secondary">
           Предпросмотр
         </div>
         <div className="relative flex h-56 w-full items-center justify-center overflow-hidden rounded-xl border border-theme-border bg-theme-surface-elevated shadow-sm">
@@ -167,7 +189,7 @@ export function WeatherWidgetEditor({
 
       {/* Current location status */}
       <div className="rounded-lg border border-theme-border/50 bg-theme-surface/30 p-2.5 text-xs">
-        <div className="text-theme-text-muted">Текущее место:</div>
+        <div className="text-theme-text-secondary">Текущее место:</div>
         <div className="mt-0.5 font-medium text-theme-text-primary">
           {config.location.type === 'unset'
             ? 'Не настроено'
@@ -189,6 +211,15 @@ export function WeatherWidgetEditor({
         <div className="relative">
           <Input
             id={searchInputId}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={suggestionsOpen && searchResults.length > 0}
+            aria-controls={listboxId}
+            aria-activedescendant={
+              suggestionsOpen && searchResults[selectedIndex]
+                ? `${listboxId}-${searchResults[selectedIndex]?.id}`
+                : undefined
+            }
             placeholder="Введите название (от 2 букв)…"
             value={searchQuery}
             onChange={handleSearchQueryChange}
@@ -204,44 +235,52 @@ export function WeatherWidgetEditor({
           )}
 
           {/* Suggestions list */}
-          {searchResults.length > 0 && (
-            <ul
-              aria-label="Подсказки городов"
-              className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-theme-border bg-theme-surface-elevated p-1 shadow-lg"
-              role="listbox"
-            >
-              {searchResults.map((city, idx) => (
-                <li
-                  key={city.id}
-                  aria-selected={idx === selectedIndex}
-                  className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+          <Popover
+            open={suggestionsOpen && searchResults.length > 0}
+            id={listboxId}
+            aria-label="Подсказки городов"
+            className="z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-theme-border bg-theme-surface-elevated p-1 shadow-lg"
+            role="listbox"
+          >
+            {searchResults.map((city, idx) => (
+              <button
+                key={city.id}
+                id={`${listboxId}-${city.id}`}
+                ref={(node) => {
+                  optionRefs.current[idx] = node;
+                }}
+                type="button"
+                tabIndex={-1}
+                aria-selected={idx === selectedIndex}
+                className={`w-full text-left cursor-pointer rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                  idx === selectedIndex
+                    ? 'bg-theme-accent text-theme-accent-text shadow-sm ring-1 ring-inset ring-theme-accent-text/20'
+                    : 'text-theme-text-primary hover:bg-theme-surface'
+                }`}
+                role="option"
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                onClick={() => handleSelectCity(city)}
+              >
+                <span className="font-medium">{city.name}</span>
+                <span
+                  className={`ml-1 text-[11px] ${
                     idx === selectedIndex
-                      ? 'bg-theme-accent text-theme-accent-text shadow-sm ring-1 ring-inset ring-theme-accent-text/20'
-                      : 'text-theme-text-primary hover:bg-theme-surface'
+                      ? 'text-theme-accent-text'
+                      : 'text-theme-text-secondary'
                   }`}
-                  role="option"
-                  onClick={() => handleSelectCity(city)}
                 >
-                  <span className="font-medium">{city.name}</span>
-                  <span
-                    className={`ml-1 text-[11px] ${
-                      idx === selectedIndex
-                        ? 'text-theme-accent-text/75'
-                        : 'text-theme-text-muted'
-                    }`}
-                  >
-                    {[city.region, city.country].filter(Boolean).join(', ')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+                  {[city.region, city.country].filter(Boolean).join(', ')}
+                </span>
+              </button>
+            ))}
+          </Popover>
 
           {searchQuery.trim().length >= MIN_CITY_QUERY_LENGTH &&
             !isSearching &&
             searchResults.length === 0 &&
             !searchError && (
-              <p className="mt-1 text-[11px] text-theme-text-muted">
+              <p className="mt-1 text-[11px] text-theme-text-secondary">
                 Города не найдены
               </p>
             )}

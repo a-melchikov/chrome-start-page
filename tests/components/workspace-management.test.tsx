@@ -22,9 +22,11 @@ describe('Workspace management', () => {
 
     // Open workspace menu
     await user.click(selectorButton);
-    expect(
-      screen.getByRole('heading', { name: 'Рабочие пространства' }),
-    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Рабочие пространства' }),
+      ).toBeVisible(),
+    );
 
     // Click on "Работа" workspace
     const workWorkspaceOption = screen.getByRole('menuitem', {
@@ -54,9 +56,11 @@ describe('Workspace management', () => {
 
     // Press W to open workspace menu
     await user.keyboard('w');
-    expect(
-      await screen.findByRole('heading', { name: 'Рабочие пространства' }),
-    ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('heading', { name: 'Рабочие пространства' }),
+      ).toBeVisible(),
+    );
 
     // Press Escape to close menu
     await user.keyboard('{Escape}');
@@ -155,5 +159,56 @@ describe('Workspace management', () => {
         name: /Пространство: Учёба/,
       }),
     ).toBeVisible();
+  });
+  it('focuses the active workspace on open and keeps management actions reachable by keyboard', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const trigger = await screen.findByRole('button', {
+      name: /Пространство: Основной/,
+    });
+    await user.click(trigger);
+    await waitFor(() =>
+      expect(screen.getByRole('menuitem', { name: 'Основной' })).toHaveFocus(),
+    );
+    await user.tab();
+    expect(
+      screen.getAllByRole('button', { name: 'Переименовать' })[0],
+    ).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(
+      screen.getByRole('textbox', { name: 'Название пространства' }),
+    ).toHaveFocus();
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Escape}');
+    expect(trigger).toHaveFocus();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('cancels an inline rename before closing the workspace menu', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const trigger = await screen.findByRole('button', {
+      name: /Пространство: Основной/,
+    });
+    await user.click(trigger);
+    await waitFor(() =>
+      expect(screen.getByRole('menuitem', { name: 'Основной' })).toHaveFocus(),
+    );
+    await user.tab();
+    await user.keyboard('{Enter}');
+    const input = screen.getByRole('textbox', {
+      name: 'Название пространства',
+    });
+    await user.clear(input);
+    await user.type(input, 'Несохранённое название');
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('menuitem', { name: 'Основной' })).toHaveFocus();
+    expect(screen.getByRole('menu')).toBeVisible();
+    expect(
+      screen.queryByRole('menuitem', { name: 'Несохранённое название' }),
+    ).not.toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(trigger).toHaveFocus();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });

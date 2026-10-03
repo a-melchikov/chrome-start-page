@@ -45,7 +45,7 @@ export function ClockWidgetEditor({
     <div className="space-y-4 text-theme-text-primary">
       {/* Live Preview */}
       <div className="rounded-xl border border-theme-border/60 bg-theme-surface/50 p-3 shadow-xs">
-        <div className="mb-2 text-xs font-medium text-theme-text-muted">
+        <div className="mb-2 text-xs font-medium text-theme-text-secondary">
           Предпросмотр
         </div>
         <div className="relative flex h-24 w-full items-center justify-center overflow-hidden rounded-lg border border-theme-border bg-theme-surface-elevated/40 p-2">
@@ -60,6 +60,7 @@ export function ClockWidgetEditor({
             Часовой пояс
           </label>
           <TimezoneSelect
+            dropdownPosition="static"
             id={timezoneId}
             value={config.timezone}
             onChange={(timezone) => updateConfig({ timezone })}
@@ -72,6 +73,7 @@ export function ClockWidgetEditor({
             Формат времени
           </label>
           <Select
+            dropdownPosition="static"
             id={timeFormatId}
             value={config.timeFormat}
             onChange={(e) => {
@@ -89,6 +91,7 @@ export function ClockWidgetEditor({
             Формат даты
           </label>
           <Select
+            dropdownPosition="static"
             disabled={!config.showDate}
             id={dateFormatId}
             value={config.dateFormat}
@@ -107,7 +110,7 @@ export function ClockWidgetEditor({
 
       {/* Переключатели отображения */}
       <div className="space-y-2 pt-1">
-        <div className="text-xs font-medium text-theme-text-muted">
+        <div className="text-xs font-medium text-theme-text-secondary">
           Элементы циферблата
         </div>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">

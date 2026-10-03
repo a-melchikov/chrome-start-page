@@ -19,6 +19,7 @@ import {
 } from '../icons';
 import { classNames } from '../ui/class-names';
 import { IconButton } from '../ui';
+import { Popover } from '../ui/Popover';
 
 interface WorkspaceSelectorProps {
   compact?: boolean;
@@ -64,6 +65,7 @@ export function WorkspaceSelector({
       );
   }, []);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const renameFocusId = useRef<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameText, setRenameText] = useState('');
 
@@ -91,6 +93,11 @@ export function WorkspaceSelector({
     };
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (
+        event.target instanceof HTMLInputElement &&
+        menuRef.current?.contains(event.target)
+      )
+        return;
       if (event.key === 'Escape' && !document.querySelector('dialog[open]')) {
         event.preventDefault();
         event.stopPropagation();
@@ -129,7 +136,31 @@ export function WorkspaceSelector({
     };
   }, [isOpen, placement, portalRoot, workspaces, renamingId]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const frame = requestAnimationFrame(() => {
+      const menu = menuRef.current;
+      (
+        menu?.querySelector<HTMLElement>('[data-active-workspace]') ??
+        menu?.querySelector<HTMLElement>('[role="menuitem"]')
+      )?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || renamingId || !renameFocusId.current) return;
+    const item = [
+      ...(menuRef.current?.querySelectorAll<HTMLElement>(
+        '[data-workspace-id]',
+      ) ?? []),
+    ].find((element) => element.dataset.workspaceId === renameFocusId.current);
+    item?.focus({ preventScroll: true });
+    renameFocusId.current = null;
+  }, [isOpen, renamingId]);
+
   const startRename = (workspace: WorkspaceConfig) => {
+    renameFocusId.current = workspace.id;
     setRenamingId(workspace.id);
     setRenameText(workspace.name);
   };
@@ -152,13 +183,36 @@ export function WorkspaceSelector({
     }
   };
 
-  const menu = isOpen ? (
-    <div
+  const menu = (
+    <Popover
+      open={isOpen}
       ref={menuRef}
       data-toolbar-owner={toolbarOwner}
       role="menu"
       aria-orientation="vertical"
       aria-labelledby="workspace-selector-trigger"
+      onKeyDown={(event) => {
+        if (event.target instanceof HTMLInputElement) return;
+        if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key))
+          return;
+        event.preventDefault();
+        const items = [
+          ...event.currentTarget.querySelectorAll<HTMLElement>(
+            '[role="menuitem"]',
+          ),
+        ];
+        const current = items.indexOf(document.activeElement as HTMLElement);
+        const index =
+          event.key === 'Home'
+            ? 0
+            : event.key === 'End'
+              ? items.length - 1
+              : (current +
+                  (event.key === 'ArrowDown' ? 1 : -1) +
+                  items.length) %
+                items.length;
+        items[index]?.focus();
+      }}
       className={classNames(
         'dashboard-popover-surface liquid-glass-surface z-50 rounded-xl p-1.5',
         placement === 'right'
@@ -169,7 +223,7 @@ export function WorkspaceSelector({
       <div
         role="heading"
         aria-level={2}
-        className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-theme-text-muted"
+        className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-theme-text-secondary"
       >
         Рабочие пространства
       </div>
@@ -187,6 +241,7 @@ export function WorkspaceSelector({
               >
                 <input
                   autoFocus
+                  aria-label="Название пространства"
                   type="text"
                   maxLength={64}
                   value={renameText}
@@ -212,11 +267,14 @@ export function WorkspaceSelector({
               <button
                 type="button"
                 role="menuitem"
+                data-active-workspace={isActive || undefined}
+                data-workspace-id={workspace.id}
                 onClick={() => {
                   onSwitchWorkspace(workspace.id);
                   closeMenu();
+                  triggerRef.current?.focus();
                 }}
-                className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer py-0.5"
+                className="flex items-center gap-2 flex-1 min-w-0 rounded text-left cursor-pointer py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
               >
                 {isActive ? (
                   <CheckIcon className="size-3.5 shrink-0 text-theme-accent" />
@@ -226,7 +284,7 @@ export function WorkspaceSelector({
                 <span className="truncate">{workspace.name}</span>
               </button>
 
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150">
                 <IconButton
                   aria-label="Переименовать"
                   size="xs"
@@ -298,8 +356,8 @@ export function WorkspaceSelector({
         <LayersIcon className="size-3.5 shrink-0" />
         <span>Управление пространствами...</span>
       </button>
-    </div>
-  ) : null;
+    </Popover>
+  );
 
   return (
     <div ref={bindContainer} className="relative inline-block text-left">
@@ -342,7 +400,7 @@ export function WorkspaceSelector({
             </span>
             <ChevronDownIcon
               className={classNames(
-                'size-3.5 shrink-0 text-theme-text-muted transition-transform duration-200',
+                'size-3.5 shrink-0 text-theme-text-secondary transition-transform duration-200',
                 isOpen && 'rotate-180',
               )}
             />

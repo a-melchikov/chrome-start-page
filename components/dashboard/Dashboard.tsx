@@ -172,8 +172,14 @@ export function Dashboard({
   }>(() => ({ epoch: historyEpoch, ids: [] }));
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [prevWorkspaceId, setPrevWorkspaceId] = useState(activeWorkspaceId);
+  const [animatedWorkspaceId, setAnimatedWorkspaceId] = useState<string | null>(
+    null,
+  );
 
   if (activeWorkspaceId !== prevWorkspaceId) {
+    // Initial storage hydration is immediate; only a later workspace change fades in.
+    if (prevWorkspaceId && activeWorkspaceId)
+      setAnimatedWorkspaceId(activeWorkspaceId);
     setPrevWorkspaceId(activeWorkspaceId);
     setEditingWidgetId(null);
     setNewWidgetIds(new Set());
@@ -353,30 +359,39 @@ export function Dashboard({
   return (
     <>
       {config ? (
-        <WidgetCanvas
+        <div
           key={activeWorkspaceId ?? 'default'}
-          topPadding={toolbar.mode === 'top-right' ? 80 : 24}
-          onInteractionChange={setIsLayoutInteracting}
-          editingWidgetId={editingWidgetId}
-          isEditing={canEditSelection}
-          newWidgetIds={newWidgetIds}
-          selectedWidgetIds={selectedWidgetIds}
-          widgets={activeWidgets}
-          onClearSelection={() => setSelectedWidgetIds(new Set())}
-          onFinishWidgetEditing={finishWidgetEditing}
-          onRemoveWidget={removeWidget}
-          onSelectWidget={selectWidget}
-          onStartWidgetEditing={startWidgetEditing}
-          onUpdateWidget={onUpdateWidget}
-          onUpdateWidgetLayouts={onUpdateWidgetLayouts}
-          onWidgetEnterEnd={(widgetId) => {
-            setNewWidgetIds((ids) => {
-              const next = new Set(ids);
-              next.delete(widgetId);
-              return next;
-            });
-          }}
-        />
+          className={
+            animatedWorkspaceId === activeWorkspaceId
+              ? 'workspace-switch'
+              : undefined
+          }
+        >
+          <WidgetCanvas
+            key={activeWorkspaceId ?? 'default'}
+            topPadding={toolbar.mode === 'top-right' ? 80 : 24}
+            onInteractionChange={setIsLayoutInteracting}
+            editingWidgetId={editingWidgetId}
+            isEditing={canEditSelection}
+            newWidgetIds={newWidgetIds}
+            selectedWidgetIds={selectedWidgetIds}
+            widgets={activeWidgets}
+            onClearSelection={() => setSelectedWidgetIds(new Set())}
+            onFinishWidgetEditing={finishWidgetEditing}
+            onRemoveWidget={removeWidget}
+            onSelectWidget={selectWidget}
+            onStartWidgetEditing={startWidgetEditing}
+            onUpdateWidget={onUpdateWidget}
+            onUpdateWidgetLayouts={onUpdateWidgetLayouts}
+            onWidgetEnterEnd={(widgetId) => {
+              setNewWidgetIds((ids) => {
+                const next = new Set(ids);
+                next.delete(widgetId);
+                return next;
+              });
+            }}
+          />
+        </div>
       ) : null}
 
       <DashboardControls

@@ -1,14 +1,20 @@
 import {
   Children,
+  createContext,
   isValidElement,
   useEffect,
+  useContext,
   useMemo,
   useRef,
   useState,
   type MouseEvent,
   type ReactNode,
+  type ComponentPropsWithoutRef,
 } from 'react';
-import ReactMarkdown, { type Components } from 'react-markdown';
+import ReactMarkdown, {
+  type Components,
+  type ExtraProps,
+} from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, {
   defaultSchema,
@@ -24,6 +30,40 @@ import { toggleMarkdownTask } from './task-list';
 import { normalizeImageUrl, normalizeLinkUrl } from './validation';
 import { remarkTextSizeDirectivePlugin } from './text-size';
 import { remarkTaskFilterPlugin, analyzeTaskContent } from './task-filter';
+
+const TaskLabelContext = createContext('Задача');
+
+function taskLabelText(
+  node: NonNullable<ExtraProps['node']>['children'][number],
+): string {
+  if (node.type === 'text') return node.value;
+  if (node.type !== 'element' || ['ul', 'ol', 'input'].includes(node.tagName))
+    return '';
+  if (node.tagName === 'img') return String(node.properties.alt ?? '');
+  return node.children.map(taskLabelText).join('');
+}
+
+function MarkdownTaskCheckbox({
+  compact,
+  disabled,
+  ...props
+}: ComponentPropsWithoutRef<'input'> & { compact: boolean }) {
+  const label = useContext(TaskLabelContext);
+  return (
+    <input
+      {...props}
+      aria-label={label}
+      checked={Boolean(props.checked)}
+      className={classNames(
+        compact ? 'mt-0.5 size-3' : 'mt-1 size-4',
+        'shrink-0 cursor-pointer accent-theme-accent',
+      )}
+      disabled={disabled}
+      type="checkbox"
+      onChange={() => undefined}
+    />
+  );
+}
 
 interface MarkdownRendererProps {
   content: string;
@@ -197,7 +237,7 @@ function createComponents(
           compact
             ? 'mt-1 mb-0.5 text-[10px] font-semibold'
             : 'mt-2 mb-1 text-xs font-semibold',
-          'text-theme-text-muted first:mt-0',
+          'text-theme-text-secondary first:mt-0',
         )}
         {...props}
       />
@@ -220,7 +260,7 @@ function createComponents(
       <em className="italic text-theme-text-primary" {...props} />
     ),
     del: ({ node: _node, ...props }) => (
-      <del className="text-theme-text-muted" {...props} />
+      <del className="text-theme-text-secondary" {...props} />
     ),
     blockquote: ({ node: _node, ...props }) => (
       <blockquote
@@ -280,35 +320,32 @@ function createComponents(
       };
 
       return (
-        <li
-          className={classNames(
-            'break-words pl-0.5 text-theme-text-primary',
-            compact && 'text-[10px] leading-snug',
-            className?.includes('task-list-item') &&
-              (compact
-                ? 'flex items-start gap-1 pl-0'
-                : 'flex items-start gap-2 pl-0'),
-          )}
-          {...props}
-          onClick={handleClick}
+        <TaskLabelContext.Provider
+          value={node?.children.map(taskLabelText).join('').trim() || 'Задача'}
         >
-          {children}
-        </li>
+          <li
+            className={classNames(
+              'break-words pl-0.5 text-theme-text-primary',
+              compact && 'text-[10px] leading-snug',
+              className?.includes('task-list-item') &&
+                (compact
+                  ? 'flex items-start gap-1 pl-0'
+                  : 'flex items-start gap-2 pl-0'),
+            )}
+            {...props}
+            onClick={handleClick}
+          >
+            {children}
+          </li>
+        </TaskLabelContext.Provider>
       );
     },
     input: ({ node: _node, type, ...props }) =>
       type === 'checkbox' ? (
-        <input
+        <MarkdownTaskCheckbox
           {...props}
-          aria-label={props.checked ? 'Выполнено' : 'Не выполнено'}
-          checked={Boolean(props.checked)}
-          className={classNames(
-            compact ? 'mt-0.5 size-3' : 'mt-1 size-4',
-            'shrink-0 cursor-pointer accent-theme-accent',
-          )}
+          compact={compact}
           disabled={!onContentChange}
-          type="checkbox"
-          onChange={() => undefined}
         />
       ) : null,
     a: ({ node: _node, href = '', children, title: _title, ...props }) => {
@@ -363,7 +400,7 @@ function createComponents(
           title={title}
         />
       ) : (
-        <span className="text-theme-text-muted">{alt}</span>
+        <span className="text-theme-text-secondary">{alt}</span>
       );
     },
     code: ({ node: _node, className, ...props }) => (
@@ -484,7 +521,7 @@ export function MarkdownRenderer({
       <p
         className={classNames(
           compact ? 'text-[10px]' : 'text-sm',
-          'text-theme-text-muted',
+          'text-theme-text-secondary',
         )}
       >
         {emptyMessage}
@@ -503,7 +540,7 @@ export function MarkdownRenderer({
         <p
           className={classNames(
             compact ? 'text-[10px]' : 'text-sm',
-            'text-theme-text-muted italic',
+            'text-theme-text-secondary italic',
           )}
         >
           Все задачи выполнены

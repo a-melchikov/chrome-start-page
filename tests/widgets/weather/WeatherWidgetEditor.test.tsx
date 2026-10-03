@@ -1,3 +1,5 @@
+import userEvent from '@testing-library/user-event';
+import { Dialog } from '../../../components/ui/Dialog';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -104,5 +106,47 @@ describe('WeatherWidgetEditor component', () => {
     fireEvent.click(doneButton);
 
     expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+  it('announces city navigation and dismisses suggestions before the surrounding dialog', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const onOpenChange = vi.fn();
+    vi.spyOn(apiModule, 'searchCities').mockResolvedValue([
+      {
+        type: 'city',
+        id: 524901,
+        name: 'Москва',
+        region: 'Москва',
+        country: 'Россия',
+        latitude: 55.75,
+        longitude: 37.62,
+        timezone: 'Europe/Moscow',
+      },
+    ]);
+    render(
+      <Dialog open title="Настройки погоды" onOpenChange={onOpenChange}>
+        <WeatherWidgetEditor
+          config={initialConfig}
+          onChange={onChange}
+          onRequestFinish={vi.fn()}
+        />
+      </Dialog>,
+    );
+    const input = screen.getByRole('combobox', { name: 'Поиск города' });
+    await user.type(input, 'Мос');
+    const option = await screen.findByRole('option', { name: /Москва/ });
+    expect(input).toHaveAttribute('aria-activedescendant', option.id);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(input).toHaveFocus();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: expect.objectContaining({ name: 'Москва' }),
+      }),
+    );
+    await user.keyboard('{Escape}');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Dialog } from '../../../components/ui/Dialog';
 import { createDefaultClockWidget } from '../../../widgets/clock/defaults';
 import { ClockWidgetEditor } from '../../../widgets/clock/ClockWidgetEditor';
 import type { ClockWidgetConfig } from '../../../widgets/clock/types';
@@ -124,7 +125,7 @@ describe('ClockWidgetEditor', () => {
     const tzButton = screen.getByRole('combobox', { name: 'Часовой пояс' });
     await user.click(tzButton);
 
-    const searchInput = screen.getByRole('textbox', {
+    const searchInput = screen.getByRole('combobox', {
       name: 'Поиск города или пояса',
     });
     await user.type(searchInput, 'tokyo');
@@ -182,5 +183,44 @@ describe('ClockWidgetEditor', () => {
     await user.click(finishButton);
 
     expect(onRequestFinish).toHaveBeenCalledTimes(1);
+  });
+  it('announces filtered timezone navigation and closes the list before the surrounding dialog', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(
+      <Dialog open title="Настройки часов" onOpenChange={onOpenChange}>
+        <ClockWidgetEditor
+          config={config}
+          onChange={onChange}
+          onRequestFinish={onRequestFinish}
+        />
+      </Dialog>,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Часовой пояс' });
+    await user.click(trigger);
+    const input = screen.getByRole('combobox', {
+      name: 'Поиск города или пояса',
+    });
+    await waitFor(() => expect(input).toHaveFocus());
+    await user.type(input, 'tokyo');
+    const option = screen.getByRole('option', { name: /Токио/ });
+    expect(input).toHaveAttribute('aria-activedescendant', option.id);
+    await user.keyboard('{Enter}');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ timezone: 'Asia/Tokyo' }),
+    );
+    expect(trigger).toHaveFocus();
+    await user.click(trigger);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('combobox', { name: 'Поиск города или пояса' }),
+      ).toHaveFocus(),
+    );
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await user.keyboard('{Escape}');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

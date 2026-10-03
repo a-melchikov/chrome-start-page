@@ -448,8 +448,8 @@ describe('widget lifecycle', () => {
     const placeholder = await screen.findByText('Выберите изображение');
     expect(placeholder).toBeInTheDocument();
 
-    const placeholderContainer = placeholder.closest('.min-w-0');
-    expect(placeholderContainer).toHaveClass('pointer-events-none');
+    const placeholderContainer = placeholder.closest('button');
+    expect(placeholderContainer).toBeDisabled();
     expect(placeholderContainer).toHaveAttribute('inert');
 
     // In edit mode, editing is accessed via the toolbar button
@@ -473,7 +473,11 @@ describe('widget lifecycle', () => {
     expect(placeholderContainer).not.toHaveClass('pointer-events-none');
     expect(placeholderContainer).not.toHaveAttribute('inert');
 
-    await user.click(placeholder);
+    const configureButton = screen.getByRole('button', {
+      name: 'Настроить изображение',
+    });
+    configureButton.focus();
+    await user.keyboard('{Enter}');
     expect(
       await screen.findByRole('dialog', { name: 'Настройки изображения' }),
     ).toBeVisible();
@@ -653,5 +657,22 @@ describe('widget lifecycle', () => {
     expect(
       screen.getByRole('button', { name: 'Редактировать виджет «Погода»' }),
     ).toHaveClass('text-white/85');
+  });
+  it('clears a new widget entrance even when animation events never fire', async () => {
+    const onWidgetEnterEnd = vi.fn();
+    render(
+      <WidgetHost
+        isEditing={false}
+        isNew
+        widget={{
+          id: 'no-animation-event',
+          type: 'unknown',
+          layout: { x: 0, y: 0, w: 1, h: 1 },
+        }}
+        onRequestDelete={vi.fn()}
+        onWidgetEnterEnd={onWidgetEnterEnd}
+      />,
+    );
+    await waitFor(() => expect(onWidgetEnterEnd).toHaveBeenCalledOnce());
   });
 });

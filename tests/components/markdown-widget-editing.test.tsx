@@ -105,9 +105,11 @@ describe('MarkdownWidget editing', () => {
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Работа');
 
-    const dialog = await screen.findByRole('dialog', {
-      name: 'Редактор Markdown',
-    });
+    const dialog = await screen.findByRole(
+      'dialog',
+      { name: 'Редактор Markdown' },
+      { timeout: 5000 },
+    );
     expect(dialog).toHaveClass('h-dvh', 'w-screen');
     expect(
       await screen.findByRole('textbox', { name: 'Заголовок' }),

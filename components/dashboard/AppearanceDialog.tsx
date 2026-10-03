@@ -11,6 +11,7 @@ import {
 import { isToolbarConfig } from '../../storage/migrations';
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
+import { Disclosure } from '../ui/Disclosure';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
 import type { AppearanceSection } from './command-catalog';
 
@@ -19,6 +20,7 @@ interface AppearanceDialogProps {
   toolbar: ToolbarConfig;
   onToolbarChange: (toolbar: ToolbarConfig) => void;
   returnFocusFallback?: () => HTMLElement | null;
+  requestedFocus?: HTMLElement | null;
   customThemes?: readonly CustomTheme[];
   requestedSection?: { section: AppearanceSection; token: number } | null;
   isWallpaperUpdating: boolean;
@@ -48,6 +50,7 @@ export function AppearanceDialog({
   toolbar,
   onToolbarChange,
   returnFocusFallback,
+  requestedFocus,
   customThemes = [],
   requestedSection,
   isWallpaperUpdating,
@@ -68,6 +71,27 @@ export function AppearanceDialog({
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
 }: AppearanceDialogProps) {
+  const [openSections, setOpenSections] = useState<
+    Partial<Record<AppearanceSection, boolean>>
+  >(() =>
+    open && requestedSection ? { [requestedSection.section]: true } : {},
+  );
+  const [previousOpen, setPreviousOpen] = useState(open);
+  const [previousRequest, setPreviousRequest] = useState(requestedSection);
+  if (open !== previousOpen || requestedSection !== previousRequest) {
+    setPreviousOpen(open);
+    setPreviousRequest(requestedSection);
+    setOpenSections(
+      open
+        ? requestedSection
+          ? {
+              ...(previousOpen ? openSections : {}),
+              [requestedSection.section]: true,
+            }
+          : openSections
+        : {},
+    );
+  }
   const [urlDraft, setUrlDraft] = useState('');
   const [themeToDelete, setThemeToDelete] = useState<CustomTheme | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -103,21 +127,24 @@ export function AppearanceDialog({
 
   useEffect(() => {
     if (!open || !requestedSection) return;
-    const section = sectionsRef.current?.querySelector<HTMLDetailsElement>(
-      `details[data-appearance-section="${requestedSection.section}"]`,
+    const section = sectionsRef.current?.querySelector<HTMLElement>(
+      `[data-appearance-section="${requestedSection.section}"]`,
     );
     if (!section) return;
-    section.open = true;
-    section.querySelector('summary')?.focus();
-  }, [open, requestedSection]);
+    const frame = requestAnimationFrame(() => {
+      const target =
+        requestedFocus?.isConnected && !requestedFocus.closest('[inert]')
+          ? requestedFocus
+          : section.querySelector('button');
+      target?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, requestedSection, requestedFocus]);
 
   useEffect(() => {
     if (!open) {
       operationControllerRef.current?.abort();
       operationControllerRef.current = null;
-      sectionsRef.current
-        ?.querySelectorAll('details')
-        .forEach((section) => (section.open = false));
     }
 
     return () => operationControllerRef.current?.abort();
@@ -126,9 +153,7 @@ export function AppearanceDialog({
   const closeDialog = () => {
     operationControllerRef.current?.abort();
     operationControllerRef.current = null;
-    sectionsRef.current
-      ?.querySelectorAll('details')
-      .forEach((section) => (section.open = false));
+    setOpenSections({});
     setThemeToDelete(null);
     onFlushAppearancePreview();
     onOpenChange(false);
@@ -176,22 +201,16 @@ export function AppearanceDialog({
         }
       >
         <div ref={sectionsRef} className="space-y-3">
-          <details
+          <Disclosure
+            title="Тема"
+            data-dialog-initial-focus
+            resetKey={open}
             data-appearance-section="theme"
-            className="group rounded-lg border border-theme-border bg-theme-surface"
+            open={Boolean(openSections.theme)}
+            onOpenChange={(next) =>
+              setOpenSections((sections) => ({ ...sections, theme: next }))
+            }
           >
-            <summary
-              className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring"
-              data-dialog-initial-focus
-            >
-              Тема
-              <span
-                aria-hidden="true"
-                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
             <fieldset aria-label="Тема" className="space-y-4 px-4 pb-4 pt-1">
               {/* Custom Themes Sub-section */}
               <div className="space-y-2">
@@ -232,7 +251,7 @@ export function AppearanceDialog({
                             onClick={() =>
                               selectTheme({ type: 'custom', id: cTheme.id })
                             }
-                            className="flex flex-col gap-1.5 text-left outline-none"
+                            className="flex flex-col gap-1.5 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-semibold text-theme-text-primary">
@@ -243,7 +262,7 @@ export function AppearanceDialog({
                               </span>
                             </div>
                             {cTheme.description && (
-                              <p className="line-clamp-2 text-xs text-theme-text-muted">
+                              <p className="line-clamp-2 text-xs text-theme-text-secondary">
                                 {cTheme.description}
                               </p>
                             )}
@@ -323,7 +342,7 @@ export function AppearanceDialog({
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-theme-text-muted">
+                  <p className="text-xs text-theme-text-secondary">
                     У вас пока нет собственных тем. Нажмите «Добавить
                     собственную», чтобы создать новую.
                   </p>
@@ -368,7 +387,7 @@ export function AppearanceDialog({
                                 : 'Тёмная'}
                           </span>
                         </div>
-                        <p className="line-clamp-2 text-xs text-theme-text-muted">
+                        <p className="line-clamp-2 text-xs text-theme-text-secondary">
                           {theme.description}
                         </p>
                         <div className="mt-1 flex items-center gap-1.5">
@@ -401,21 +420,17 @@ export function AppearanceDialog({
                 </div>
               </div>
             </fieldset>
-          </details>
+          </Disclosure>
 
-          <details
+          <Disclosure
+            title="Цвет фона"
+            resetKey={open}
             data-appearance-section="background"
-            className="group rounded-lg border border-theme-border bg-theme-surface"
+            open={Boolean(openSections.background)}
+            onOpenChange={(next) =>
+              setOpenSections((sections) => ({ ...sections, background: next }))
+            }
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-              Цвет фона
-              <span
-                aria-hidden="true"
-                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
             <div className="flex flex-wrap items-center gap-3 px-4 pb-4 pt-1">
               <label className="sr-only" htmlFor="background-color">
                 Цвет фона
@@ -452,21 +467,17 @@ export function AppearanceDialog({
                   </button>
                 )}
             </div>
-          </details>
+          </Disclosure>
 
-          <details
+          <Disclosure
+            title="Обои"
+            resetKey={open}
             data-appearance-section="wallpaper"
-            className="group rounded-lg border border-theme-border bg-theme-surface"
+            open={Boolean(openSections.wallpaper)}
+            onOpenChange={(next) =>
+              setOpenSections((sections) => ({ ...sections, wallpaper: next }))
+            }
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-              Обои
-              <span
-                aria-hidden="true"
-                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
             <div className="space-y-4 px-4 pb-4 pt-1">
               <p className="text-sm text-theme-text-secondary">
                 Изображение заполнит весь экран; края могут быть обрезаны.
@@ -519,16 +530,7 @@ export function AppearanceDialog({
                 </div>
               ) : null}
 
-              <details className="group/local rounded-md border border-theme-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-                  Локальное изображение
-                  <span
-                    aria-hidden="true"
-                    className="text-lg leading-none text-theme-text-secondary transition-transform group-open/local:rotate-90"
-                  >
-                    ›
-                  </span>
-                </summary>
+              <Disclosure title="Локальное изображение" resetKey={open}>
                 <div className="space-y-3 px-3 pb-3 pt-1">
                   {appearance.wallpaper.type === 'local' ? (
                     <p className="text-sm text-theme-text-secondary">
@@ -564,23 +566,14 @@ export function AppearanceDialog({
                       ? 'Заменить файл'
                       : 'Выбрать файл'}
                   </Button>
-                  <p className="text-xs text-theme-text-muted">
+                  <p className="text-xs text-theme-text-secondary">
                     PNG, JPEG, WebP, GIF, AVIF или SVG. Файлы больше 6 МБ будут
                     сжаты без потери качества, если это возможно.
                   </p>
                 </div>
-              </details>
+              </Disclosure>
 
-              <details className="group/url rounded-md border border-theme-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-                  По ссылке
-                  <span
-                    aria-hidden="true"
-                    className="text-lg leading-none text-theme-text-secondary transition-transform group-open/url:rotate-90"
-                  >
-                    ›
-                  </span>
-                </summary>
+              <Disclosure title="По ссылке" resetKey={open}>
                 <form className="space-y-2 px-3 pb-3 pt-1" onSubmit={submitUrl}>
                   {appearance.wallpaper.type === 'url' ? (
                     <p className="text-sm text-theme-text-secondary">
@@ -614,7 +607,7 @@ export function AppearanceDialog({
                     </Button>
                   </div>
                 </form>
-              </details>
+              </Disclosure>
 
               {isWallpaperUpdating ? (
                 <p
@@ -644,21 +637,17 @@ export function AppearanceDialog({
                 Удалить обои
               </Button>
             </div>
-          </details>
+          </Disclosure>
 
-          <details
+          <Disclosure
+            title="Виджеты"
+            resetKey={open}
             data-appearance-section="widgets"
-            className="group rounded-lg border border-theme-border bg-theme-surface"
+            open={Boolean(openSections.widgets)}
+            onOpenChange={(next) =>
+              setOpenSections((sections) => ({ ...sections, widgets: next }))
+            }
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-              Виджеты
-              <span
-                aria-hidden="true"
-                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
             <div className="space-y-5 px-4 pb-4 pt-1">
               <label className="flex cursor-pointer items-center justify-between gap-4">
                 <span className="text-sm font-medium text-theme-text-primary">
@@ -687,24 +676,21 @@ export function AppearanceDialog({
                 onReset={(liquidGlass) => onAppearanceChange({ liquidGlass })}
               />
             </div>
-          </details>
-          <details
+          </Disclosure>
+          <Disclosure
+            title="Панель управления"
+            resetKey={open}
             data-appearance-section="toolbar"
-            className="group rounded-lg border border-theme-border bg-theme-surface"
+            open={Boolean(openSections.toolbar)}
+            onOpenChange={(next) =>
+              setOpenSections((sections) => ({ ...sections, toolbar: next }))
+            }
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring">
-              Панель управления
-              <span
-                aria-hidden="true"
-                className="text-lg leading-none text-theme-text-secondary transition-transform group-open:rotate-90"
-              >
-                ›
-              </span>
-            </summary>
             <div className="space-y-3 px-4 pb-4 pt-1">
               <label className="block space-y-2 text-sm">
                 <span>Расположение и видимость</span>
                 <Select
+                  dropdownPosition="static"
                   aria-label="Расположение и видимость"
                   value={toolbar.mode}
                   options={[
@@ -728,7 +714,7 @@ export function AppearanceDialog({
                 </p>
               )}
             </div>
-          </details>
+          </Disclosure>
         </div>
       </Dialog>
 

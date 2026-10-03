@@ -86,6 +86,17 @@ export function WidgetHost({
       ? definition?.renderEditor?.(widget, onWidgetChange, finishEditing)
       : null;
   const handleEditorExited = useCallback(() => setIsEditorExiting(false), []);
+  const enterEndRef = useRef(onWidgetEnterEnd);
+  useEffect(() => {
+    enterEndRef.current = onWidgetEnterEnd;
+  }, [onWidgetEnterEnd]);
+
+  useEffect(() => {
+    if (!isNew) return;
+    // Also clear the entrance flag if animation events are unavailable or cancelled.
+    const timer = window.setTimeout(() => enterEndRef.current?.(), 250);
+    return () => window.clearTimeout(timer);
+  }, [isNew]);
 
   useEffect(() => {
     if (shouldRestoreEditFocus && !isWidgetEditing && editButtonRef.current) {
@@ -94,7 +105,7 @@ export function WidgetHost({
   }, [isWidgetEditing, shouldRestoreEditFocus]);
 
   const fallback = (
-    <p className="text-sm text-theme-text-muted">
+    <p className="text-sm text-theme-text-secondary">
       Неподдерживаемый тип виджета: {widget.type}
     </p>
   );
@@ -190,21 +201,34 @@ export function WidgetHost({
         {isBare ? (
           isOverlayControls ? (
             <div className="relative h-full w-full overflow-hidden rounded-xl">
-              <div
-                className={classNames(
-                  'h-full w-full min-w-0',
-                  isEditing && 'pointer-events-none select-none',
-                  !isEditing && !hasImage && 'cursor-pointer',
-                )}
-                inert={isEditing ? true : undefined}
-                onClick={
-                  !isEditing && !hasImage && !isWidgetEditing && onRequestEdit
-                    ? startEditing
-                    : undefined
-                }
-              >
-                {content ?? fallback}
-              </div>
+              {!hasImage ? (
+                <button
+                  type="button"
+                  aria-label="Настроить изображение"
+                  disabled={isEditing || isWidgetEditing || !onRequestEdit}
+                  className="h-full w-full min-w-0 cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring disabled:pointer-events-none"
+                  inert={isEditing ? true : undefined}
+                  onClick={startEditing}
+                >
+                  {content ?? fallback}
+                </button>
+              ) : (
+                <div
+                  className={classNames(
+                    'h-full w-full min-w-0',
+                    isEditing && 'pointer-events-none select-none',
+                    !isEditing && !hasImage && 'cursor-pointer',
+                  )}
+                  inert={isEditing ? true : undefined}
+                  onClick={
+                    !isEditing && !hasImage && !isWidgetEditing && onRequestEdit
+                      ? startEditing
+                      : undefined
+                  }
+                >
+                  {content ?? fallback}
+                </div>
+              )}
               <div
                 aria-hidden={!isEditing}
                 className="edit-controls absolute right-2 top-2 z-10 p-0.5"
@@ -290,6 +314,7 @@ export function WidgetHost({
             onExited={handleEditorExited}
             size={definition?.presentation.editorDialogSize}
             title={definition?.presentation.editorTitle ?? displayName}
+            description="Изменения сохраняются автоматически"
             onOpenChange={(open) => {
               if (!open) {
                 finishEditing();

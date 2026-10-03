@@ -411,7 +411,7 @@ export function ImageWidgetEditor({
                   </Button>
                 ) : null}
               </div>
-              <p className="text-xs text-theme-text-muted">
+              <p className="text-xs text-theme-text-secondary">
                 PNG, JPEG, WebP, GIF или AVIF (до 32 МБ). SVG не поддерживается.
               </p>
             </div>
@@ -446,7 +446,7 @@ export function ImageWidgetEditor({
                   </Button>
                 ) : null}
               </div>
-              <p className="text-xs text-theme-text-muted">
+              <p className="text-xs text-theme-text-secondary">
                 Прямая HTTPS-ссылка на изображение.
               </p>
             </form>
@@ -549,7 +549,7 @@ export function ImageWidgetEditor({
                 }}
               />
               {fitMode === 'cover' ? (
-                <div className="pointer-events-none absolute bottom-1 right-1.5 rounded-xs bg-black/60 px-1.5 py-0.5 text-2xs text-white/90 backdrop-blur-xs">
+                <div className="pointer-events-none absolute bottom-1 right-1.5 rounded-xs bg-black/60 px-1.5 py-0.5 text-xs text-white/90 backdrop-blur-xs">
                   Зажмите и тяните
                 </div>
               ) : null}
@@ -564,12 +564,12 @@ export function ImageWidgetEditor({
                   Масштаб (Zoom):
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-2xs font-semibold text-theme-text-primary">
+                  <span className="font-mono text-xs font-semibold text-theme-text-primary">
                     {currentZoom.toFixed(1)}×
                   </span>
                   {currentZoom > 1 ? (
                     <button
-                      className="text-2xs text-theme-accent hover:underline"
+                      className="text-xs text-theme-accent hover:underline"
                       type="button"
                       onClick={() => handleZoomChange(1)}
                     >
@@ -597,7 +597,7 @@ export function ImageWidgetEditor({
               <span className="block text-xs font-medium text-theme-text-secondary">
                 Выравнивание
               </span>
-              <span className="text-2xs text-theme-text-muted">
+              <span className="text-xs text-theme-text-secondary">
                 {getPositionDisplay(config.objectPosition)}
               </span>
             </div>
@@ -618,7 +618,7 @@ export function ImageWidgetEditor({
                         'flex size-6 items-center justify-center rounded-xs transition-colors',
                         isSelected
                           ? 'bg-theme-accent text-white shadow-xs'
-                          : 'text-theme-text-muted hover:bg-theme-surface-muted hover:text-theme-text-primary',
+                          : 'text-theme-text-secondary hover:bg-theme-surface-muted hover:text-theme-text-primary',
                       )}
                       role="radio"
                       title={POSITION_LABELS[pos]}
@@ -631,7 +631,7 @@ export function ImageWidgetEditor({
                         className={classNames(
                           'rounded-full',
                           isSelected
-                            ? 'size-2 bg-white'
+                            ? 'size-2 bg-theme-accent-text'
                             : 'size-1.5 bg-current',
                         )}
                       />
@@ -651,7 +651,7 @@ export function ImageWidgetEditor({
             Размер на дашборде
           </span>
           {naturalDimensions ? (
-            <span className="text-2xs text-theme-text-muted">
+            <span className="text-xs text-theme-text-secondary">
               {naturalDimensions.width} × {naturalDimensions.height} px
             </span>
           ) : null}
@@ -688,7 +688,7 @@ export function ImageWidgetEditor({
                 +
               </button>
             </div>
-            <span className="text-2xs text-theme-text-muted">кол.</span>
+            <span className="text-xs text-theme-text-secondary">кол.</span>
           </div>
 
           {/* Height controller */}
@@ -721,29 +721,29 @@ export function ImageWidgetEditor({
                 +
               </button>
             </div>
-            <span className="text-2xs text-theme-text-muted">стр.</span>
+            <span className="text-xs text-theme-text-secondary">стр.</span>
           </div>
         </div>
 
         {/* Quick aspect ratio presets */}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          <span className="text-2xs text-theme-text-muted">Пропорции:</span>
+          <span className="text-xs text-theme-text-secondary">Пропорции:</span>
           <button
-            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-2xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
+            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
             type="button"
             onClick={() => handleApplyPresetRatio(1, 1)}
           >
             1:1
           </button>
           <button
-            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-2xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
+            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
             type="button"
             onClick={() => handleApplyPresetRatio(4, 3)}
           >
             4:3
           </button>
           <button
-            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-2xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
+            className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
             type="button"
             onClick={() => handleApplyPresetRatio(16, 9)}
           >
@@ -751,7 +751,7 @@ export function ImageWidgetEditor({
           </button>
           {naturalDimensions ? (
             <button
-              className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-2xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
+              className="rounded-xs border border-theme-border bg-theme-surface px-2 py-0.5 text-xs font-medium text-theme-text-secondary transition-colors hover:bg-theme-surface-muted hover:text-theme-text-primary"
               type="button"
               onClick={handleApplyRecommendedSize}
             >

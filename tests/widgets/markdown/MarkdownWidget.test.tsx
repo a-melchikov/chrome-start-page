@@ -271,4 +271,25 @@ describe('MarkdownWidget', () => {
       }),
     );
   });
+  it('names task checkboxes from their own text without including nested tasks', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <MarkdownWidget
+        config={createConfig('- [ ] **Родитель**\n  - [x] Дочерняя задача')}
+        onChange={onChange}
+      />,
+    );
+    const parent = screen.getByRole('checkbox', { name: 'Родитель' });
+    const child = screen.getByRole('checkbox', { name: 'Дочерняя задача' });
+    expect(parent).not.toBeChecked();
+    expect(child).toBeChecked();
+    parent.focus();
+    await user.keyboard(' ');
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: '- [x] **Родитель**\n  - [x] Дочерняя задача',
+      }),
+    );
+  });
 });

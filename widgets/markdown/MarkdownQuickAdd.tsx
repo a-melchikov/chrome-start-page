@@ -50,7 +50,7 @@ export function MarkdownQuickAdd({
         <input
           aria-label={`Быстрое добавление (${placeholder})`}
           className={classNames(
-            'w-full rounded-md border bg-theme-surface-muted/60 px-2.5 py-1 text-xs text-theme-text-primary placeholder:text-theme-text-muted focus:bg-theme-surface focus:outline-none focus-visible:ring-1',
+            'w-full rounded-md border bg-theme-surface-muted/60 px-2.5 py-1 text-xs text-theme-text-primary placeholder:text-theme-text-secondary focus:bg-theme-surface focus:outline-none focus-visible:ring-1',
             error
               ? 'border-red-400 focus-visible:ring-red-400'
               : 'border-theme-border-subtle focus-visible:ring-theme-ring',

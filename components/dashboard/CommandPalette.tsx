@@ -102,7 +102,7 @@ export function CommandPalette({
       <div className="command-palette-surface flex max-h-[calc(100dvh-5rem)] min-h-0 flex-col overflow-hidden rounded-xl border border-theme-border bg-theme-surface shadow-2xl min-[36rem]:max-h-[calc(100dvh-2rem)]">
         <input
           data-dialog-initial-focus
-          className="h-[49px] w-full shrink-0 border-b border-theme-border-subtle bg-transparent px-3 text-sm text-theme-text-primary outline-none placeholder:text-theme-text-muted"
+          className="h-[49px] w-full shrink-0 border-b border-theme-border-subtle bg-transparent px-3 text-sm text-theme-text-primary outline-none placeholder:text-theme-text-secondary"
           aria-activedescendant={
             results[selectedIndex]
               ? `palette-${results[selectedIndex].id}`
@@ -154,18 +154,18 @@ export function CommandPalette({
                 onMouseEnter={() => setSelectedIndex(index)}
               >
                 <span className="text-sm font-medium">{command.label}</span>
-                <span className="text-xs text-theme-text-muted">
+                <span className="text-xs text-theme-text-secondary">
                   {command.category}
                 </span>
               </button>
             ))
           ) : (
-            <p className="px-3 py-5 text-center text-sm text-theme-text-muted">
+            <p className="px-3 py-5 text-center text-sm text-theme-text-secondary">
               Ничего не найдено
             </p>
           )}
         </div>
-        <p className="shrink-0 border-t border-theme-border-subtle px-3 py-2 text-xs text-theme-text-muted">
+        <p className="shrink-0 border-t border-theme-border-subtle px-3 py-2 text-xs text-theme-text-secondary">
           ↑ ↓ — выбор · Enter — выполнить · Esc — закрыть
         </p>
       </div>

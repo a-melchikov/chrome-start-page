@@ -224,6 +224,9 @@ export function MarkdownWidgetEditor({
           </label>
         </div>
 
+        <p className="ml-auto text-xs text-theme-text-secondary">
+          Изменения сохраняются автоматически
+        </p>
         <Button size="small" variant="primary" onClick={onRequestFinish}>
           Готово
         </Button>
@@ -265,7 +268,7 @@ export function MarkdownWidgetEditor({
                   onClick={() => setIsSizeMenuOpen(!isSizeMenuOpen)}
                 >
                   <span>Размер текста</span>
-                  <ChevronDownIcon className="size-3 text-theme-text-muted" />
+                  <ChevronDownIcon className="size-3 text-theme-text-secondary" />
                 </button>
 
                 {isSizeMenuOpen ? (

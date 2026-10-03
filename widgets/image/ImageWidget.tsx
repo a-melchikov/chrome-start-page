@@ -57,7 +57,7 @@ export function ImageWidget({ config }: ImageWidgetProps) {
   if (isLoading) {
     return (
       <div className="widget-card-surface liquid-glass-surface flex h-full w-full flex-col items-center justify-center rounded-xl p-6 text-center">
-        <div className="flex size-14 animate-pulse items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-text-muted/60 shadow-xs">
+        <div className="flex size-14 animate-pulse items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-text-secondary/60 shadow-xs">
           <PhotoIcon className="size-7" />
         </div>
       </div>
@@ -84,7 +84,7 @@ export function ImageWidget({ config }: ImageWidgetProps) {
         <span className="mt-3 text-sm font-semibold text-theme-text-primary transition-colors duration-200 group-hover:text-theme-accent">
           Выберите изображение
         </span>
-        <span className="mt-1 text-xs text-theme-text-muted transition-colors duration-200 group-hover:text-theme-text-secondary">
+        <span className="mt-1 text-xs text-theme-text-secondary transition-colors duration-200 group-hover:text-theme-text-secondary">
           Нажмите, чтобы настроить
         </span>
       </div>

@@ -122,9 +122,9 @@ describe('App', () => {
     await user.click(
       screen.getByRole('option', { name: /Открыть настройки: Обои/ }),
     );
-    const summary = await screen.findByText('Обои', { selector: 'summary' });
+    const summary = await screen.findByText('Обои', { selector: 'button' });
     await waitFor(() =>
-      expect(summary.closest('details')).toHaveAttribute('open'),
+      expect(summary).toHaveAttribute('aria-expanded', 'true'),
     );
     expect(screen.getByRole('dialog', { name: 'Оформление' })).toHaveAttribute(
       'open',
@@ -365,7 +365,7 @@ describe('App', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Импорт и экспорт' }));
     await user.upload(
-      screen.getByLabelText('Файл резервной копии'),
+      await screen.findByLabelText('Файл резервной копии'),
       createBackupFile(imported),
     );
 
@@ -396,11 +396,11 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    const themeSection = screen.getByText('Тема', { selector: 'summary' });
+    const themeSection = screen.getByText('Тема', { selector: 'button' });
     expect(themeSection).toHaveFocus();
     await user.click(themeSection);
     await user.click(screen.getByRole('button', { name: 'Тёмная' }));
-    await user.click(screen.getByText('Цвет фона', { selector: 'summary' }));
+    await user.click(screen.getByText('Цвет фона', { selector: 'button' }));
     fireEvent.change(screen.getByLabelText('Цвет фона'), {
       target: { value: '#123456' },
     });
@@ -436,7 +436,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    await user.click(screen.getByText('Тема', { selector: 'button' }));
     await user.click(screen.getByRole('button', { name: 'Tokyo Night' }));
 
     expect(document.documentElement).toHaveAttribute(
@@ -474,7 +474,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Тема', { selector: 'summary' }));
+    await user.click(screen.getByText('Тема', { selector: 'button' }));
     await user.click(screen.getByRole('button', { name }));
 
     expect(document.documentElement).toHaveAttribute('data-theme', theme);
@@ -523,13 +523,13 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Виджеты', { selector: 'summary' }));
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
     });
     fireEvent.change(transparency, { target: { value: '70' } });
-    expect(screen.getByText('70%')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('70%')).toBeVisible());
     fireEvent.pointerUp(transparency);
 
     await waitFor(async () => {
@@ -590,8 +590,8 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Тема', { selector: 'summary' }));
-    await user.click(screen.getByText('Цвет фона', { selector: 'summary' }));
+    await user.click(screen.getByText('Тема', { selector: 'button' }));
+    await user.click(screen.getByText('Цвет фона', { selector: 'button' }));
 
     expect(screen.getByRole('button', { name: 'Светлая' })).toHaveAttribute(
       'aria-pressed',
@@ -683,8 +683,8 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
       'http://example.com/wallpaper.jpg',
@@ -890,5 +890,47 @@ describe('App', () => {
     ).toHaveFocus();
     expect(searchInput).not.toHaveFocus();
     expect(searchInput).toHaveValue('');
+  });
+  it('preserves the theme draft through full screen preview and returns focus to its appearance opener', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole('button', {
+      name: 'Включить режим редактирования',
+    });
+    await user.keyboard('e');
+    await user.click(
+      await screen.findByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Тема' }));
+    const opener = screen.getByRole('button', { name: /Добавить собственную/ });
+    await user.click(opener);
+    const name = await screen.findByRole('textbox', {
+      name: 'Название темы *',
+    });
+    expect(name).toHaveFocus();
+    await user.clear(name);
+    await user.type(name, 'Морской бриз');
+    await user.click(
+      screen.getByRole('button', { name: 'Показать всю страницу' }),
+    );
+    const returnButton = await screen.findByRole('button', {
+      name: 'Вернуться к редактированию',
+    });
+    await waitFor(() => expect(returnButton).toHaveFocus());
+    expect(
+      screen.queryByRole('dialog', { name: 'Создание темы' }),
+    ).not.toBeInTheDocument();
+    await user.click(returnButton);
+    const restoredName = screen.getByRole('textbox', {
+      name: 'Название темы *',
+    });
+    expect(restoredName).toHaveValue('Морской бриз');
+    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+    await user.click(screen.getByRole('button', { name: 'Не сохранять' }));
+    await screen.findByRole('dialog', { name: 'Оформление' });
+    await waitFor(() => expect(opener).toHaveFocus());
+    expect(
+      screen.queryByRole('dialog', { name: 'Создание темы' }),
+    ).not.toBeInTheDocument();
   });
 });

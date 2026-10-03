@@ -191,9 +191,9 @@ describe('dashboard toolbar integration', () => {
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
     const section = await screen.findByText('Панель управления', {
-      selector: 'summary',
+      selector: 'button',
     });
-    expect(section.closest('details')).not.toHaveAttribute('open');
+    expect(section).toHaveAttribute('aria-expanded', 'false');
     await user.click(section);
     await chooseMode(user, 'Слева — скрываемая');
     await waitFor(async () =>
@@ -290,10 +290,10 @@ describe('dashboard toolbar integration', () => {
     );
     await user.click(screen.getByRole('option', { name: /Панель управления/ }));
     const section = await screen.findByText('Панель управления', {
-      selector: 'summary',
+      selector: 'button',
     });
     await waitFor(() =>
-      expect(section.closest('details')).toHaveAttribute('open'),
+      expect(section).toHaveAttribute('aria-expanded', 'true'),
     );
   });
 

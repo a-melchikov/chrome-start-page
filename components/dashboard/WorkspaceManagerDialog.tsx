@@ -197,7 +197,7 @@ export function WorkspaceManagerDialog({
                       )}
                     </div>
                   )}
-                  <div className="text-xs text-theme-text-muted mt-0.5">
+                  <div className="text-xs text-theme-text-secondary mt-0.5">
                     {formatWidgetCountRu(workspace.widgets.length)}
                   </div>
                 </div>

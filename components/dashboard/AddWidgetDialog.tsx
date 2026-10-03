@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import { useId, type ComponentType } from 'react';
 
 import type { WidgetType } from '../../storage/schema';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
@@ -35,6 +35,7 @@ export function AddWidgetDialog({
   onOpenChange,
   onSelectWidgetType,
 }: AddWidgetDialogProps) {
+  const labelId = useId();
   const selectWidgetType = (type: WidgetType) => {
     onSelectWidgetType(type);
     onOpenChange(false);
@@ -49,7 +50,9 @@ export function AddWidgetDialog({
           return (
             <Button
               key={definition.type}
-              className="w-full justify-start gap-2.5"
+              aria-labelledby={`${labelId}-${definition.type}`}
+              aria-describedby={`${labelId}-${definition.type}-description`}
+              className="!h-auto min-h-14 w-full justify-start gap-3 py-3 text-left"
               data-dialog-initial-focus={index === 0 ? true : undefined}
               size="small"
               variant="secondary"
@@ -58,7 +61,20 @@ export function AddWidgetDialog({
               {Icon ? (
                 <Icon className="size-5 shrink-0 text-theme-text-secondary" />
               ) : null}
-              <span>{definition.metadata.name}</span>
+              <span className="min-w-0">
+                <span
+                  id={`${labelId}-${definition.type}`}
+                  className="block font-medium"
+                >
+                  {definition.metadata.name}
+                </span>
+                <span
+                  id={`${labelId}-${definition.type}-description`}
+                  className="mt-0.5 block text-xs font-normal text-theme-text-secondary"
+                >
+                  {definition.metadata.description}
+                </span>
+              </span>
             </Button>
           );
         })}

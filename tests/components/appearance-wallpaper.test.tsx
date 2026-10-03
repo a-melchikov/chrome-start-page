@@ -47,10 +47,12 @@ describe('AppearanceDialog wallpaper controls', () => {
   it('starts with every appearance section collapsed', () => {
     const { container } = renderDialog();
 
-    expect(container.querySelectorAll('details')).not.toHaveLength(0);
     expect(
-      [...container.querySelectorAll('details')].every(
-        (section) => !section.open,
+      container.querySelectorAll('[aria-expanded][aria-controls]'),
+    ).not.toHaveLength(0);
+    expect(
+      [...container.querySelectorAll('[aria-expanded][aria-controls]')].every(
+        (section) => section.getAttribute('aria-expanded') === 'false',
       ),
     ).toBe(true);
   });
@@ -58,20 +60,20 @@ describe('AppearanceDialog wallpaper controls', () => {
   it('collapses opened sections before the dialog is opened again', async () => {
     const user = userEvent.setup();
     const { container, props, rerender } = renderDialog();
-    const themeSection = screen
-      .getByText('Тема', { selector: 'summary' })
-      .closest('details');
+    const themeSection = screen.getByText('Тема', { selector: 'button' });
 
-    await user.click(screen.getByText('Тема', { selector: 'summary' }));
-    expect(themeSection).toHaveAttribute('open');
+    await user.click(screen.getByText('Тема', { selector: 'button' }));
+    expect(themeSection).toHaveAttribute('aria-expanded', 'true');
 
     rerender(<AppearanceDialog {...props} open={false} />);
-    await waitFor(() => expect(themeSection).not.toHaveAttribute('open'));
+    await waitFor(() =>
+      expect(themeSection).toHaveAttribute('aria-expanded', 'false'),
+    );
     rerender(<AppearanceDialog {...props} open />);
 
     expect(
-      [...container.querySelectorAll('details')].every(
-        (section) => !section.open,
+      [...container.querySelectorAll('[aria-expanded][aria-controls]')].every(
+        (section) => section.getAttribute('aria-expanded') === 'false',
       ),
     ).toBe(true);
   });
@@ -80,10 +82,10 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     const { props } = renderDialog();
     const widgetsSection = screen.getByText('Виджеты', {
-      selector: 'summary',
+      selector: 'button',
     });
 
-    expect(widgetsSection.closest('details')).not.toHaveAttribute('open');
+    expect(widgetsSection).toHaveAttribute('aria-expanded', 'false');
 
     await user.click(widgetsSection);
     const glassSwitch = screen.getByRole('switch', {
@@ -106,7 +108,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     const { props } = renderDialog();
 
-    await user.click(screen.getByText('Виджеты', { selector: 'summary' }));
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
@@ -152,7 +154,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
     });
 
-    await user.click(screen.getByText('Виджеты', { selector: 'summary' }));
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
 
     expect(screen.getByRole('slider', { name: 'Прозрачность' })).toBeDisabled();
     expect(screen.getByRole('slider', { name: 'Размытие' })).toBeDisabled();
@@ -193,9 +195,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     const onSetLocalWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetLocalWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
     await user.click(
-      screen.getByText('Локальное изображение', { selector: 'summary' }),
+      screen.getByText('Локальное изображение', { selector: 'button' }),
     );
 
     const input = screen.getByLabelText('Локальное изображение');
@@ -224,8 +226,8 @@ describe('AppearanceDialog wallpaper controls', () => {
     const onSetUrlWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetUrlWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
 
     const input = screen.getByLabelText('Ссылка на изображение');
     await user.type(input, 'https://example.com/wallpaper.jpg');
@@ -257,7 +259,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       onRemoveWallpaper,
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
 
     expect(screen.getByTestId('wallpaper-preview')).toHaveAttribute(
       'src',
@@ -275,7 +277,8 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     renderDialog({ isWallpaperUpdating: true });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
 
     expect(screen.getByLabelText('Локальное изображение')).toBeDisabled();
     expect(screen.getByLabelText('Ссылка на изображение')).toBeDisabled();
@@ -294,8 +297,8 @@ describe('AppearanceDialog wallpaper controls', () => {
     });
     const { props } = renderDialog({ onSetUrlWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
+    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
 
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
@@ -325,12 +328,14 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'blob:wallpaper',
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
     await user.click(
-      screen.getByText('Локальное изображение', { selector: 'summary' }),
+      screen.getByText('Локальное изображение', { selector: 'button' }),
     );
 
-    expect(screen.getByText('Локальные обои установлены')).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByText('Локальные обои установлены')).toBeVisible(),
+    );
     expect(screen.getByRole('button', { name: 'Заменить файл' })).toBeVisible();
     expect(screen.getByLabelText('Локальное изображение')).toHaveClass(
       'sr-only',
@@ -352,9 +357,9 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'https://example.com/wallpaper.jpg',
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
     const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
-    expect(toggle).toBeVisible();
+    await waitFor(() => expect(toggle).toBeVisible());
     expect(toggle).toBeChecked();
 
     await user.click(toggle);
@@ -375,12 +380,12 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'blob:wallpaper',
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
     const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
-    expect(toggle).toBeVisible();
+    await waitFor(() => expect(toggle).toBeVisible());
     expect(toggle).not.toBeChecked();
 
-    expect(screen.getByText('Отключено')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('Отключено')).toBeVisible());
     expect(screen.getByTestId('wallpaper-preview').parentElement).toHaveClass(
       'opacity-60',
     );
@@ -395,7 +400,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'summary' }));
+    await user.click(screen.getByText('Обои', { selector: 'button' }));
     expect(
       screen.queryByRole('switch', { name: 'Показывать обои' }),
     ).not.toBeInTheDocument();

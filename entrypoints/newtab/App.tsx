@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -24,7 +26,13 @@ import {
 } from '../../themes/registry';
 import { createCustomThemeSnapshot } from '../../themes/color-derivation';
 import type { CustomTheme } from '../../themes/types';
-import { CustomThemeEditorDialog } from '../../components/dashboard/CustomThemeEditorDialog';
+const CustomThemeEditorDialog = lazy(() =>
+  import('../../components/dashboard/CustomThemeEditorDialog').then(
+    (module) => ({
+      default: module.CustomThemeEditorDialog,
+    }),
+  ),
+);
 
 type DashboardStyle = CSSProperties & {
   '--liquid-glass-opacity': number;
@@ -223,9 +231,7 @@ export function App() {
         appearance.theme.type === 'custom' && appearance.theme.id === theme.id;
       saveCustomTheme(theme, { makeActive: isNewTheme || isCurrentActive });
       setIsThemeEditorOpen(false);
-      setThemeBeingEdited(null);
       setFullScreenPreviewDraft(null);
-      setAppearanceReopenToken((t) => t + 1);
     },
     [appearance.theme, isNewTheme, saveCustomTheme],
   );
@@ -240,8 +246,17 @@ export function App() {
     setIsThemeEditorOpen(true);
   }, []);
 
+  const handleThemeEditorExited = useCallback(() => {
+    if (fullScreenPreviewDraft || isThemeEditorOpen) return;
+    setThemeBeingEdited(null);
+    setAppearanceReopenToken((token) => token + 1);
+  }, [fullScreenPreviewDraft, isThemeEditorOpen]);
+
   useEffect(() => {
     if (!fullScreenPreviewDraft) return;
+    document
+      .querySelector<HTMLButtonElement>('[data-theme-preview-return]')
+      ?.focus();
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -257,6 +272,7 @@ export function App() {
     <main
       aria-busy={isLoading}
       data-theme-motion={themeMotionReady}
+      data-wallpaper-active={wallpaperActive}
       className={classNames(
         'dashboard-root relative isolate min-h-screen text-theme-text-primary',
         liquidGlass.enabled && 'liquid-glass-enabled',
@@ -289,6 +305,7 @@ export function App() {
             </strong>
           </span>
           <Button
+            data-theme-preview-return
             variant="primary"
             size="small"
             onClick={handleReturnFromFullScreenPreview}
@@ -298,12 +315,7 @@ export function App() {
         </div>
       )}
 
-      <div
-        className={classNames(
-          'dashboard-workspace relative z-10',
-          !isLoading && 'dashboard-workspace--ready',
-        )}
-      >
+      <div className="dashboard-workspace relative z-10">
         <Dashboard
           appearance={appearance}
           toolbar={config?.toolbar ?? DEFAULT_TOOLBAR}
@@ -371,23 +383,31 @@ export function App() {
       </div>
 
       {themeBeingEdited && (
-        <CustomThemeEditorDialog
-          key={themeBeingEdited.id}
-          open={isThemeEditorOpen}
-          initialTheme={themeBeingEdited}
-          isNew={isNewTheme}
-          existingThemes={config?.customThemes ?? []}
-          widgets={activeWorkspace?.widgets ?? []}
-          onOpenChange={(open) => {
-            setIsThemeEditorOpen(open);
-            if (!open) {
-              setThemeBeingEdited(null);
-              setAppearanceReopenToken((t) => t + 1);
-            }
-          }}
-          onSave={handleSaveCustomTheme}
-          onPreviewFullScreen={handlePreviewFullScreen}
-        />
+        <Suspense
+          fallback={
+            <p
+              className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-theme-border bg-theme-surface px-4 py-2 text-sm"
+              role="status"
+            >
+              Загружаем редактор темы…
+            </p>
+          }
+        >
+          <CustomThemeEditorDialog
+            key={themeBeingEdited.id}
+            open={isThemeEditorOpen}
+            initialTheme={themeBeingEdited}
+            isNew={isNewTheme}
+            existingThemes={config?.customThemes ?? []}
+            widgets={activeWorkspace?.widgets ?? []}
+            onOpenChange={(open) => {
+              setIsThemeEditorOpen(open);
+            }}
+            onExited={handleThemeEditorExited}
+            onSave={handleSaveCustomTheme}
+            onPreviewFullScreen={handlePreviewFullScreen}
+          />
+        </Suspense>
       )}
     </main>
   );
