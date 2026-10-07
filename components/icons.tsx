@@ -95,6 +95,16 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+export function AnalogClockIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l2.5 1.5" />
+      <path d="M12 3v1M12 20v1M3 12h1M20 12h1" strokeWidth="1.75" />
+    </BaseIcon>
+  );
+}
+
 export function TimerIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

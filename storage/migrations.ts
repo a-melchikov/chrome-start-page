@@ -10,6 +10,7 @@ import {
   isImageAssetId,
   isWallpaperAssetId,
 } from './schema';
+import type { AnalogClockDialStyle } from '../widgets/analog-clock/types';
 import type { ClockDateFormat, ClockTimeFormat } from '../widgets/clock/types';
 import {
   IMAGE_OBJECT_POSITIONS,
@@ -180,6 +181,13 @@ function isClockDateFormat(value: unknown): value is ClockDateFormat {
   return typeof value === 'string' && CLOCK_DATE_FORMATS.has(value);
 }
 
+const ANALOG_CLOCK_DIAL_STYLES: ReadonlySet<string> =
+  new Set<AnalogClockDialStyle>(['minimal', 'numbers', 'bauhaus']);
+
+function isAnalogClockDialStyle(value: unknown): value is AnalogClockDialStyle {
+  return typeof value === 'string' && ANALOG_CLOCK_DIAL_STYLES.has(value);
+}
+
 function isValidTimezone(value: unknown): value is string {
   if (typeof value !== 'string' || value.trim() === '') {
     return false;
@@ -275,6 +283,16 @@ function isWidgetConfigV6(value: unknown): boolean {
     return (
       (value.mode === 'visual' || value.mode === 'compact') &&
       isWeatherLocation(value.location)
+    );
+  }
+
+  if (value.type === 'analog-clock') {
+    return (
+      isAnalogClockDialStyle(value.dialStyle) &&
+      typeof value.showSeconds === 'boolean' &&
+      typeof value.showDate === 'boolean' &&
+      typeof value.showTimezone === 'boolean' &&
+      isValidTimezone(value.timezone)
     );
   }
 

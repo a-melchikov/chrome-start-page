@@ -1,3 +1,4 @@
+import type { AnalogClockWidgetConfig } from '../widgets/analog-clock/types';
 import type { ClockWidgetConfig } from '../widgets/clock/types';
 import type { ImageWidgetConfig } from '../widgets/image/types';
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
@@ -62,6 +63,7 @@ export interface WidgetConfigMap {
   image: ImageWidgetConfig;
   clock: ClockWidgetConfig;
   weather: WeatherWidgetConfig;
+  'analog-clock': AnalogClockWidgetConfig;
 }
 
 export type WidgetType = keyof WidgetConfigMap;

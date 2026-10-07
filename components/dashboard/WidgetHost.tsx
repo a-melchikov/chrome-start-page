@@ -62,12 +62,13 @@ export function WidgetHost({
     'type' in ((widget as { source?: unknown }).source as object) &&
     (widget as { source: { type: string } }).source.type !== 'none';
   const isClock = widget.type === 'clock';
+  const isAnalogClock = widget.type === 'analog-clock';
   const isWeather = widget.type === 'weather';
   const isVisualWeather =
     widget.type === 'weather' &&
     'mode' in widget &&
     (widget as { mode?: unknown }).mode === 'visual';
-  const isTitleHidden = isClock || isWeather;
+  const isTitleHidden = isClock || isAnalogClock || isWeather;
   const isImageWithSource = isOverlayControls && hasImage;
   const usesDialogEditor = definition?.presentation.editor === 'dialog';
   const finishEditing = () => {

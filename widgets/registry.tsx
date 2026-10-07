@@ -32,6 +32,13 @@ import {
 } from './weather/defaults';
 import type { WeatherWidgetConfig } from './weather/types';
 import {
+  createDefaultAnalogClockWidget,
+  DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT,
+} from './analog-clock/defaults';
+import type { AnalogClockWidgetConfig } from './analog-clock/types';
+import {
+  AnalogClockWidget,
+  AnalogClockWidgetEditor,
   ClockWidget,
   ClockWidgetEditor,
   ImageWidget,
@@ -246,6 +253,29 @@ function isWeatherWidgetConfig(value: unknown): value is WeatherWidgetConfig {
   );
 }
 
+function isAnalogClockWidgetConfig(
+  value: unknown,
+): value is AnalogClockWidgetConfig {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'analog-clock' &&
+    'dialStyle' in value &&
+    (value.dialStyle === 'minimal' ||
+      value.dialStyle === 'numbers' ||
+      value.dialStyle === 'bauhaus') &&
+    'showSeconds' in value &&
+    typeof value.showSeconds === 'boolean' &&
+    'showDate' in value &&
+    typeof value.showDate === 'boolean' &&
+    'showTimezone' in value &&
+    typeof value.showTimezone === 'boolean' &&
+    'timezone' in value &&
+    typeof value.timezone === 'string'
+  );
+}
+
 const definitions: readonly RegisteredWidgetDefinition[] = [
   defineWidget<MarkdownWidgetConfig>({
     type: 'markdown',
@@ -388,6 +418,31 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_WEATHER_WIDGET_LAYOUT.minW,
         minH: DEFAULT_WEATHER_WIDGET_LAYOUT.minH,
+        resizeHandles: ['se'],
+      },
+    },
+  }),
+  defineWidget<AnalogClockWidgetConfig>({
+    type: 'analog-clock',
+    metadata: {
+      name: 'Аналоговые часы',
+      description:
+        'Стрелочный циферблат с выбором стилей, даты и часового пояса.',
+    },
+    create: createDefaultAnalogClockWidget,
+    isConfig: isAnalogClockWidgetConfig,
+    Renderer: AnalogClockWidget,
+    Editor: AnalogClockWidgetEditor,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: false,
+      editorTitle: 'Настройки аналоговых часов',
+      editorDialogSize: 'default',
+      titleStyle: 'default',
+      layout: {
+        minW: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minW,
+        minH: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minH,
         resizeHandles: ['se'],
       },
     },

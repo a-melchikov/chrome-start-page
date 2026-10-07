@@ -26,6 +26,7 @@ flowchart LR
   Registry --> Pomodoro[Pomodoro widget]
   Registry --> Image[Image widget]
   Registry --> Clock[Clock widget]
+  Registry --> AnalogClock[Analog Clock widget]
   Registry --> Weather[Weather widget]
   Weather <--> WeatherCache[storage/weather-cache]
   Weather <--> OpenMeteo[Open-Meteo API]
@@ -60,7 +61,9 @@ ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`,
 adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
 `objectPosition`, and optional `altText`, Clock adds `timeFormat`, `showTime`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
-`showTimezoneName`, and `showTimezoneAbbr`, and Weather adds `mode`
+`showTimezoneName`, and `showTimezoneAbbr`, Analog Clock adds `dialStyle`
+(`'minimal' | 'numbers' | 'bauhaus'`), `showSeconds`, `showDate`, `showTimezone`,
+and `timezone`, and Weather adds `mode`
 (`'visual' | 'compact'`) and `location` (`'unset' | 'city'`). Weather
 forecast data is cached in WXT Storage under `local:weather-cache:<id>` and not
 persisted to dashboard config or backup.

@@ -122,7 +122,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(blur).toHaveAttribute('max', '40');
     expect(blur).toHaveValue('18');
     expect(shadow).toHaveValue('50');
-    expect(screen.getByText('40%')).toBeVisible();
+    await waitFor(() => expect(screen.getByText('40%')).toBeVisible());
     expect(screen.getByText('18 px')).toBeVisible();
     expect(screen.getByText('50%')).toBeVisible();
 
@@ -285,7 +285,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(
       screen.getByRole('button', { name: 'Установить по ссылке' }),
     ).toBeDisabled();
-    expect(screen.getByText('Проверяем изображение…')).toBeVisible();
+    expect(await screen.findByText('Проверяем изображение…')).toBeVisible();
   });
 
   it('aborts an in-flight validation when the dialog closes', async () => {

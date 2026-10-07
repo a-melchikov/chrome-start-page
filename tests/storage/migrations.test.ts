@@ -951,13 +951,81 @@ describe('toolbar configuration migration', () => {
     },
   );
 
-  it('validates legacy v8 before adding toolbar defaults', () => {
+  it('accepts valid analog-clock widgets in dashboard config', () => {
+    const migrated = migrateDashboardConfig(
+      createTestDashboardWithWidgets([
+        {
+          id: 'analog-clock-1',
+          type: 'analog-clock',
+          dialStyle: 'minimal',
+          showSeconds: true,
+          showDate: true,
+          showTimezone: false,
+          timezone: 'local',
+          layout: { x: 0, y: 0, w: 3, h: 3 },
+        },
+        {
+          id: 'analog-clock-2',
+          type: 'analog-clock',
+          dialStyle: 'numbers',
+          showSeconds: false,
+          showDate: false,
+          showTimezone: true,
+          timezone: 'Europe/Moscow',
+          layout: { x: 3, y: 0, w: 3, h: 3 },
+        },
+        {
+          id: 'analog-clock-3',
+          type: 'analog-clock',
+          dialStyle: 'bauhaus',
+          showSeconds: true,
+          showDate: true,
+          showTimezone: true,
+          timezone: 'UTC',
+          layout: { x: 6, y: 0, w: 3, h: 3 },
+        },
+      ]),
+    );
+
+    expect(migrated.workspaces[0]!.widgets).toHaveLength(3);
+    expect(migrated.workspaces[0]!.widgets[0]?.type).toBe('analog-clock');
+    expect(migrated.workspaces[0]!.widgets[1]?.type).toBe('analog-clock');
+    expect(migrated.workspaces[0]!.widgets[2]?.type).toBe('analog-clock');
+  });
+
+  it('rejects analog-clock widgets with invalid dialStyle or timezone', () => {
     expect(() =>
-      migrateDashboardConfig({
-        ...createDefaultDashboardConfig(),
-        version: 8,
-        workspaces: [],
-      }),
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
+          {
+            id: 'analog-bad-style',
+            type: 'analog-clock',
+            dialStyle: 'roman',
+            showSeconds: true,
+            showDate: true,
+            showTimezone: false,
+            timezone: 'local',
+            layout: { x: 0, y: 0, w: 3, h: 3 },
+          },
+        ]),
+      ),
+    ).toThrow(InvalidDashboardConfigError);
+
+    expect(() =>
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
+          {
+            id: 'analog-bad-tz',
+            type: 'analog-clock',
+            dialStyle: 'minimal',
+            showSeconds: true,
+            showDate: true,
+            showTimezone: false,
+            timezone: 'Invalid/Timezone',
+            layout: { x: 0, y: 0, w: 3, h: 3 },
+          },
+        ]),
+      ),
     ).toThrow(InvalidDashboardConfigError);
   });
 });

@@ -60,3 +60,13 @@ export const WeatherWidgetEditor = lazy(() =>
     default: module.WeatherWidgetEditor,
   })),
 );
+export const AnalogClockWidget = lazy(() =>
+  import('./analog-clock/AnalogClockWidget').then((module) => ({
+    default: module.AnalogClockWidget,
+  })),
+);
+export const AnalogClockWidgetEditor = lazy(() =>
+  import('./analog-clock/AnalogClockWidgetEditor').then((module) => ({
+    default: module.AnalogClockWidgetEditor,
+  })),
+);

@@ -62,6 +62,11 @@ async function addWeatherWidget(user: User) {
   await user.click(screen.getByRole('button', { name: 'Погода' }));
 }
 
+async function addAnalogClockWidget(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+  await user.click(screen.getByRole('button', { name: 'Аналоговые часы' }));
+}
+
 async function getStoredConfig() {
   const config = await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
   if (!config) return null;
@@ -674,5 +679,52 @@ describe('widget lifecycle', () => {
       />,
     );
     await waitFor(() => expect(onWidgetEnterEnd).toHaveBeenCalledOnce());
+  });
+
+  it('creates, edits and immediately persists an AnalogClockWidget', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await enableEditMode(user);
+    await addAnalogClockWidget(user);
+
+    const clockArticle = await screen.findByRole('article', {
+      name: 'Аналоговые часы',
+    });
+    expect(clockArticle).toBeVisible();
+
+    const storedConfig = await getStoredConfig();
+    expect(storedConfig?.widgets).toHaveLength(1);
+    expect(storedConfig?.widgets[0]).toMatchObject({
+      type: 'analog-clock',
+      dialStyle: 'minimal',
+      layout: { w: 2, h: 4 },
+    });
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Редактировать виджет «Аналоговые часы»',
+      }),
+    );
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Настройки аналоговых часов' }),
+    ).toBeVisible();
+
+    const styleSelect = screen.getByRole('combobox', {
+      name: 'Стиль циферблата',
+    });
+    await user.click(styleSelect);
+    await user.click(screen.getByRole('option', { name: /Баухаус/ }));
+
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+    await waitFor(async () => {
+      const updatedConfig = await getStoredConfig();
+      expect(updatedConfig?.widgets[0]).toMatchObject({
+        type: 'analog-clock',
+        dialStyle: 'bauhaus',
+      });
+    });
   });
 });

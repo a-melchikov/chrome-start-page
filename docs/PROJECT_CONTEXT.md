@@ -9,7 +9,7 @@ have the complete dashboard restored from local Chrome storage.
 
 ## Current Product
 
-Version 0.1.0 implements six repeatable widget types:
+Version 0.1.0 implements seven repeatable widget types:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar
@@ -32,6 +32,9 @@ Version 0.1.0 implements six repeatable widget types:
   time, date, and day of week with full customizability: 12h/24h formats, 4 date
   presets, optional seconds, system local or IANA timezones, centered display
   without card title, timezone abbreviation, and container-query responsive text scaling.
+- **Analog Clock** — a card widget (default `2×4`, minimum `2×2`) displaying an
+  analog dial with 3 dial styles (`minimal`, `numbers`, `bauhaus`), optional seconds,
+  date window at 3 o'clock, timezone label, and local or IANA timezones.
 - **Pomodoro** — a configurable focus/break timer with cycle progression,
   persistent runtime state, background alarms, notifications, and audio.
 - **Weather** — a card widget (default `5×5`, minimum `3×3`) supporting visual

@@ -3,6 +3,7 @@ import { useId, type ComponentType } from 'react';
 import type { WidgetType } from '../../storage/schema';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import {
+  AnalogClockIcon,
   ClockIcon,
   CloudSunIcon,
   DocumentTextIcon,
@@ -28,6 +29,7 @@ const WIDGET_ICONS: Record<
   image: PhotoIcon,
   clock: ClockIcon,
   weather: CloudSunIcon,
+  'analog-clock': AnalogClockIcon,
 };
 
 export function AddWidgetDialog({

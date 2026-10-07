@@ -61,6 +61,9 @@ Last updated: 2026-10-02
   formats, 4 date presets, optional seconds, system local or IANA timezones with
   searchable selection, centered display without card title, timezone abbreviation, and
   container-query responsive typography.
+- Analog Clock widgets with customizable dial styles (`minimal`, `numbers`, `bauhaus`),
+  energy-efficient second ticker, date window at 3 o'clock, timezone label,
+  system local or IANA timezones with searchable selection, and responsive SVG scaling.
 - Weather widgets with visual and compact modes, Open-Meteo Forecast and
   Geocoding integration, city search, comprehensive meteorological
   indicators (temperature, feels-like, min/max, wind speed/direction, pressure,
