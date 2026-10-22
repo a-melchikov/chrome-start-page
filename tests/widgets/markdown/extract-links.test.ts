@@ -15,11 +15,28 @@ describe('extractMarkdownLinks', () => {
     ]);
   });
 
-  it('ignores unsafe and local links', () => {
+  it('ignores unsafe links and anchors', () => {
     expect(
       extractMarkdownLinks(
         '[Опасно](javascript:alert%281%29) [Раздел](#section) <a href="data:text/html,bad">Bad</a>',
       ),
     ).toEqual([]);
+  });
+
+  it('extracts local file links and absolute paths', () => {
+    expect(
+      extractMarkdownLinks(
+        '[Go Handbook](file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf)\n\n[Docs](/home/andrey/docs.pdf)',
+      ),
+    ).toEqual([
+      {
+        href: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+        label: 'Go Handbook',
+      },
+      {
+        href: 'file:///home/andrey/docs.pdf',
+        label: 'Docs',
+      },
+    ]);
   });
 });

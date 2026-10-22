@@ -1,4 +1,4 @@
-import { LinkIcon } from '../../components/icons';
+import { DocumentTextIcon, LinkIcon } from '../../components/icons';
 import { SiteFavicon } from '../../components/ui';
 import { classNames } from '../../components/ui/class-names';
 
@@ -10,6 +10,15 @@ interface LinkFaviconProps {
 }
 
 export function LinkFavicon({ href, compact }: LinkFaviconProps) {
+  if (href.startsWith('file:')) {
+    return (
+      <DocumentTextIcon
+        className={classNames(compact ? 'size-3' : 'size-4', 'shrink-0')}
+        data-testid="link-file-icon"
+      />
+    );
+  }
+
   return (
     <SiteFavicon
       className={compact ? 'size-3' : 'size-4'}

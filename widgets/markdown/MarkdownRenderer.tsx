@@ -24,8 +24,10 @@ import remarkDirective from 'remark-directive';
 import remarkGfm from 'remark-gfm';
 
 import { Button } from '../../components/ui';
+import { MotionNotice } from '../../components/ui/MotionNotice';
 import { classNames } from '../../components/ui/class-names';
 import { LinkFavicon } from './LinkFavicon';
+import { openLocalFileLink } from './open-file-link';
 import { toggleMarkdownTask } from './task-list';
 import { normalizeImageUrl, normalizeLinkUrl } from './validation';
 import { remarkTextSizeDirectivePlugin } from './text-size';
@@ -105,7 +107,7 @@ const markdownSanitizeSchema: SanitizeSchema = {
   },
   protocols: {
     ...defaultSchema.protocols,
-    href: ['http', 'https'],
+    href: ['http', 'https', 'file'],
     src: ['https'],
   },
 };
@@ -174,6 +176,7 @@ function createComponents(
   content: string,
   onContentChange?: (content: string) => void,
   compact = false,
+  onNotice?: (message: string) => void,
 ): Components {
   return {
     h1: ({ node: _node, ...props }) => (
@@ -370,6 +373,37 @@ function createComponents(
         return <span title="Некорректная ссылка">{children}</span>;
       }
 
+      const isFileLink = normalizedUrl.href.startsWith('file:');
+
+      const handleLinkClick = async (event: MouseEvent<HTMLAnchorElement>) => {
+        if (!isFileLink) {
+          return;
+        }
+
+        event.preventDefault();
+        const inNewTab = event.ctrlKey || event.metaKey || event.button === 1;
+        const result = await openLocalFileLink(normalizedUrl.href, {
+          inNewTab,
+        });
+        if (!result.opened && result.message) {
+          onNotice?.(result.message);
+        }
+      };
+
+      const handleAuxClick = async (event: MouseEvent<HTMLAnchorElement>) => {
+        if (!isFileLink || event.button !== 1) {
+          return;
+        }
+
+        event.preventDefault();
+        const result = await openLocalFileLink(normalizedUrl.href, {
+          inNewTab: true,
+        });
+        if (!result.opened && result.message) {
+          onNotice?.(result.message);
+        }
+      };
+
       return (
         <a
           className={classNames(
@@ -379,6 +413,8 @@ function createComponents(
           href={normalizedUrl.href}
           title={getTextContent(children)}
           {...props}
+          onClick={handleLinkClick}
+          onAuxClick={handleAuxClick}
         >
           <LinkFavicon href={normalizedUrl.href} compact={compact} />
           <span className="min-w-0">{children}</span>
@@ -501,8 +537,16 @@ export function MarkdownRenderer({
   compact = false,
   hideCompletedTasks = false,
 }: MarkdownRendererProps) {
+  const [fileNotice, setFileNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fileNotice) return;
+    const timer = window.setTimeout(() => setFileNotice(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [fileNotice]);
+
   const components = useMemo(
-    () => createComponents(content, onContentChange, compact),
+    () => createComponents(content, onContentChange, compact, setFileNotice),
     [content, onContentChange, compact],
   );
 
@@ -564,6 +608,11 @@ export function MarkdownRenderer({
       >
         {content}
       </ReactMarkdown>
+      <MotionNotice
+        className="fixed bottom-4 left-1/2 z-30 max-w-[calc(100vw-2rem)] rounded-md border border-theme-border bg-theme-surface px-3 py-2 text-sm text-theme-text-primary shadow-lg"
+        message={fileNotice}
+        role="status"
+      />
     </div>
   );
 }

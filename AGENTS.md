@@ -116,7 +116,7 @@ specification.
   unsupported configurations.
 - Render user Markdown through the existing parse/sanitize pipeline. Never use
   unsanitized HTML or `dangerouslySetInnerHTML`.
-- Links are HTTP/HTTPS only and stay in the current tab. Images are absolute
+- Links support HTTP/HTTPS and local file:// (stay in current tab by default, Ctrl/middle-click opens new tab). Images are absolute
   HTTPS only and keep lazy loading plus `no-referrer`.
 - Search uses fixed HTTPS GET endpoints, never persists queries, and performs no
   request before explicit submit.

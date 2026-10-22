@@ -9,13 +9,13 @@ have the complete dashboard restored from local Chrome storage.
 
 ## Current Product
 
-Version 0.1.0 implements seven repeatable widget types:
+Version 0.1.1 implements seven repeatable widget types:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar
   with template-specific formatting, single-line text sizing directives (`:large[текст]` / `:xlarge[текст]`),
   task filtering (`hideCompletedTasks`) with parent preservation for open subtasks and
-  all-completed empty state, sanitized CommonMark/GFM rendering, interactive task lists, safe links and
+  all-completed empty state, sanitized CommonMark/GFM rendering, interactive task lists, safe links (HTTP/HTTPS and local file://) and
   HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog with behavior settings.
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and
   DuckDuckGo use fixed GET endpoints and bundled brand icons. One surface places

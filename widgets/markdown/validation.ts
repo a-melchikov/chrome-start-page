@@ -6,6 +6,7 @@ export type UrlValidationResult =
   | { valid: false; reason: UrlValidationReason; message: string };
 
 const explicitSchemePattern = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
+const windowsPathPattern = /^[a-zA-Z]:[/\\]/;
 
 export function normalizeLinkUrl(sourceUrl: string): UrlValidationResult {
   const value = sourceUrl.trim();
@@ -18,7 +19,10 @@ export function normalizeLinkUrl(sourceUrl: string): UrlValidationResult {
     };
   }
 
-  if (/\s/.test(value)) {
+  const isLocalPath = value.startsWith('/') || windowsPathPattern.test(value);
+  const isFileUrl = value.startsWith('file:');
+
+  if (!isLocalPath && !isFileUrl && /\s/.test(value)) {
     return {
       valid: false,
       reason: 'spaces',
@@ -26,19 +30,49 @@ export function normalizeLinkUrl(sourceUrl: string): UrlValidationResult {
     };
   }
 
-  const candidate = explicitSchemePattern.test(value)
-    ? value
-    : `https://${value}`;
+  let candidate = value;
+
+  if (isLocalPath) {
+    if (value.startsWith('/')) {
+      candidate = `file://${encodeURI(value)}`;
+    } else {
+      const normalizedWin = value.replace(/\\/g, '/');
+      candidate = `file:///${encodeURI(normalizedWin)}`;
+    }
+  } else if (isFileUrl) {
+    try {
+      candidate = encodeURI(decodeURI(candidate));
+    } catch {
+      candidate = encodeURI(candidate);
+    }
+  } else {
+    candidate = explicitSchemePattern.test(value) ? value : `https://${value}`;
+  }
 
   try {
     const url = new URL(candidate);
 
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    if (
+      url.protocol !== 'http:' &&
+      url.protocol !== 'https:' &&
+      url.protocol !== 'file:'
+    ) {
       return {
         valid: false,
         reason: 'unsupported-protocol',
-        message: 'Разрешены только HTTP и HTTPS ссылки',
+        message: 'Разрешены только HTTP, HTTPS и локальные file:// ссылки',
       };
+    }
+
+    if (url.protocol === 'file:') {
+      if (!url.pathname || url.pathname === '/' || url.pathname === '//') {
+        return {
+          valid: false,
+          reason: 'invalid',
+          message: 'Укажите корректный путь к файлу',
+        };
+      }
+      return { valid: true, href: url.href };
     }
 
     if (!url.hostname) {

@@ -97,7 +97,7 @@ viewport offset below the toolbar. Closed search remains visually absent.
 Widget focus uses the rendered card's `data-widget-id` and temporary focus.
 `widgets/markdown/extract-links.ts` parses saved Markdown with `remark-parse`
 and `remark-gfm`, then validates candidate URLs with the same `normalizeLinkUrl`
-rule as the renderer. No Chrome bookmarks access or permission is used.
+rule as the renderer (supporting HTTP/HTTPS and local `file://` URIs). No Chrome bookmarks access or permission is used.
 `download-backup.ts` shares the Blob download between the backup dialog and
 direct export command; both call the same queued backup export hook.
 
@@ -394,8 +394,8 @@ geocoding without API keys:
 
 `wxt.config.ts` is the manifest source. Permissions are `storage`,
 `unlimitedStorage`, `favicon`, `alarms`, `notifications`, and `offscreen`.
-Host permissions include `https://api.open-meteo.com/*` and
-`https://geocoding-api.open-meteo.com/*`. Static assets in `public/` are
+Host permissions include `https://api.open-meteo.com/*`,
+`https://geocoding-api.open-meteo.com/*`, and `file:///*`. Static assets in `public/` are
 bundled, and generated `.wxt/` and `.output/` directories are never source files.
 
 ## Панель управления

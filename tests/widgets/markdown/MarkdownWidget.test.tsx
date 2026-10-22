@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { createDefaultMarkdownWidget } from '../../../widgets/markdown/defaults';
 import { MarkdownWidget } from '../../../widgets/markdown/MarkdownWidget';
@@ -87,6 +88,73 @@ describe('MarkdownWidget', () => {
     expect(link).not.toHaveAttribute('target');
     fireEvent.error(container.querySelector('img') as HTMLImageElement);
     expect(screen.getByTestId('link-favicon-fallback')).toBeVisible();
+  });
+
+  it('renders local file links with DocumentTextIcon and opens them via tabs when allowed', async () => {
+    const user = userEvent.setup();
+    fakeBrowser.extension.isAllowedFileSchemeAccess = vi
+      .fn()
+      .mockResolvedValue(true);
+    fakeBrowser.tabs.update = vi.fn().mockResolvedValue({} as never);
+    fakeBrowser.tabs.create = vi.fn().mockResolvedValue({} as never);
+
+    render(
+      <MarkdownWidget
+        config={createConfig(
+          '[Учебник](file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf)',
+        )}
+      />,
+    );
+
+    const link = screen.getByRole('link', { name: 'Учебник' });
+    expect(link).toHaveAttribute(
+      'href',
+      'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+    );
+    expect(screen.getByTestId('link-file-icon')).toBeVisible();
+
+    await user.click(link);
+    expect(fakeBrowser.tabs.update).toHaveBeenCalledWith({
+      url: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+    });
+
+    await user.keyboard('{Control>}');
+    await user.click(link);
+    await user.keyboard('{/Control}');
+    expect(fakeBrowser.tabs.create).toHaveBeenCalledWith({
+      url: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+    });
+  });
+
+  it('copies path to clipboard and shows notice when file URL access is not allowed', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    fakeBrowser.extension.isAllowedFileSchemeAccess = vi
+      .fn()
+      .mockResolvedValue(false);
+
+    render(
+      <MarkdownWidget
+        config={createConfig(
+          '[Локальный документ](/home/andrey/Downloads/doc.pdf)',
+        )}
+      />,
+    );
+
+    const link = screen.getByRole('link', { name: 'Локальный документ' });
+    await user.click(link);
+
+    expect(writeText).toHaveBeenCalledWith(
+      'file:///home/andrey/Downloads/doc.pdf',
+    );
+    expect(
+      await screen.findByText(/Ссылка скопирована в буфер обмена/),
+    ).toBeVisible();
   });
 
   it('allows HTTPS images with privacy and loading attributes', () => {

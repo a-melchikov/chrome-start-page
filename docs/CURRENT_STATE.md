@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-10-02
+Last updated: 2026-10-22
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Last updated: 2026-10-02
   после hover или M, закрывается кнопкой/внешним кликом/M; редактирование доступно
   при скрытой панели. Состояние раскрытия не сохраняется; настройки мигрируют в v9.
 
-- WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.0.
+- WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.1.
 - Version 9 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
   isolated `widgets`, `layout`, `appearance` (`theme`, `backgroundColor`, `wallpaper`, `liquidGlass`) per workspace, global shared `customThemes`,
   full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.

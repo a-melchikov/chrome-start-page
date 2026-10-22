@@ -6,7 +6,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'Chrome Start Page',
-    version: '0.1.0',
+    version: '0.1.1',
     description: 'Custom Chrome new tab page',
     icons: {
       16: 'icons/icon-16.png',
@@ -30,6 +30,7 @@ export default defineConfig({
     host_permissions: [
       'https://api.open-meteo.com/*',
       'https://geocoding-api.open-meteo.com/*',
+      'file:///*',
     ],
     content_security_policy: {
       extension_pages: "script-src 'self'; object-src 'none'; base-uri 'none';",

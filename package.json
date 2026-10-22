@@ -1,6 +1,6 @@
 {
   "name": "chrome-start-page",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A minimal custom new tab page for Google Chrome",
   "private": true,
   "type": "module",

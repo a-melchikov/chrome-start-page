@@ -41,6 +41,7 @@ import { WorkspaceSelector } from './WorkspaceSelector';
 import { WorkspaceManagerDialog } from './WorkspaceManagerDialog';
 import { downloadBackup } from './download-backup';
 import type { AppearanceSection, PaletteCommand } from './command-catalog';
+import { openLocalFileLink } from '../../widgets/markdown/open-file-link';
 
 const AppearanceDialog = lazy(() =>
   import('./AppearanceDialog').then((module) => ({
@@ -368,7 +369,15 @@ export function DashboardControls({
         });
       }
     } else if (command.kind === 'link') {
-      window.location.assign(command.href);
+      if (command.href.startsWith('file:')) {
+        void openLocalFileLink(command.href).then((result) => {
+          if (!result.opened && result.message) {
+            setPaletteFeedback(result.message);
+          }
+        });
+      } else {
+        window.location.assign(command.href);
+      }
     }
   };
 
