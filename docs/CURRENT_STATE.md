@@ -17,7 +17,8 @@ Last updated: 2026-10-22
   full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.
 - Auto-migration pipeline v1–v8 -> v9 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
 - Global extensible theme system and design tokens (`themes/`, `themes.css`,
-  Tailwind CSS 4 `@theme`) with 13 curated presets: System, Light, Dark,
+  Tailwind CSS 4 `@theme`) with 14 curated presets: System, Light, Dark,
+  «Графит и мята» (графитовый фон и мятный акцент по референсу),
   Tokyo Night, Rainy Tokyo, Cozy Lofi Night, Catppuccin Mocha, Catppuccin Latte,
   Paper Sage, Apricot Noon, Nord, SynthWave '84 (with neon glow), and Solarized Dark.
   All widgets, controls,

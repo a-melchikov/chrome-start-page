@@ -73,6 +73,43 @@
   --theme-glow: none;
 }
 
+[data-theme='graphite-mint'] {
+  --theme-canvas-bg: #151d1f;
+  --theme-surface-bg: #242b2d;
+  --theme-surface-elevated: #333b3d;
+  --theme-surface-muted: #1c2224;
+  --theme-border: #3a4244;
+  --theme-border-subtle: #30383a;
+  --theme-text-primary: #e1eae8;
+  --theme-text-secondary: #b4c2bf;
+  --theme-text-muted: #98a8a5;
+  --theme-accent: #42c7b4;
+  --theme-accent-hover: #71d9ca;
+  --theme-accent-text: #151d1f;
+  --theme-ring: #42c7b4;
+  --theme-danger: #ed8796;
+  --theme-danger-bg: #422f35;
+  --theme-danger-hover-bg: #53373f;
+  --theme-danger-border: #75444e;
+  --theme-danger-text: #ed8796;
+  --theme-code-bg: #1c2224;
+  --theme-code-border: #30383a;
+  --theme-quote-border: #42c7b4;
+  --theme-link: #42c7b4;
+  --theme-link-hover: #71d9ca;
+  --theme-pomodoro-track: #333b3d;
+  --theme-pomodoro-progress: #42c7b4;
+  --theme-glass-border: rgba(225, 234, 232, 0.1);
+  --theme-glass-rim: rgba(225, 234, 232, 0.16);
+  --theme-glass-shadow-color: rgba(
+    10,
+    15,
+    17,
+    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
+  );
+  --theme-glow: none;
+}
+
 [data-theme='tokyo-night'] {
   --theme-canvas-bg: #1a1b26;
   --theme-surface-bg: #24283b;

@@ -91,7 +91,8 @@ describe('CommandPalette', () => {
       />,
     );
     await user.click(screen.getByRole('option', { name: /Переключить тему/ }));
-    expect(screen.getAllByRole('option')).toHaveLength(13);
+    expect(screen.getAllByRole('option')).toHaveLength(14);
+    expect(screen.getByRole('option', { name: /Графит и мята/ })).toBeVisible();
     expect(
       screen.getByRole('option', { name: /Бумага и шалфей/ }),
     ).toBeInTheDocument();

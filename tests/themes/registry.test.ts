@@ -47,8 +47,8 @@ describe('theme registry', () => {
     }
   });
 
-  it('registers all 13 themes with complete tokens', () => {
-    expect(THEMES.length).toBe(13);
+  it('registers all 14 themes with complete tokens', () => {
+    expect(THEMES.length).toBe(14);
 
     for (const theme of THEMES) {
       expect(theme.id).toBeDefined();
@@ -108,6 +108,30 @@ describe('theme registry', () => {
     expect(latteResolved.definition.id).toBe('catppuccin-latte');
   });
 
+  it('defines graphite-mint with the reference colors in either system mode', () => {
+    const theme = getThemeDefinition('graphite-mint');
+    expect(theme.name).toBe('Графит и мята');
+    expect(theme.defaultBackgroundColor).toBe('#151d1f');
+    expect(theme.previewColors).toEqual({
+      bg: '#151d1f',
+      surface: '#242b2d',
+      accent: '#42c7b4',
+    });
+    expect(theme.tokens.canvasBg).toBe('#151d1f');
+    expect(theme.tokens.surfaceBg).toBe('#242b2d');
+    expect(theme.tokens.textPrimary).toBe('#e1eae8');
+    expect(theme.tokens.accent).toBe('#42c7b4');
+    for (const systemDarkMode of [true, false]) {
+      const resolved = resolveTheme(
+        { type: 'builtin', id: 'graphite-mint' },
+        systemDarkMode,
+      );
+      expect(resolved.definition.id).toBe('graphite-mint');
+      expect(resolved.mode).toBe('dark');
+      expect(resolved.isCustom).toBe(false);
+    }
+  });
+
   it.each([
     ['paper-sage', '#f6f3eb', '#fffefa', '#276354'],
     ['apricot-noon', '#fff3e8', '#fffcf8', '#b34f36'],
@@ -125,7 +149,7 @@ describe('theme registry', () => {
     },
   );
 
-  it.each(['paper-sage', 'apricot-noon'] as const)(
+  it.each(['paper-sage', 'apricot-noon', 'graphite-mint'] as const)(
     'keeps text and controls readable in %s',
     (id) => {
       const tokens = getThemeDefinition(id).tokens;

@@ -49,7 +49,8 @@ Version 0.1.1 implements seven repeatable widget types:
   переходят в сетку 2×2; компактный режим сохраняет обычную подачу данных.
 
 The dashboard has light/dark/system themes, including the warm light presets
-«Бумага и шалфей» and «Абрикосовый полдень», an arbitrary background color,
+«Бумага и шалфей» and «Абрикосовый полдень», and the dark preset «Графит и мята»
+(background `#151D1F`, text `#E1EAE8`, accent `#42C7B4`), an arbitrary background color,
 validated local or HTTPS wallpaper with full-screen cover cropping, a 12-column
 draggable/resizable grid, autosave, deletion confirmation, keyboard dialog
 behavior, restoration after Chrome restarts, and full versioned JSON backup and
@@ -59,7 +60,7 @@ restore (format v3) with embedded local wallpaper and image assets.
 ввода или нажатия на лупу. Под полем сразу раскрывается список на слегка
 затемнённом фоне; клик вне поиска или Escape его закрывает. Поиск охватывает
 действия, все типы и существующие экземпляры виджетов,
-13 тем, разделы оформления и безопасные HTTP/HTTPS ссылки из сохранённого
+14 тем, разделы оформления и безопасные HTTP/HTTPS ссылки из сохранённого
 Markdown. Поле остаётся на одной линии с блоком кнопок и сужается при
 увеличении масштаба; на совсем узком экране оно переносится ниже. Поле и
 результаты образуют одну панель с короткой анимацией появления; на экране видны

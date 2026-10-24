@@ -334,12 +334,13 @@ Active tabs additionally play a local Web Audio chime if open.
 The theme architecture lives in `themes/` and decouples color palettes and
 visual tokens from widget logic and components:
 
-- `themes/types.ts` defines `BuiltinThemeId` (13 themes: `system`, `light`, `dark`,
+- `themes/types.ts` defines `BuiltinThemeId` (14 themes: `system`, `light`, `dark`,
+  `graphite-mint`,
   `tokyo-night`, `rainy-tokyo`, `cozy-lofi-night`, `catppuccin-mocha`,
   `catppuccin-latte`, `paper-sage`, `apricot-noon`, `nord`, `synthwave-84`,
   `solarized-dark`), `ThemeRef` (`builtin` or `custom`), `CustomTheme` with 28
   semantic color keys, `ThemeTokens`, `ThemeDefinition`, and `ThemePreviewColors`.
-- `themes/palettes.ts` provides semantic token definitions for all 12 concrete
+- `themes/palettes.ts` provides semantic token definitions for all 13 concrete
   builtin palettes; `system` resolves to the existing light or dark preset.
 - `themes/color-utils.ts` contains color helpers: hex validation/normalization,
   relative luminance, WCAG contrast calculation, and linear RGB blending.

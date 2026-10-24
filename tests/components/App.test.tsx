@@ -74,7 +74,7 @@ describe('App', () => {
     );
     await user.type(await screen.findByRole('combobox'), 'Переключить тему');
     await user.click(screen.getByRole('option', { name: /Переключить тему/ }));
-    expect(screen.getAllByRole('option')).toHaveLength(13);
+    expect(screen.getAllByRole('option')).toHaveLength(14);
     await user.click(screen.getByRole('option', { name: /Nord/ }));
     await waitFor(() =>
       expect(document.documentElement).toHaveAttribute('data-theme', 'nord'),
@@ -460,50 +460,58 @@ describe('App', () => {
   });
 
   it.each([
-    ['Бумага и шалфей', 'paper-sage', '#f6f3eb'],
-    ['Абрикосовый полдень', 'apricot-noon', '#fff3e8'],
-  ] as const)('selects and restores %s', async (name, theme, background) => {
-    const user = userEvent.setup();
-    const view = render(<App />);
+    ['Бумага и шалфей', 'paper-sage', '#f6f3eb', 'light'],
+    ['Абрикосовый полдень', 'apricot-noon', '#fff3e8', 'light'],
+    ['Графит и мята', 'graphite-mint', '#151d1f', 'dark'],
+  ] as const)(
+    'selects and restores %s',
+    async (name, theme, background, mode) => {
+      const user = userEvent.setup();
+      const view = render(<App />);
 
-    await user.click(
-      await screen.findByRole('button', {
-        name: 'Включить режим редактирования',
-      }),
-    );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
-    await user.click(screen.getByText('Тема', { selector: 'button' }));
-    await user.click(screen.getByRole('button', { name }));
-
-    expect(document.documentElement).toHaveAttribute('data-theme', theme);
-    expect(document.documentElement).not.toHaveClass('dark');
-    expect(screen.getByRole('main')).toHaveStyle({
-      backgroundColor: background,
-    });
-    await waitFor(async () => {
-      const storedConfig = await storage.getItem<DashboardConfig>(
-        DASHBOARD_STORAGE_KEY,
+      await user.click(
+        await screen.findByRole('button', {
+          name: 'Включить режим редактирования',
+        }),
       );
-      expect(storedConfig?.workspaces[0]?.appearance.theme).toEqual({
-        type: 'builtin',
-        id: theme,
-      });
-      expect(storedConfig?.workspaces[0]?.appearance.backgroundColor).toEqual({
-        type: 'theme',
-      });
-    });
+      await user.click(
+        screen.getByRole('button', { name: 'Настройки оформления' }),
+      );
+      await user.click(screen.getByText('Тема', { selector: 'button' }));
+      await user.click(screen.getByRole('button', { name }));
 
-    view.unmount();
-    render(<App />);
-    await waitFor(() =>
-      expect(document.documentElement).toHaveAttribute('data-theme', theme),
-    );
-    expect(screen.getByRole('main')).toHaveStyle({
-      backgroundColor: background,
-    });
-  });
+      expect(document.documentElement).toHaveAttribute('data-theme', theme);
+      expect(document.documentElement.classList.contains('dark')).toBe(
+        mode === 'dark',
+      );
+      expect(screen.getByRole('main')).toHaveStyle({
+        backgroundColor: background,
+      });
+      await waitFor(async () => {
+        const storedConfig = await storage.getItem<DashboardConfig>(
+          DASHBOARD_STORAGE_KEY,
+        );
+        expect(storedConfig?.workspaces[0]?.appearance.theme).toEqual({
+          type: 'builtin',
+          id: theme,
+        });
+        expect(storedConfig?.workspaces[0]?.appearance.backgroundColor).toEqual(
+          {
+            type: 'theme',
+          },
+        );
+      });
+
+      view.unmount();
+      render(<App />);
+      await waitFor(() =>
+        expect(document.documentElement).toHaveAttribute('data-theme', theme),
+      );
+      expect(screen.getByRole('main')).toHaveStyle({
+        backgroundColor: background,
+      });
+    },
+  );
 
   it('previews, persists, resets, and toggles Liquid Glass settings', async () => {
     const user = userEvent.setup();

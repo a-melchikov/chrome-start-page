@@ -2,6 +2,7 @@ export type BuiltinThemeId =
   | 'system'
   | 'light'
   | 'dark'
+  | 'graphite-mint'
   | 'tokyo-night'
   | 'rainy-tokyo'
   | 'cozy-lofi-night'
