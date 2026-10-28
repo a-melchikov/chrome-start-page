@@ -90,7 +90,7 @@ export function useDashboardToolbar({
 
   useEffect(() => {
     if (mode !== 'left-collapsible' || !isOpen) return;
-    const handleOutside = (event: PointerEvent) => {
+    const handleOutside = (event: MouseEvent) => {
       if (
         document.querySelector('dialog[open]') ||
         !(event.target instanceof Element)
@@ -105,8 +105,9 @@ export function useDashboardToolbar({
         return;
       collapse(false);
     };
-    document.addEventListener('pointerdown', handleOutside);
-    return () => document.removeEventListener('pointerdown', handleOutside);
+    // Let the target receive the full click before the canvas moves back.
+    document.addEventListener('click', handleOutside);
+    return () => document.removeEventListener('click', handleOutside);
   }, [mode, isOpen, toolbarId, collapse]);
 
   const getReturnFocus = useCallback(() => {

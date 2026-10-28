@@ -231,7 +231,7 @@ export function WidgetCanvas({
     <>
       <section
         aria-label="Виджеты"
-        className="overflow-x-auto px-6 pb-6"
+        className="dashboard-canvas overflow-x-auto px-6 pb-6"
         style={{ paddingTop: topPadding }}
         onPointerDown={(event) => {
           if (
@@ -248,7 +248,7 @@ export function WidgetCanvas({
       >
         <div
           ref={containerRef}
-          className="min-w-[60rem]"
+          className="min-w-[60rem] overflow-x-clip [overflow-clip-margin:1.5rem]"
           data-dashboard-canvas="desktop"
         >
           {mounted ? (

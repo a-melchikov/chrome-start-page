@@ -46,14 +46,14 @@ export function DashboardToolbar({
             aria-expanded={isOpen}
             aria-controls={toolbarId}
             title="Раскрыть панель управления (M)"
-            className="dashboard-toolbar-reveal-button dashboard-popover-surface liquid-glass-surface"
+            className="dashboard-toolbar-reveal-button dashboard-popover-surface liquid-glass-surface h-16 w-6 rounded-l-none rounded-r-lg !p-0"
             size="small"
             variant="ghost"
             disabled={!canManage || isInteracting}
             tabIndex={isOpen ? -1 : 0}
             onClick={onExpand}
           >
-            <ChevronRightIcon className="size-6" />
+            <ChevronRightIcon className="size-5" />
           </IconButton>
         </div>
       )}

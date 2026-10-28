@@ -97,7 +97,7 @@ async function chooseMode(
 beforeEach(() => fakeBrowser.reset());
 
 describe('toolbar visibility and focus', () => {
-  it('reveals only the trigger on hover, opens on click, and restores trigger focus on collapse', async () => {
+  it('opens on trigger click rather than hover and restores focus on collapse', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     const trigger = screen.getByRole('button', {
@@ -119,7 +119,7 @@ describe('toolbar visibility and focus', () => {
     expect(trigger).toHaveFocus();
   });
 
-  it('allows keyboard access to the hidden trigger', async () => {
+  it('allows keyboard access to the collapsed panel trigger', async () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.tab();
@@ -139,7 +139,14 @@ describe('toolbar visibility and focus', () => {
     await user.click(screen.getByRole('button', { name: 'Внутри popup' }));
     expect(panel()).toHaveAttribute('data-open', 'true');
     const outside = screen.getByRole('button', { name: 'Снаружи' });
-    await user.click(outside);
+    const onOutsideClick = vi.fn(() => {
+      expect(panel()).toHaveAttribute('data-open', 'true');
+    });
+    outside.addEventListener('click', onOutsideClick);
+    await user.pointer({ target: outside, keys: '[MouseLeft>]' });
+    expect(panel()).toHaveAttribute('data-open', 'true');
+    await user.pointer({ keys: '[/MouseLeft]' });
+    expect(onOutsideClick).toHaveBeenCalledOnce();
     expect(panel()).toHaveAttribute('data-open', 'false');
     expect(outside).toHaveFocus();
   });
@@ -213,7 +220,7 @@ describe('dashboard toolbar integration', () => {
     });
   });
 
-  it('M toggles visibility without persisting state or changing the grid', async () => {
+  it('M toggles visibility without persisting state or changing saved grid coordinates', async () => {
     const user = userEvent.setup();
     const { config } = await startApp();
     const save = vi.spyOn(fakeBrowser.storage.local, 'set');

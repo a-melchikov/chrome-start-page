@@ -211,6 +211,11 @@
     }
   }
 
+  .dashboard-root:has(.dashboard-toolbar-left[data-open='true'])
+    .dashboard-canvas {
+    margin-left: 72px;
+  }
+
   .dashboard-toolbar-left {
     left: 8px;
     top: 50%;
@@ -260,8 +265,8 @@
     top: 50%;
     left: 0;
     z-index: 30;
-    width: 12px;
-    height: 160px;
+    width: 24px;
+    height: calc(100dvh - 32px);
     max-height: 100dvh;
     transform: translateY(-50%);
   }
@@ -271,11 +276,10 @@
     position: absolute;
     top: 50%;
     left: 0;
-    width: 32px;
     transform: translateY(-50%);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 160ms ease-out;
+    transition: opacity 180ms ease-out;
   }
 
   .dashboard-toolbar-reveal:hover .dashboard-toolbar-reveal-button,
