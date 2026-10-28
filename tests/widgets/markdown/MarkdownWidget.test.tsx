@@ -1,7 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { createDefaultMarkdownWidget } from '../../../widgets/markdown/defaults';
@@ -359,5 +365,116 @@ describe('MarkdownWidget', () => {
         content: '- [x] **Родитель**\n  - [x] Дочерняя задача',
       }),
     );
+  });
+});
+
+describe('MarkdownWidget website sets', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+    vi.clearAllMocks();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('shows the set size, opens only on explicit keyboard activation and leaves config unchanged', async () => {
+    const user = userEvent.setup();
+    const create = vi
+      .spyOn(fakeBrowser.tabs, 'create')
+      .mockResolvedValue({} as never);
+    const onChange = vi.fn();
+    render(
+      <MarkdownWidget
+        config={createConfig(
+          '[A](https://one.example.com) [B](https://two.example.com) [A2](https://one.example.com/)',
+        )}
+        onChange={onChange}
+      />,
+    );
+    const button = screen.getByRole('button', {
+      name: 'Начать работу: открыть сайты (2)',
+    });
+    expect(create).not.toHaveBeenCalled();
+    button.focus();
+    await user.keyboard('{Enter}');
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Открыто сайтов: 2 из 2.',
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenCalledWith({
+      url: 'https://one.example.com/',
+      active: false,
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('does not offer a website launch for an empty note or file-only links', () => {
+    const { rerender } = render(
+      <MarkdownWidget config={createConfig('Обычная заметка')} />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+    rerender(
+      <MarkdownWidget config={createConfig('[Файл](file:///tmp/doc.md)')} />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('disables launch while opening a set to prevent duplicate activation', async () => {
+    const user = userEvent.setup();
+    let complete: (() => void) | undefined;
+    const create = vi.spyOn(fakeBrowser.tabs, 'create').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          complete = () => resolve({} as never);
+        }),
+    );
+    render(
+      <MarkdownWidget config={createConfig('[A](https://one.example.com)')} />,
+    );
+    const button = screen.getByRole('button', { name: /Начать работу/ });
+    await user.click(button);
+    expect(button).toBeDisabled();
+    await user.dblClick(button);
+    expect(create).toHaveBeenCalledTimes(1);
+    await act(async () => complete?.());
+    await waitFor(() => expect(button).toBeEnabled());
+  });
+
+  it('retries only failed sites and clears stale feedback after changing the note', async () => {
+    const user = userEvent.setup();
+    const create = vi
+      .spyOn(fakeBrowser.tabs, 'create')
+      .mockRejectedValueOnce(new Error('Tab failed'))
+      .mockResolvedValue({} as never);
+    const config = createConfig(
+      '[A](https://one.example.com) [B](https://two.example.com)',
+    );
+    const { rerender } = render(<MarkdownWidget config={config} />);
+    await user.click(screen.getByRole('button', { name: /Начать работу/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Открыто сайтов: 1 из 2.',
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Повторить открытие сайтов (1)' }),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Открыто сайтов: 2 из 2.',
+    );
+    expect(create).toHaveBeenCalledTimes(3);
+    expect(create).toHaveBeenLastCalledWith({
+      url: 'https://one.example.com/',
+      active: false,
+    });
+    rerender(
+      <MarkdownWidget
+        config={{ ...config, content: '[C](https://three.example.com)' }}
+      />,
+    );
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Начать работу: открыть сайты (1)' }),
+    ).toBeVisible();
   });
 });

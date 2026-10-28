@@ -13,6 +13,7 @@ interface MarkdownNode {
   type: string;
   value?: string;
   url?: string;
+  identifier?: string;
   children?: MarkdownNode[];
 }
 
@@ -25,6 +26,19 @@ function textOf(node: MarkdownNode): string {
 export function extractMarkdownLinks(content: string): MarkdownLink[] {
   const links: MarkdownLink[] = [];
   const root = processor.parse(content) as MarkdownNode;
+  const definitions = new Map<string, string>();
+  const collectDefinitions = (node: MarkdownNode) => {
+    if (
+      node.type === 'definition' &&
+      node.identifier &&
+      node.url &&
+      !definitions.has(node.identifier)
+    ) {
+      definitions.set(node.identifier, node.url);
+    }
+    node.children?.forEach(collectDefinitions);
+  };
+  collectDefinitions(root);
 
   const add = (url: string, label: string) => {
     if (url.startsWith('#')) return;
@@ -45,6 +59,11 @@ export function extractMarkdownLinks(content: string): MarkdownLink[] {
   };
 
   const visit = (node: MarkdownNode) => {
+    if (node.type === 'linkReference' && node.identifier) {
+      const url = definitions.get(node.identifier);
+      if (url) add(url, textOf(node));
+      return;
+    }
     if (node.type === 'link' && node.url) {
       add(node.url, textOf(node));
       return;

@@ -151,6 +151,10 @@ reserved for user-selected local wallpapers whose original bytes must be kept.
 для этого не добавляются. Поиск по заметкам работает только с конфигурацией
 в памяти и не сохраняет запросы.
 
+Рабочие наборы сайтов также запускаются только явной кнопкой пользователя.
+Набор вычисляется из ссылок Markdown-заметки, открывается в фоновых вкладках
+без новых разрешений и не требует отдельного сохраняемого списка адресов.
+
 ### Why
 
 The product is a personal start page and does not require accounts, remote

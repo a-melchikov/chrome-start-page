@@ -3,6 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { extractMarkdownLinks } from '../../../widgets/markdown/extract-links';
 
 describe('extractMarkdownLinks', () => {
+  it('resolves full, collapsed and shortcut references while ignoring unused definitions', () => {
+    expect(
+      extractMarkdownLinks(
+        [
+          '[Полная][Docs] [Почта][] [tracker]',
+          '[docs]: https://docs.example.com',
+          '[почта]: https://mail.example.com',
+          '[tracker]: https://tasks.example.com',
+          '[unused]: https://unused.example.com',
+        ].join('\n\n'),
+      ),
+    ).toEqual([
+      { href: 'https://docs.example.com/', label: 'Полная' },
+      { href: 'https://mail.example.com/', label: 'Почта' },
+      { href: 'https://tasks.example.com/', label: 'tracker' },
+    ]);
+  });
+
   it('extracts Markdown, GFM and HTML links with their labels', () => {
     expect(
       extractMarkdownLinks(

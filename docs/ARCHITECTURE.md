@@ -270,6 +270,17 @@ split state (50/50 on each open, keyboard/pointer range 30–70), provides behav
 settings (template picker, quick add switch, hide completed switch, text size dropdown),
 and sends title and content changes through the normal debounced persistence path.
 
+Рабочий набор сайтов формируется из HTTP/HTTPS-ссылок одной Markdown-заметки
+без отдельной сохраняемой модели. Общий разборщик `extract-links.ts`
+учитывает обычные, автоматические, HTML- и ссылочные Markdown-ссылки.
+`website-set.ts` нормализует и удаляет повторяющиеся адреса, а платформенная
+функция открывает их последовательно через `tabs.create({ active: false })`.
+Текущая вкладка остаётся активной; новые разрешения Chrome не нужны.
+Кнопка «Начать работу» показывает число сайтов, блокируется до завершения
+запуска и сообщает результат. При частичной ошибке повтор открывает только
+неудавшиеся адреса. Состояние запуска и повторов существует только в памяти
+виджета и сбрасывается при изменении Markdown.
+
 ## Search Widget
 
 Search is intentionally a bare form with no visible card or title. Engine
