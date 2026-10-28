@@ -44,6 +44,8 @@ export function WidgetHost({
 }: WidgetHostProps) {
   const titleId = useId();
   const readerDialogId = useId();
+  const [headerActionsTarget, setHeaderActionsTarget] =
+    useState<HTMLDivElement | null>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const [shouldRestoreEditFocus, setShouldRestoreEditFocus] = useState(false);
   const [isEditorExiting, setIsEditorExiting] = useState(false);
@@ -52,7 +54,11 @@ export function WidgetHost({
   );
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
-  const content = definition?.render(widget, onWidgetChange);
+  const content = definition?.render(
+    widget,
+    onWidgetChange,
+    headerActionsTarget,
+  );
   const reader = definition?.renderReader?.(widget);
   if ((!reader || isWidgetEditing) && readerState !== 'closed') {
     setReaderState('closed');
@@ -326,6 +332,11 @@ export function WidgetHost({
               >
                 {displayName}
               </h2>
+              <div
+                ref={setHeaderActionsTarget}
+                className="flex shrink-0 items-center gap-1 empty:hidden"
+                data-no-drag
+              />
               {widgetControls}
             </header>
             <div

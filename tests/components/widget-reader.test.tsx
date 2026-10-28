@@ -39,6 +39,11 @@ describe('widget reading view', () => {
     };
     const props = hostProps(widget);
     render(<WidgetHost {...props} />);
+    const launcher = await screen.findByRole('button', {
+      name: 'Начать работу: открыть сайты (1)',
+    });
+    expect(launcher.closest('header')).toContainElement(launcher);
+    expect(launcher).toHaveTextContent(/^1$/);
     await user.click(
       screen.getByRole('button', { name: 'Развернуть виджет «Материалы»' }),
     );
@@ -61,6 +66,57 @@ describe('widget reading view', () => {
     expect(dialog.querySelector('script')).toBeNull();
     expect(props.onRequestEdit).not.toHaveBeenCalled();
     expect(props.onWidgetChange).not.toHaveBeenCalled();
+  });
+
+  it('launches only the selected card websites from its header with the keyboard', async () => {
+    const user = userEvent.setup();
+    const create = vi
+      .spyOn(fakeBrowser.tabs, 'create')
+      .mockResolvedValue({} as never);
+    const first = {
+      ...createMarkdownWidgetWithTemplate('first', 0),
+      title: 'Первый набор',
+      content: '[A](https://one.example.com)',
+    };
+    const second = {
+      ...createMarkdownWidgetWithTemplate('second', 1),
+      title: 'Второй набор',
+      content: '[B](https://two.example.com) [C](https://three.example.com)',
+    };
+    const props = hostProps(second);
+    const { rerender } = render(
+      <>
+        <WidgetHost {...hostProps(first)} />
+        <WidgetHost {...props} />
+      </>,
+    );
+    const article = screen.getByRole('article', { name: second.title });
+    const launcher = await within(article).findByRole('button', {
+      name: 'Начать работу: открыть сайты (2)',
+    });
+    expect(launcher.closest('header')).toContainElement(launcher);
+    expect(create).not.toHaveBeenCalled();
+    launcher.focus();
+    await user.keyboard('{Enter}');
+    expect(await within(article).findByRole('status')).toHaveTextContent(
+      'Открыто сайтов: 2 из 2.',
+    );
+    expect(create.mock.calls.map(([options]) => options.url)).toEqual([
+      'https://two.example.com/',
+      'https://three.example.com/',
+    ]);
+    expect(props.onWidgetChange).not.toHaveBeenCalled();
+    const noteWithoutLinks = { ...second, content: 'Без ссылок' };
+    rerender(
+      <>
+        <WidgetHost {...hostProps(first)} />
+        <WidgetHost {...props} widget={noteWithoutLinks} />
+      </>,
+    );
+    expect(
+      within(article).queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+    create.mockRestore();
   });
 
   it('closes on Escape or the close button and restores focus to the opener', async () => {

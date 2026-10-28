@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { CheckSquareIcon, PlayIcon } from '../../components/icons';
 import { Button } from '../../components/ui';
@@ -17,6 +18,7 @@ import {
 interface MarkdownWidgetProps {
   config: MarkdownWidgetConfig;
   onChange?: (config: MarkdownWidgetConfig) => void;
+  headerActionsTarget?: HTMLElement | null;
 }
 
 export function MarkdownWidgetReader({
@@ -40,7 +42,11 @@ export function MarkdownWidgetReader({
   );
 }
 
-export function MarkdownWidget({ config, onChange }: MarkdownWidgetProps) {
+export function MarkdownWidget({
+  config,
+  onChange,
+  headerActionsTarget,
+}: MarkdownWidgetProps) {
   const websiteUrls = useMemo(
     () => getWebsiteSetUrls(config.content),
     [config.content],
@@ -91,33 +97,41 @@ export function MarkdownWidget({ config, onChange }: MarkdownWidgetProps) {
     }
   };
 
+  const websiteActionLabel = failedUrls.length
+    ? 'Повторить открытие сайтов (' + failedUrls.length + ')'
+    : 'Начать работу: открыть сайты (' + websiteUrls.length + ')';
+  const websiteAction =
+    websiteUrls.length > 0 ? (
+      <Button
+        aria-label={websiteActionLabel}
+        aria-busy={isOpeningWebsites}
+        className="shrink-0 gap-1.5 text-theme-text-secondary hover:text-theme-text-primary"
+        disabled={isOpeningWebsites}
+        size="xs"
+        variant="ghost"
+        title={
+          isOpeningWebsites
+            ? 'Открываю сайты…'
+            : websiteActionLabel + ' в новых фоновых вкладках'
+        }
+        onClick={() => void startWebsiteSet()}
+      >
+        <PlayIcon className="size-4" />
+        <span aria-hidden="true" className="tabular-nums">
+          {failedUrls.length || websiteUrls.length}
+        </span>
+      </Button>
+    ) : null;
+  const inlineWebsiteAction = !headerActionsTarget && websiteAction;
+
   return (
     <div className="@container flex h-full min-h-0 flex-col">
-      {websiteUrls.length > 0 || hasTasks || config.hideCompletedTasks ? (
+      {headerActionsTarget
+        ? createPortal(websiteAction, headerActionsTarget)
+        : null}
+      {inlineWebsiteAction || hasTasks || config.hideCompletedTasks ? (
         <div className="mb-1.5 flex shrink-0 flex-wrap items-center justify-between gap-2">
-          {websiteUrls.length > 0 ? (
-            <Button
-              aria-label={
-                failedUrls.length
-                  ? 'Повторить открытие сайтов (' + failedUrls.length + ')'
-                  : 'Начать работу: открыть сайты (' + websiteUrls.length + ')'
-              }
-              disabled={isOpeningWebsites}
-              aria-busy={isOpeningWebsites}
-              size="xs"
-              variant="secondary"
-              title="Открыть сайты из заметки в новых фоновых вкладках"
-              onClick={() => void startWebsiteSet()}
-            >
-              <PlayIcon className="size-3.5" />
-              {isOpeningWebsites
-                ? 'Открываю…'
-                : failedUrls.length
-                  ? 'Повторить'
-                  : 'Начать работу'}
-              <span>{failedUrls.length || websiteUrls.length}</span>
-            </Button>
-          ) : null}
+          {inlineWebsiteAction}
           {hasTasks || config.hideCompletedTasks ? (
             <button
               aria-label="Показать только незавершённые задачи"
@@ -183,7 +197,7 @@ export function MarkdownWidget({ config, onChange }: MarkdownWidgetProps) {
           {failedUrls.length
             ? ' Не удалось открыть: ' +
               failedUrls.length +
-              '. Нажмите «Повторить».'
+              '. Нажмите кнопку запуска ещё раз.'
             : ''}
         </p>
       ) : null}
