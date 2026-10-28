@@ -246,84 +246,86 @@ export function WidgetCanvas({
           }
         }}
       >
-        <div
-          ref={containerRef}
-          className="min-w-[60rem] overflow-x-clip [overflow-clip-margin:1.5rem]"
-          data-dashboard-canvas="desktop"
-        >
-          {mounted ? (
-            <GridLayout
-              className={isEditing ? 'dashboard-grid--editing' : undefined}
-              compactor={collisionBlockingCompactor}
-              dragConfig={createDashboardDragConfig(
-                isEditing && editingWidgetId === null,
-              )}
-              gridConfig={{
-                cols: DASHBOARD_GRID_COLUMNS,
-                rowHeight: DASHBOARD_GRID_ROW_HEIGHT,
-                margin: [DASHBOARD_GRID_GAP, DASHBOARD_GRID_GAP],
-                containerPadding: [0, 0],
-              }}
-              layout={gridLayout}
-              resizeConfig={{
-                enabled: isEditing && editingWidgetId === null,
-                handles: ['se'],
-              }}
-              width={getDashboardGridWidth(width)}
-              onDragStart={() => onInteractionChange?.(true)}
-              onResizeStart={() => onInteractionChange?.(true)}
-              onDragStop={(layout) => {
-                onInteractionChange?.(false);
-                persistGridLayout(layout);
-              }}
-              onResizeStop={(layout) => {
-                onInteractionChange?.(false);
-                persistGridLayout(layout);
-              }}
-            >
-              {widgets.map((widget) => {
-                const constraints = getWidgetDefinition(widget.type)
-                  ?.presentation.layout;
-                return (
-                  <div
-                    key={widget.id}
-                    data-grid={{
-                      x: widget.layout.x,
-                      y: widget.layout.y,
-                      w: widget.layout.w,
-                      h: widget.layout.h,
-                      minW: constraints?.minW,
-                      minH: constraints?.minH,
-                      maxH: constraints?.maxH,
-                    }}
-                    className="min-w-0"
-                    onPointerDown={(event) =>
-                      handlePointerDown(event, widget.id)
-                    }
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={(event) => finishGroupDrag(event)}
-                    onPointerCancel={(event) => finishGroupDrag(event, true)}
-                    onLostPointerCapture={(event) =>
-                      finishGroupDrag(event, true)
-                    }
-                  >
-                    <WidgetHost
-                      isEditing={isEditing}
-                      isNew={newWidgetIds.has(widget.id)}
-                      isSelected={selectedWidgetIds.has(widget.id)}
-                      isWidgetEditing={editingWidgetId === widget.id}
-                      widget={widget}
-                      onRequestEdit={() => onStartWidgetEditing(widget.id)}
-                      onRequestDelete={setWidgetPendingDelete}
-                      onRequestFinishEditing={onFinishWidgetEditing}
-                      onWidgetChange={onUpdateWidget}
-                      onWidgetEnterEnd={() => onWidgetEnterEnd(widget.id)}
-                    />
-                  </div>
-                );
-              })}
-            </GridLayout>
-          ) : null}
+        <div className="dashboard-canvas-viewport">
+          <div
+            ref={containerRef}
+            className="dashboard-canvas-grid min-w-[60rem]"
+            data-dashboard-canvas="desktop"
+          >
+            {mounted ? (
+              <GridLayout
+                className={isEditing ? 'dashboard-grid--editing' : undefined}
+                compactor={collisionBlockingCompactor}
+                dragConfig={createDashboardDragConfig(
+                  isEditing && editingWidgetId === null,
+                )}
+                gridConfig={{
+                  cols: DASHBOARD_GRID_COLUMNS,
+                  rowHeight: DASHBOARD_GRID_ROW_HEIGHT,
+                  margin: [DASHBOARD_GRID_GAP, DASHBOARD_GRID_GAP],
+                  containerPadding: [0, 0],
+                }}
+                layout={gridLayout}
+                resizeConfig={{
+                  enabled: isEditing && editingWidgetId === null,
+                  handles: ['se'],
+                }}
+                width={getDashboardGridWidth(width)}
+                onDragStart={() => onInteractionChange?.(true)}
+                onResizeStart={() => onInteractionChange?.(true)}
+                onDragStop={(layout) => {
+                  onInteractionChange?.(false);
+                  persistGridLayout(layout);
+                }}
+                onResizeStop={(layout) => {
+                  onInteractionChange?.(false);
+                  persistGridLayout(layout);
+                }}
+              >
+                {widgets.map((widget) => {
+                  const constraints = getWidgetDefinition(widget.type)
+                    ?.presentation.layout;
+                  return (
+                    <div
+                      key={widget.id}
+                      data-grid={{
+                        x: widget.layout.x,
+                        y: widget.layout.y,
+                        w: widget.layout.w,
+                        h: widget.layout.h,
+                        minW: constraints?.minW,
+                        minH: constraints?.minH,
+                        maxH: constraints?.maxH,
+                      }}
+                      className="min-w-0"
+                      onPointerDown={(event) =>
+                        handlePointerDown(event, widget.id)
+                      }
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={(event) => finishGroupDrag(event)}
+                      onPointerCancel={(event) => finishGroupDrag(event, true)}
+                      onLostPointerCapture={(event) =>
+                        finishGroupDrag(event, true)
+                      }
+                    >
+                      <WidgetHost
+                        isEditing={isEditing}
+                        isNew={newWidgetIds.has(widget.id)}
+                        isSelected={selectedWidgetIds.has(widget.id)}
+                        isWidgetEditing={editingWidgetId === widget.id}
+                        widget={widget}
+                        onRequestEdit={() => onStartWidgetEditing(widget.id)}
+                        onRequestDelete={setWidgetPendingDelete}
+                        onRequestFinishEditing={onFinishWidgetEditing}
+                        onWidgetChange={onUpdateWidget}
+                        onWidgetEnterEnd={() => onWidgetEnterEnd(widget.id)}
+                      />
+                    </div>
+                  );
+                })}
+              </GridLayout>
+            ) : null}
+          </div>
         </div>
       </section>
 
