@@ -38,6 +38,28 @@ styles. `App` is the composition root: it resolves appearance, applies the theme
 to the document, surfaces persistence errors, and connects state operations to
 `Dashboard`.
 
+## Запуск без расширения
+
+Для запуска без установки расширения добавлена отдельная Vite-точка входа
+`web/index.html`. Она монтирует тот же `entrypoints/newtab/main.tsx`.
+Только веб-конфигурация заменяет `#imports` и `wxt/browser` /
+`@wxt-dev/browser` адаптерами из `web/`. WXT-сборка и её manifest не меняются.
+Сам WXT Storage переиспользуется; `web/storage.ts` реализует необходимые
+операции `storage.local/session` через транзакции IndexedDB и onChanged через
+BroadcastChannel. Ошибки записи не подменяются успешным сохранением в памяти.
+Сессия удерживается общим Web Lock на время жизни окон; следующий запуск
+очищает сессионное хранилище, сохраняя локальное.
+
+Адаптер браузера предоставляет только используемые веб-возможности: пути
+статических ресурсов и открытие HTTP/HTTPS-ссылок. Фоновые API не эмулируются.
+Приватный Chrome favicon заменяется существующим fallback, а локальные ссылки
+копируются. Репозитории, схема v9, миграции и обработка конфликтов общие.
+Tailwind явно сканирует корень репозитория независимо от Vite root.
+
+`scripts/dev-app.mjs` запускает Vite и отдельный Chrome/Chromium-профиль
+в режиме `--app`. Docker собирает веб-target и раздаёт его nginx; пользовательские
+данные остаются в IndexedDB браузера. Детали и ограничения — в DEVELOPMENT.md.
+
 ## Module Boundaries
 
 | Layer                   | Responsibility                                                               |

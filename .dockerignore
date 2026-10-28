@@ -1,0 +1,10 @@
+.git
+.output
+.wxt
+node_modules
+dist
+output
+*.log
+.env
+.env.*
+.codex

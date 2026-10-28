@@ -97,6 +97,9 @@ specification.
 - Persistent config key: `local:dashboard-config`; local wallpaper assets use
   `local:dashboard-wallpaper:<uuid>`. Use WXT Storage only, never `localStorage`
   or `chrome.storage.sync`.
+- Standalone development (`web/`) reuses WXT Storage over a build-only IndexedDB
+  browser adapter. Keep aliases out of the WXT extension build; do not replace
+  extension storage or claim web tests prove native background/context-menu APIs.
 - Immediate saves: add/remove, ordinary appearance changes, completed
   drag/resize, and Liquid Glass reset/toggle. Liquid Glass sliders preview in
   memory and flush after input completion, dialog close, `pagehide`, or
@@ -132,38 +135,47 @@ the unified verification pipeline:
 pnpm check
 ```
 
-This runs lint, Prettier check, typecheck, unit tests, and production build in a
-single fail-fast step. UI/layout changes should receive a Chrome smoke check when
-browser control is available.
+This runs lint, Prettier check, typecheck, unit tests, and both extension/web builds
+in a single fail-fast step.
 
-### MCP Testing and Verification
+### Обязательная проверка интерфейса в браузере
 
-Do not launch MCP servers automatically on file changes. When changes affect UI,
-styles, widget grid, or performance-sensitive features (Liquid Glass, wallpapers,
-rendering pipeline), proactively propose verification via `ask_question` at the
-end of the task:
+После изменений интерфейса, форм, виджетов, стилей или пользовательского поведения
+агент должен сам запустить приложение и прокликать изменённый сценарий в настоящем
+браузере. Обычная локальная проверка входит в реализацию задачи и не требует
+отдельного вопроса о разрешении, если пользователь явно не ограничил проверки.
 
-- `lighthouse`: audit Core Web Vitals (FCP, LCP, TBT, CLS) and loading overhead.
-  Must run against a release build (`pnpm build`) loaded from `.output/chrome-mv3`.
-- `playwright`: interactive E2E user flows (grid drag-and-drop, theme switching,
-  modal dialogs, Escape shortcut navigation). May run against `pnpm dev`.
-- `chrome-devtools`: console inspection (`console.error`/warnings), inspecting
-  `chrome.storage.local` keys, and script profiling. May run against `pnpm dev`.
+- Основной запуск для автоматизации — `pnpm dev:web` и `http://127.0.0.1:5173`.
+  Открывать адрес через доступный Chrome DevTools MCP, Playwright MCP,
+  Browser Use или Computer Use с управлением браузером. `pnpm dev:app` подходит
+  для отдельного окна, если инструмент умеет управлять именно этим окном.
+- Использовать доступный инструмент самостоятельно: не ограничиваться предложением
+  «проверьте вручную» и не устанавливать расширение ради обычной проверки форм.
+  Наличие MCP-сервера или управления браузером сначала проверить; не придумывать API
+  инструментов и не устанавливать новые MCP-серверы без необходимости.
+- Прокликать затронутую форму, проверить ввод и сохранение, повторное открытие
+  или reload, отмену/Escape и фокус. Для изменений сетки проверить drag/resize,
+  для оформления — затронутые темы и размеры окна. Проверить доступные ошибки
+  консоли и сделать снимок результата.
+- Найденные дефекты в рамках задачи исправить и повторить затронутый сценарий.
+  Если браузер недоступен, явно указать `NOT_RUN` и причину; unit-тесты
+  и сборка не заменяют интерактивную проверку.
+- Веб-проверка подтверждает UI и IndexedDB. Нативное меню Chrome, background,
+  permissions и Chrome Storage требуют отдельной проверки расширения.
 
-Environment Readiness Check: before proposing an MCP check, verify that the
-environment is actually ready (e.g. browser binaries installed in
-`~/.cache/ms-playwright` for Playwright, remote debugging port accessible for
-Chrome DevTools, production build present for Lighthouse). Do not propose an MCP
-tool via `ask_question` if its environment prerequisites are not met.
-
-Proposal format: `Я бы проверил это <что именно> через MCP <название>, потому что <причина>.`
-If an MCP check reveals errors or metric regressions, isolate the root cause,
-propose a targeted fix, and resolve after user confirmation.
+Порядок запуска, изоляции данных и отчёта — в
+[DEVELOPMENT.md](docs/DEVELOPMENT.md#браузерная-проверка-для-агента).
+Выбор инструментов и дополнительные проверки — в
+[mcp-verify](.agents/skills/mcp-verify/SKILL.md).
 
 ## Commands
 
 - Install: `pnpm install`
 - Develop: `pnpm dev`
+- Develop without extension: `pnpm dev:web`
+- Separate application window: `pnpm dev:app`
+- Build / preview standalone: `pnpm build:web` / `pnpm preview:web`
+- Container: `docker compose up --build` (loopback port 5173 by default)
 - Format: `pnpm format`
 - Format check: `pnpm format:check`
 - Lint: `pnpm lint`

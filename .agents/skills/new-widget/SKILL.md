@@ -91,4 +91,6 @@ Run the unified check pipeline:
 pnpm check
 ```
 
-Propose an interactive smoke check via MCP Playwright / Chrome DevTools if UI behavior or layout is affected.
+Run the widget and its editor in standalone web mode and interact with the changed
+controls using an available browser tool. Follow
+[mcp-verify](../mcp-verify/SKILL.md); do not stop at proposing a manual check.

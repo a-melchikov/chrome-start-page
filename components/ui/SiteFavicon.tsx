@@ -29,6 +29,8 @@ export function SiteFavicon({
   sourceSize = size,
   testId,
 }: SiteFaviconProps) {
+  // Chrome's private favicon endpoint is unavailable in standalone web mode.
+  if (!browser.runtime.id) return fallback;
   const source = getSiteFaviconUrl(pageUrl, sourceSize);
 
   return (

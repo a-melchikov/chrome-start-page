@@ -1,63 +1,76 @@
 ---
 name: mcp-verify
-description: Procedures, flags, and targets for running MCP verifications (Lighthouse, Playwright, Chrome DevTools) on chrome-start-page.
+description: Verify chrome-start-page UI changes in the standalone web app using available Chrome DevTools MCP, Playwright, Browser Use, or Computer Use, and distinguish web checks from native extension checks.
 ---
 
-# MCP Verification Runbook for Chrome Start Page
+# Проверка Chrome Start Page в браузере
 
-Use this runbook when proposing or running Model Context Protocol (MCP) verification tools for `chrome-start-page`.
+После реализации изменений UI или пользовательского поведения самостоятельно
+проверьте затронутые формы в настоящем браузере. Это часть разработки:
+не спрашивайте разрешение на обычный локальный smoke check и не завершайте
+работу одним предложением проверить вручную. Явные ограничения пользователя
+сохраняют приоритет. Для изменений только документации UI запускать не нужно.
 
-## Policy and Interaction Rules
+## Основной сценарий
 
-1. **No automatic execution**: Never run MCP checks automatically upon modifying code.
-2. **Proactive proposal**: In tasks touching UI, visual layout, animations, Liquid Glass, or performance, ask the user via `ask_question` at the end of the task:
-   `Я бы проверил это <что именно> через MCP <название>, потому что <причина>.`
-3. **Environment readiness**: Before proposing an MCP tool, silently verify its prerequisites (e.g. browser binaries in `~/.cache/ms-playwright` for Playwright, reachable debug port for Chrome DevTools, production build for Lighthouse). Do not propose tools whose environment is absent or unconfigured.
-4. **Failure handling**: If an MCP check reveals regressions or errors, isolate the root cause, propose a targeted fix, and resolve after confirmation.
+Следуйте [порядку браузерной проверки](../../../docs/DEVELOPMENT.md#браузерная-проверка-для-агента):
+поднимите `pnpm dev:web`, откройте выведенный URL управляемым браузером и
+прокликайте изменённую форму. По умолчанию это `http://127.0.0.1:5173`.
+Используйте тестовые данные и отдельный профиль/контекст, сохраняя пользовательские.
+`pnpm check` остаётся обязательной отдельной проверкой кода.
 
----
+| Доступный инструмент       | Как использовать                                                                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Chrome DevTools MCP        | Открыть локальный URL, получить DOM-снимок, вводить и нажимать элементы, проверить консоль и снимок результата                           |
+| Playwright MCP             | Пройти тот же сценарий через locators по ролям/названиям, проверить reload, клавиатуру и видимость элементов                             |
+| Browser Use / Computer Use | Открыть URL доступным API браузера, взаимодействовать по DOM или скриншотам; соблюдать документацию реально предоставленного инструмента |
 
-## 1. Lighthouse MCP (Performance & Web Vitals)
+Выбирайте из инструментов текущей сессии; наличие одного не означает наличие
+остальных. До запуска проверьте доступность браузера/подключения. Если инструмент
+открывает браузер сам, отдельный `dev:app` и remote debugging port не нужны.
+Не устанавливайте новые MCP-серверы и не меняйте их конфигурацию ради стандартной
+проверки, когда уже есть подходящее управление браузером.
 
-- **Goal**: Measure Core Web Vitals (FCP, LCP, CLS, TBT) and ensure zero layout shift.
-- **Prerequisite**: Must run against a release build to eliminate Vite dev-server overhead:
-  ```bash
-  pnpm build
-  ```
-- **Target Artifact**: `.output/chrome-mv3/newtab.html`
-- **Key Targets**:
-  - **FCP**: < 600 ms
-  - **CLS**: 0 (grid and wallpapers must not cause layout jumps)
-  - **TBT**: < 100 ms
+Если Chrome DevTools MCP требует CDP-подключения и доступен установленный Chrome,
+запустите отдельный тестовый профиль с доступным локальным портом. Например,
+после запуска веб-сервера и проверки, что порт `9222` свободен:
 
----
+```bash
+task_browser_profile="$(mktemp -d -t chrome-start-page-mcp.XXXXXX)"
+google-chrome \
+  --user-data-dir="$task_browser_profile" \
+  --remote-debugging-address=127.0.0.1 \
+  --remote-debugging-port=9222 \
+  --no-first-run \
+  http://127.0.0.1:5173
+```
 
-## 2. Playwright MCP (Interactive User Flows)
+Подключайтесь согласно настройкам доступного MCP, не предполагая автоматического
+подключения к любому запущенному окну. Для отдельного окна можно использовать
+`dev:app`, если инструмент действительно способен управлять этим экземпляром.
 
-- **Goal**: Verify E2E user flows, grid interactions, and keyboard navigation.
-- **Browser Launch Flags**:
-  ```bash
-  google-chrome \
-    --disable-extensions-except=$(pwd)/.output/chrome-mv3 \
-    --load-extension=$(pwd)/.output/chrome-mv3 \
-    chrome://newtab
-  ```
-  _(Or execute `pnpm preview:chrome`)_
-- **Key Scenarios to Verify**:
-  - Drag-and-drop and resize widgets in global edit mode.
-  - Escape shortcut: closes active modal if open; otherwise exits edit mode.
-  - Theme switching (Light / Dark / System) with contrast validation.
-  - Adding, editing, and deleting Markdown and Search widgets.
+Минимальное свидетельство успеха — реальный ввод, сохранение и повторное открытие
+либо reload с ожидаемым результатом, а также проверка затронутой формы на снимке.
+Не подменяйте клики пользователя прямыми вызовами обработчиков или записью в БД.
+Проверяйте относящиеся к задаче ошибки ввода, отмену, Escape/фокус, темы,
+drag/resize и тесный viewport. Дождитесь окончания анимации перед проверкой фокуса.
 
----
+При ошибке исправьте причину в рамках задачи и повторите сценарий. В отчёте
+назовите инструмент, сценарии, результат `PASS / FAIL / NOT_RUN` и ограничения;
+недоступность браузера не превращает unit-тесты в интерактивный PASS.
+Закройте свои тестовые процессы после проверки, если не запрошено иное.
 
-## 3. Chrome DevTools MCP (CDP Inspection)
+## Производительность и нативные API
 
-- **Goal**: Inspect runtime state, console diagnostics, and extension storage.
-- **Connection**:
-  - Connect to existing Chrome with remote debugging port (`http://127.0.0.1:9222`) or `--autoConnect`.
-- **Key Verifications**:
-  - Check `console.error` and `console.warn` on tab open and widget edit.
-  - Inspect `chrome.storage.local` keys:
-    - `local:dashboard-config`: verify schema version is `5` and structure matches `DashboardConfig`.
-    - `local:dashboard-wallpaper:*`: ensure binary assets are properly referenced and cleaned up.
+- Lighthouse выполняйте при необходимости измерений на release-сборке:
+  `pnpm build:web` + `pnpm preview:web` или Docker. Сравнивайте FCP, LCP,
+  TBT и CLS в одинаковых условиях; HMR-сервер не является release-целью.
+  Для расширения используйте `pnpm build` и загруженную `.output/chrome-mv3`.
+- Контекстное меню, permissions, background worker, Chrome Alarms, offscreen
+  audio и Chrome Storage проверяйте в настоящем расширении. Обычная веб-проверка
+  подтверждает только UI и IndexedDB. Не устанавливайте расширение ради формы,
+  если изменение не затрагивает эти возможности.
+- В веб-режиме данные находятся в IndexedDB `chrome-start-page-web`. В расширении
+  сверяйте конфигурацию `dashboard-config` в `chrome.storage.local` с актуальным
+  `DASHBOARD_CONFIG_VERSION` из `storage/schema.ts`. Не используйте устаревшие
+  номера схемы из старых инструкций.

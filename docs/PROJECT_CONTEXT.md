@@ -179,6 +179,12 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 
 ## Known Limitations
 
+Для локальной разработки доступен запуск без расширения: отдельное окно
+`pnpm dev:app`, HTTP-сервер `pnpm dev:web` и контейнер Docker. Это тот же
+дашборд с изолированным IndexedDB-хранилищем и общим форматом backup.
+Нативное меню Chrome и фоновые API проверяются отдельно в расширении;
+веб-версия не обещает их эмуляцию. Подробности — в DEVELOPMENT.md.
+
 - No sync, full-dashboard reset/recovery UI, accounts, sharing, or Chrome Web
   Store publishing workflow.
 - Markdown has no Math, Mermaid, YAML frontmatter, embedded file upload, syntax
