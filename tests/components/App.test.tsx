@@ -21,6 +21,8 @@ import {
 } from '../../storage/dashboard-storage';
 import { createDefaultDashboardConfig } from '../../storage/defaults';
 import type { DashboardConfig } from '../../storage/schema';
+import { saveBrowserCapture } from '../../storage/markdown-capture';
+import { createMarkdownWidgetWithTemplate } from '../../widgets/markdown/templates';
 
 function createBackupFile(config: DashboardConfig) {
   return new File(
@@ -39,6 +41,47 @@ function createBackupFile(config: DashboardConfig) {
 }
 
 describe('App', () => {
+  it('finds newly captured text and focuses its note after switching workspaces', async () => {
+    const user = userEvent.setup();
+    const config = createDefaultDashboardConfig();
+    config.workspaces[1]!.widgets = [
+      {
+        ...createMarkdownWidgetWithTemplate('remote-note', 0),
+        title: 'Материалы',
+        content: 'Предыдущая запись',
+      },
+    ];
+    await saveDashboardConfig(config);
+    render(<App />);
+    await screen.findByRole('button', { name: 'Поиск команд' });
+    await act(async () => {
+      await saveBrowserCapture(
+        { workspaceId: config.workspaces[1]!.id, widgetId: 'remote-note' },
+        {
+          selectionText: 'Уникальный сохранённый фрагмент',
+          pageUrl: 'https://example.com/',
+        },
+      );
+    });
+    await user.click(screen.getByRole('button', { name: 'Поиск команд' }));
+    await user.type(
+      await screen.findByRole('combobox'),
+      'уникальный сохранённый',
+    );
+    await user.click(
+      await screen.findByRole('option', { name: /Заметка «Материалы»/ }),
+    );
+    expect(
+      await screen.findByRole('button', { name: /Пространство: Работа/ }),
+    ).toBeVisible();
+    const card = document.querySelector('[data-widget-id="remote-note"]');
+    await waitFor(() => expect(card).toHaveFocus());
+    await waitFor(() =>
+      expect(card).toHaveTextContent('Уникальный сохранённый фрагмент'),
+    );
+    expect(card).toHaveTextContent('Предыдущая запись');
+  });
+
   beforeEach(() => {
     fakeBrowser.reset();
   });

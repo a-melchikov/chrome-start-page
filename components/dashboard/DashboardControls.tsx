@@ -200,6 +200,10 @@ export function DashboardControls({
     token: number;
   } | null>(null);
   const [paletteFeedback, setPaletteFeedback] = useState<string | null>(null);
+  const [pendingWidgetFocus, setPendingWidgetFocus] = useState<{
+    workspaceId: string;
+    widgetId: string;
+  } | null>(null);
   const [themeEditorOpener, setThemeEditorOpener] =
     useState<HTMLElement | null>(null);
 
@@ -233,6 +237,25 @@ export function DashboardControls({
     const timeout = window.setTimeout(() => setPaletteFeedback(null), 4000);
     return () => window.clearTimeout(timeout);
   }, [paletteFeedback]);
+
+  useEffect(() => {
+    if (
+      !pendingWidgetFocus ||
+      config?.activeWorkspaceId !== pendingWidgetFocus.workspaceId
+    )
+      return;
+    const frame = window.requestAnimationFrame(() => {
+      const widget = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-widget-id]'),
+      ).find(
+        (element) => element.dataset.widgetId === pendingWidgetFocus.widgetId,
+      );
+      widget?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+      widget?.focus({ preventScroll: true });
+      setPendingWidgetFocus(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [config?.activeWorkspaceId, pendingWidgetFocus]);
 
   const openPalette = () => {
     setHasOpenedPalette(true);
@@ -353,6 +376,12 @@ export function DashboardControls({
         onAddWidget(command.widgetType);
       }
       if (!isEditing) onEditingChange(true);
+    } else if (command.kind === 'note') {
+      onSwitchWorkspace?.(command.workspaceId);
+      setPendingWidgetFocus({
+        workspaceId: command.workspaceId,
+        widgetId: command.widgetId,
+      });
     } else if (command.kind === 'focus') {
       const widget = Array.from(
         document.querySelectorAll<HTMLElement>('[data-widget-id]'),

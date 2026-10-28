@@ -1,6 +1,7 @@
 import { defineBackground, storage } from '#imports';
 import { browser } from 'wxt/browser';
 
+import { registerCaptureContextMenus } from '../capture/context-menus';
 import { loadDashboardConfig } from '../storage/dashboard-storage';
 import { releaseClosedTabImageLease } from '../storage/image-assets';
 import {
@@ -198,6 +199,8 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 }
 
 export default defineBackground(() => {
+  registerCaptureContextMenus();
+
   browser.tabs.onRemoved.addListener((tabId) => {
     void releaseClosedTabImageLease(tabId).catch((error: unknown) => {
       console.warn('Failed to release dashboard image lease:', error);

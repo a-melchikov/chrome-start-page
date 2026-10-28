@@ -6,6 +6,10 @@ import {
 import { THEMES } from '../../themes/registry';
 import type { BuiltinThemeId, ThemeRef } from '../../themes/types';
 import { extractMarkdownLinks } from '../../widgets/markdown/extract-links';
+import {
+  createSearchSnippet,
+  extractMarkdownSearchText,
+} from '../../widgets/markdown/search-text';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import { getWidgetDisplayName } from './widget-display';
 
@@ -70,6 +74,16 @@ export type PaletteCommand =
       label: string;
       category: string;
       keywords?: string;
+    }
+  | {
+      id: string;
+      kind: 'note';
+      workspaceId: string;
+      widgetId: string;
+      label: string;
+      category: string;
+      searchText: string;
+      snippet?: string;
     }
   | {
       id: string;
@@ -211,6 +225,23 @@ export function buildCommandCatalog(
       category: `Виджеты · ${index + 1}`,
       keywords: widget.type,
     })),
+    ...config.workspaces.flatMap((workspace) =>
+      workspace.widgets.flatMap((widget): PaletteCommand[] =>
+        widget.type === 'markdown'
+          ? [
+              {
+                id: 'note:' + workspace.id + ':' + widget.id,
+                kind: 'note',
+                workspaceId: workspace.id,
+                widgetId: widget.id,
+                label: 'Заметка «' + getWidgetDisplayName(widget) + '»',
+                category: 'Заметки · ' + workspace.name,
+                searchText: extractMarkdownSearchText(widget.content),
+              },
+            ]
+          : [],
+      ),
+    ),
     ...THEMES.map((theme): PaletteCommand => ({
       id: `theme:builtin:${theme.id}`,
       kind: 'theme',
@@ -253,10 +284,25 @@ export function filterCommands(
   query: string,
 ): PaletteCommand[] {
   const needle = normalize(query);
-  if (!needle) return [...commands];
-  return commands.filter((command) =>
-    normalize(
-      `${command.label} ${command.category} ${command.keywords ?? ''}`,
-    ).includes(needle),
-  );
+  if (!needle) return commands.filter((command) => command.kind !== 'note');
+  return commands
+    .filter((command) =>
+      normalize(
+        [
+          command.label,
+          command.category,
+          command.kind === 'note'
+            ? command.searchText
+            : (command.keywords ?? ''),
+        ].join(' '),
+      ).includes(needle),
+    )
+    .map((command) =>
+      command.kind === 'note'
+        ? {
+            ...command,
+            snippet: createSearchSnippet(command.searchText, needle),
+          }
+        : command,
+    );
 }

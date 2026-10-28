@@ -4,8 +4,43 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CommandPalette } from '../../components/dashboard/CommandPalette';
 import { createDefaultDashboardConfig } from '../../storage/defaults';
+import { createMarkdownWidgetWithTemplate } from '../../widgets/markdown/templates';
 
 describe('CommandPalette', () => {
+  it('shows a note excerpt and selects a result from another workspace', async () => {
+    const user = userEvent.setup();
+    const config = createDefaultDashboardConfig();
+    config.workspaces[1]!.widgets.push({
+      ...createMarkdownWidgetWithTemplate('remote-note', 0),
+      title: 'Материалы',
+      content: 'Уникальный фрагмент для поиска',
+    });
+    const onSelect = vi.fn();
+    render(
+      <CommandPalette
+        config={config}
+        isEditing={false}
+        open
+        onOpenChange={vi.fn()}
+        onSelect={onSelect}
+      />,
+    );
+    await user.type(screen.getByRole('combobox'), 'уникальный фрагмент');
+    const result = screen.getByRole('option', { name: /Заметка «Материалы»/ });
+    expect(result).toHaveTextContent('Заметки · Работа');
+    expect(result).toHaveTextContent('Уникальный фрагмент для поиска');
+    await user.keyboard('{Enter}');
+    await vi.waitFor(() =>
+      expect(onSelect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          kind: 'note',
+          workspaceId: config.workspaces[1]!.id,
+          widgetId: 'remote-note',
+        }),
+      ),
+    );
+  });
+
   it('keeps search hidden until opened and places it at the top without a visible heading', () => {
     const props = {
       config: createDefaultDashboardConfig(),

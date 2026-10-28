@@ -61,7 +61,9 @@ restore (format v3) with embedded local wallpaper and image assets.
 затемнённом фоне; клик вне поиска или Escape его закрывает. Поиск охватывает
 действия, все типы и существующие экземпляры виджетов,
 14 тем, разделы оформления и безопасные HTTP/HTTPS ссылки из сохранённого
-Markdown. Поле остаётся на одной линии с блоком кнопок и сужается при
+Markdown. Поиск также находит текст заметок во всех пространствах, показывает
+фрагмент совпадения и переключает пространство с фокусом на найденной карточке.
+Поле остаётся на одной линии с блоком кнопок и сужается при
 увеличении масштаба; на совсем узком экране оно переносится ниже. Поле и
 результаты образуют одну панель с короткой анимацией появления; на экране видны
 примерно шесть действий. Полоса прокрутки скрыта, но прокрутка и навигация
@@ -153,7 +155,12 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
 ## Platform and Privacy Constraints
 
 - Manifest V3 permissions are `storage`, `unlimitedStorage`, `favicon`, `alarms`,
-  `notifications`, and `offscreen`; there are no `host_permissions`.
+  `notifications`, `offscreen`, and `contextMenus`; host permissions are limited
+  to Open-Meteo Forecast/Geocoding and local `file:///*` links.
+- Контекстное меню Chrome сохраняет страницу, ссылку или выделенный текст в
+  выбранную Markdown-заметку любого пространства либо в новую карточку.
+  Выделение сохраняется цитатой с источником; чтение произвольных страниц,
+  истории и закладок для этого не требуется. Запись остаётся локальной.
 - Links allow HTTP/HTTPS. Images require absolute HTTPS and use `no-referrer`.
 - Search endpoints are fixed in code; custom templates, suggestions, and search
   history are outside current scope.

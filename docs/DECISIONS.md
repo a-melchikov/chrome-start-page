@@ -138,10 +138,18 @@ Status: Accepted
 ### Decision
 
 Keep the extension backend-free and telemetry-free. Manifest permissions are
-`storage`, `unlimitedStorage`, and `favicon`; no host permissions. User links
+`storage`, `unlimitedStorage`, `favicon`, `alarms`, `notifications`,
+`offscreen`, and `contextMenus`. Host permissions are limited to Open-Meteo
+Forecast/Geocoding and local `file:///*` links. User links
 use Chrome's local favicon endpoint, while external images and explicit search
 submissions follow their documented network behavior. `unlimitedStorage` is
 reserved for user-selected local wallpapers whose original bytes must be kept.
+
+Дополнение: `contextMenus` используется для явного сохранения страницы,
+ссылки или выделенного текста в локальную Markdown-заметку. Данные поступают
+из события меню; разрешения `tabs`, `scripting` и доступ ко всем сайтам
+для этого не добавляются. Поиск по заметкам работает только с конфигурацией
+в памяти и не сохраняет запросы.
 
 ### Why
 

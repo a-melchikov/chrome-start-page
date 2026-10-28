@@ -114,7 +114,7 @@ export function CommandPalette({
           aria-label="Поиск команд"
           autoComplete="off"
           placeholder={
-            showThemes ? 'Найти тему…' : 'Найти действие, виджет или ссылку…'
+            showThemes ? 'Найти тему…' : 'Найти заметку, действие или ссылку…'
           }
           role="combobox"
           type="text"
@@ -157,6 +157,11 @@ export function CommandPalette({
                 <span className="text-xs text-theme-text-secondary">
                   {command.category}
                 </span>
+                {command.kind === 'note' && command.snippet ? (
+                  <span className="mt-1 line-clamp-2 break-words text-xs text-theme-text-secondary">
+                    {command.snippet}
+                  </span>
+                ) : null}
               </button>
             ))
           ) : (

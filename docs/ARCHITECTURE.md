@@ -89,6 +89,11 @@ Increase the schema version only when persisted compatibility requires it.
 `components/dashboard/command-catalog.ts` derives typed commands from the
 current in-memory config, widget registry, and theme registry. Search performs
 case-insensitive substring matching; neither the catalog nor query is stored.
+Markdown notes from every workspace are indexed as plain text by
+`widgets/markdown/search-text.ts`; matching results include a bounded excerpt.
+Note results appear only for a nonempty query. Selecting one switches the
+workspace through the existing state hook, then scrolls to and focuses the
+mounted card after the workspace render.
 `CommandPalette` owns only dialog, query, selection, and theme-list state. It
 uses the shared `Dialog` launcher variant: top-centered 480 px search field,
 results below it, subtle backdrop, screen-reader-only title, and a narrow-
@@ -394,10 +399,32 @@ geocoding without API keys:
 ## Extension Boundary
 
 `wxt.config.ts` is the manifest source. Permissions are `storage`,
-`unlimitedStorage`, `favicon`, `alarms`, `notifications`, and `offscreen`.
+`unlimitedStorage`, `favicon`, `alarms`, `notifications`, `offscreen`, and `contextMenus`.
 Host permissions include `https://api.open-meteo.com/*`,
 `https://geocoding-api.open-meteo.com/*`, and `file:///*`. Static assets in `public/` are
 bundled, and generated `.wxt/` and `.output/` directories are never source files.
+
+## Сохранение материалов из браузера
+
+`capture/context-menus.ts` регистрирует меню страниц, ссылок и выделенного
+текста в service worker. Подменю отражает пространства и Markdown-заметки,
+содержит создание новой заметки и обновляется после изменения названий или
+состава. Записи одного текста не пересоздают меню. После перезапуска worker
+меню строится заново; операции обновления выполняются последовательно.
+
+`widgets/markdown/browser-capture.ts` преобразует выделение в Markdown-цитату
+с источником, а страницу или ссылку — в пункт списка. Разметка выделенного
+текста экранируется, адреса проверяются существующим валидатором.
+`storage/markdown-capture.ts` читает последнюю конфигурацию внутри общего
+Web Lock и сохраняет дополненную заметку через репозиторий. Новая карточка
+размещается ниже существующих; активное пространство не переключается.
+Удалённая цель и ошибки записи показываются уведомлением, успешное сохранение
+подтверждается только после завершения записи. Открытые вкладки получают
+обновление через существующий WXT watcher и сохраняют обычную обработку конфликтов.
+
+Разрешение `contextMenus` нужно только для явного действия пользователя.
+Расширение не сканирует страницы и не получает новых разрешений на сайты,
+историю, закладки или чтение всех вкладок.
 
 ## Панель управления
 

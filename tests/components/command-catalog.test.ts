@@ -6,8 +6,32 @@ import {
 } from '../../components/dashboard/command-catalog';
 import { createDefaultDashboardConfig } from '../../storage/defaults';
 import { THEMES } from '../../themes/registry';
+import { createMarkdownWidgetWithTemplate } from '../../widgets/markdown/templates';
 
 describe('command catalog', () => {
+  it('searches note contents across workspaces and returns a plain text excerpt', () => {
+    const config = createDefaultDashboardConfig();
+    config.workspaces[1]!.widgets.push({
+      ...createMarkdownWidgetWithTemplate('remote-note', 0),
+      title: 'Материалы',
+      content: 'Вступление '.repeat(40) + '**Важная** заметка\nдля проекта',
+    });
+    const catalog = buildCommandCatalog(config, false);
+    const results = filterCommands(catalog, '  ВАЖНАЯ  ЗАМЕТКА  ');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      kind: 'note',
+      workspaceId: config.workspaces[1]!.id,
+      widgetId: 'remote-note',
+      category: 'Заметки · Работа',
+      snippet: expect.stringContaining('Важная заметка'),
+    });
+    expect(
+      filterCommands(catalog, '').some((command) => command.kind === 'note'),
+    ).toBe(false);
+    expect(filterCommands(catalog, 'совсем нет совпадений')).toEqual([]);
+  });
+
   it('includes registry widgets, existing cards, themes, settings, workspaces and duplicate links', () => {
     const config = createDefaultDashboardConfig();
     config.workspaces[0]!.widgets = [
