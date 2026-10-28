@@ -1,278 +1,133 @@
 # AGENTS.md
 
-## Project
+## Проект
 
-Chrome Start Page is a local-first Manifest V3 extension that replaces Chrome's
-new tab page with a configurable widget dashboard. The UI and documentation are
-Russian-language. Current persisted schema version: `9`; current widget types:
-`markdown`, `search`, `pomodoro`, `image`, `clock`, `weather`, and `analog-clock`.
+Chrome Start Page — локальное Manifest V3 расширение с настраиваемой стартовой
+страницей и общим React-интерфейсом для расширения и самостоятельного веб-приложения.
+Пользовательские тексты и документация — на русском, символы кода — на английском.
 
-Source code and configuration are the source of truth for implementation state.
-`PLAN.md` is an obsolete bootstrap plan and must not be treated as the current
-specification.
+Актуальное состояние определяют код и конфигурация. Версии инструментов смотри
+в `.nvmrc` и `package.json`, схему данных — в `storage/`, виджеты — в реестре.
+`PLAN.md` — устаревший начальный план, а не действующая спецификация.
 
-## Stack
+## Команды
 
-- Node.js 22 (`.nvmrc`), pnpm 10 (`packageManager` in `package.json`)
-- WXT 0.21, Manifest V3, React 19, strict TypeScript
-- Tailwind CSS 4, `react-grid-layout`
-- WXT Storage backed by `chrome.storage.local`
-- Vitest, React Testing Library, ESLint, Prettier
-- Markdown: `react-markdown`, `remark-gfm`, `rehype-raw`, `rehype-sanitize`
+- Установка: `pnpm install`.
+- Веб-приложение для разработки и браузерных проверок: `pnpm dev:web`
+  → `http://127.0.0.1:5173`.
+- Отдельное окно приложения: `pnpm dev:app`; разработка расширения: `pnpm dev`.
+- Проверки по задаче: `pnpm test <путь>`; полный набор: `pnpm check`.
+- Сборка расширения: `pnpm build`; веб-версии: `pnpm build:web`.
+- Запуск в контейнере: `docker compose up --build` (порт 5173 на loopback).
 
-## Repository Structure
+Остальные команды и параметры запуска — в `package.json` и
+[DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-- `entrypoints/newtab/` — WXT new-tab entrypoint and React composition root
-- `components/dashboard/` — dashboard controls, widget host, grid integration
-- `components/ui/` — small reusable primitives; no domain logic
-- `widgets/` — typed registry and widget implementations
-- `storage/` — schema, defaults, runtime validation, migrations, repository
-- `hooks/` — React state/persistence orchestration
-- `tests/` — storage, domain, and React integration tests
-- `public/` — assets copied into the extension build
+## Архитектура
 
-## Architecture
+- Разделяй React UI, логику виджетов, раскладку и хранение данных. Доступ к API
+  платформы оставляй за адаптерами; компоненты не вызывают `chrome.storage` напрямую.
+- Интегрируй виджеты через `widgets/registry.tsx` и `WidgetConfigMap`, без ветвлений
+  по типу виджета в общем dashboard. Фабрики детерминированы, кроме переданного ID.
+- Используй строгие типы и discriminated unions; не вводи `any` и нетипизированные
+  контейнеры `settings`.
+- Переиспользуй `components/ui/` и outline-иконки из `components/icons.tsx`.
+  Марки поисковиков используют локальные SVG. Новые зависимости и разрешения
+  Chrome требуют конкретного обоснования.
+- Не восстанавливай удалённый `LinksWidget`: списки ссылок реализованы Markdown.
+- Перед изменением границ модулей, хранения, реестра, Markdown или сетки прочитай
+  соответствующий раздел [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- При добавлении виджета используй [new-widget](.agents/skills/new-widget/SKILL.md).
 
-- Keep React UI, domain/widget logic, layout helpers, and storage separate.
-- All widget integration goes through `widgets/registry.tsx` and the typed
-  `WidgetConfigMap`; do not add dashboard-wide type branches.
-- Persist raw domain config only. Rendered Markdown/HTML, parsed links, search
-  queries, and ephemeral editor state are not persisted.
-- Treat values loaded from storage as `unknown`; validate/migrate them before
-  use. Incompatible schema changes require a version bump and migration.
-- Keep platform API access behind an abstraction. React components must not
-  call `chrome.storage` directly.
-- See `docs/ARCHITECTURE.md` before changing module boundaries, storage,
-  registry, Markdown processing, or grid behavior.
+## Данные и безопасность
 
-## Development Rules
+- Загруженные данные считай `unknown`: сначала проверка и миграция, затем использование.
+  Сохраняй совместимость дашбордов; несовместимое изменение схемы требует новой
+  версии, миграции и тестов. Ошибки хранения и неподдерживаемые данные показывай пользователю.
+- Сохраняй исходную конфигурацию, а не HTML, разобранные ссылки, поисковые запросы
+  или временное состояние редактора. Не обходи repository и санитайзер.
+- Храни конфигурацию в `local:dashboard-config`, локальные обои —
+  в `local:dashboard-wallpaper:<uuid>` через WXT Storage. Не используй
+  `localStorage` или `chrome.storage.sync`.
+- Веб-режим использует адаптер IndexedDB из `web/`. Его aliases не должны попадать
+  в WXT-сборку или менять хранилище расширения.
+- Сохраняй порядок записей и существующие моменты сохранения: обычные действия —
+  сразу, редакторы — с debounce, ползунки Liquid Glass — после завершения ввода.
+  Не теряй отложенные изменения при закрытии, Escape, `pagehide` и unmount;
+  точные правила — в разделе State and Persistence документа архитектуры.
+- Markdown проходит существующий parse/sanitize pipeline; не используй
+  несаницированный HTML или `dangerouslySetInnerHTML`.
+- Ссылки поддерживают HTTP/HTTPS и `file://`; по умолчанию открываются в текущей
+  вкладке, Ctrl/средняя кнопка — в новой. Удалённые изображения — только абсолютные
+  HTTPS URL с lazy loading и `no-referrer`.
+- Поиск использует фиксированные HTTPS GET endpoints, отправляется только явно
+  и не сохраняет запросы.
+- Не добавляй backend, аналитику, телеметрию, внешние favicon API, широкие
+  `host_permissions` или исполняемые пользовательские виджеты.
 
-- Use strict types and discriminated unions; do not introduce `any` or generic
-  `settings` bags.
-- Preserve backward compatibility for saved dashboards. Add runtime validation
-  and migration tests with every persisted schema change.
-- Reuse `components/ui/` and `components/icons.tsx`; do not add a large UI or
-  icon library for isolated needs.
-- Add dependencies or Chrome permissions only when necessary and document why.
-- Keep factories deterministic except for the ID supplied by the registry.
-- Add or update focused tests with every behavior change.
-- Never make assumptions or guess when requirements, UX, or implementation details are unclear; always ask the user for clarification before proceeding.
+## Интерфейс
 
-## Code Style
+- Сетка — 12 колонок с минимальной шириной 960 px. На узком экране нужна
+  горизонтальная прокрутка, а не изменение сохранённых координат.
+- Drag/resize доступны только в общем режиме редактирования. Не ограничивай
+  размещение виджетов снизу текущей высотой сетки.
+- Markdown — карточка с фиксированным заголовком и прокруткой тела. Search —
+  без карточки и видимого заголовка, высотой в одну строку, resize только по горизонтали.
+  Высота Search нормализуется в `1` при загрузке и сохранении.
+- Обеспечивай читаемость элементов управления на любых пользовательских обоях.
+- Escape закрывает активный диалог, иначе завершает общее редактирование.
+  Сохраняй доступные названия и возврат фокуса.
+- Поведение Liquid Glass, панели инструментов и тем описано в
+  [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md); при таких изменениях читай нужный раздел.
 
-- User-facing strings and project documentation are in Russian; code symbols
-  are in English.
-- React components use PascalCase `.tsx`; hooks use the `use-` prefix; widget
-  implementations live in `widgets/<type>/`.
-- Follow Prettier (`singleQuote`, trailing commas) and the configured ESLint
-  rules. Use `pnpm format` only when formatting changes are intended.
+## Проверка результата
 
-## UI Rules
+- При изменении поведения добавляй или обновляй тесты по затронутым сценариям.
+  Во время работы запускай целевые тесты; перед передачей изменений кода или
+  конфигурации — `pnpm check` (lint, формат, типы, тесты, обе сборки).
+- После изменений UI, форм, виджетов, стилей или пользовательского поведения
+  самостоятельно запускай веб-приложение и прокликивай сценарий в настоящем браузере.
+  Это часть задачи без отдельного согласования, если пользователь не ограничил проверки.
+- Используй доступный Chrome DevTools MCP, Playwright, Browser Use или Computer Use.
+  Сначала проверь наличие инструмента; не подменяй браузерную проверку предложением
+  проверить вручную. Порядок работы — в [mcp-verify](.agents/skills/mcp-verify/SKILL.md)
+  и [инструкции запуска](docs/DEVELOPMENT.md#браузерная-проверка-для-агента).
+- Проверь ввод, сохранение и повторное открытие/reload, отмену/Escape и фокус.
+  Для сетки проверь drag/resize, для оформления — затронутые темы и размеры окна.
+  Проверь доступные ошибки консоли, сделай снимок результата, исправь дефекты задачи.
+- При недоступном браузере укажи `NOT_RUN` и причину. Тесты и сборка не заменяют клики.
+  Веб-проверка подтверждает UI и IndexedDB; background, меню, разрешения и Chrome Storage
+  требуют отдельной проверки расширения.
+- Для правок только документации достаточно проверки форматирования, ссылок и
+  `git diff --check`; полный pipeline и браузер не нужны.
 
-- The dashboard is a 12-column desktop canvas with a 960 px minimum width;
-  narrow viewports scroll horizontally instead of rewriting saved coordinates.
-- Drag/resize is available only in global edit mode. Do not reintroduce a
-  vertical bound that prevents placing widgets below the current grid.
-- Shared control icons use the outline system in `components/icons.tsx`; keep
-  their sizing, stroke, variants, and light/dark contrast visually consistent.
-  Search-engine brand marks are the deliberate exception and use bundled SVGs.
-- Arbitrary user-selected backgrounds must not make controls unreadable.
-- `MarkdownWidget` is a card with a prominent fixed title and scrollable body.
-  `SearchWidget` is bare, has no visible title/card, and remains one grid row
-  high with horizontal resizing only.
-- Liquid Glass is enabled by default for card surfaces and Search. Weather
-  scenes and loaded images receive only the edge and shadow, without an overlay.
-  The effect is static, theme-aware, and can be configured or disabled from the
-  collapsed «Виджеты» appearance section. The top dashboard toolbar uses the
-  same glass tint as widget cards when enabled; dialogs remain opaque.
-- Toolbar position is global across workspaces. Left modes overlay widgets and
-  use 24 px top canvas padding; top-right uses 80 px. Collapsible mode reveals
-  only its trigger on edge hover/focus, opens on click or M, and remains usable
-  during editing. Drag/resize disables the reveal zone.
-- Escape closes the active dialog; with no dialog open, Escape exits global edit
-  mode. Preserve focus restoration and accessible names.
+## Работа и Git
 
-## State / Storage Rules
+- До правок изучи связанный код, тесты, `git status` и текущий diff. Сохраняй чужие
+  изменения; не редактируй генерируемые `.wxt/`, `.output/` и `node_modules/`.
+- Существенную неопределённость поведения уточняй после изучения контекста.
+  Очевидные технические решения принимай самостоятельно; не запускай полный
+  опрос для локального исправления.
+- При явном запросе плана используй [planning](.agents/skills/planning/SKILL.md).
+  Планирование само по себе не разрешает реализацию.
+- Не выполняй commit или push без явного указания пользователя.
+  Сообщения коммитов — Conventional Commits на английском, imperative lowercase,
+  без точки в конце. Не добавляй теги авторства AI, ассистента или инструмента.
+- В конце проверь `git status` и кратко сообщи на русском результат и проверки,
+  включая невыполненные. Если есть изменения, заверши ответ готовой командой
+  `git add <явные пути> && git commit -m "<type>(<scope>): <summary>"`.
+  Перечисляй все относящиеся к задаче накопленные файлы, включая untracked;
+  не используй `git add .`. Предложение команды не разрешает её выполнение.
 
-- Persistent config key: `local:dashboard-config`; local wallpaper assets use
-  `local:dashboard-wallpaper:<uuid>`. Use WXT Storage only, never `localStorage`
-  or `chrome.storage.sync`.
-- Standalone development (`web/`) reuses WXT Storage over a build-only IndexedDB
-  browser adapter. Keep aliases out of the WXT extension build; do not replace
-  extension storage or claim web tests prove native background/context-menu APIs.
-- Immediate saves: add/remove, ordinary appearance changes, completed
-  drag/resize, and Liquid Glass reset/toggle. Liquid Glass sliders preview in
-  memory and flush after input completion, dialog close, `pagehide`, or
-  unmount. Widget editor changes are debounced and must flush on finish,
-  Escape, `pagehide`, and unmount. Preserve queued write ordering.
-- Schema v9 supports independent workspaces / profiles (`workspaces: WorkspaceConfig[]`,
-  `activeWorkspaceId: string`), custom user themes (`customThemes`), typed theme references
-  (`appearance.theme: ThemeRef`), background override modes (`backgroundColor: BackgroundColorConfig`),
-  and auto-migrates v1–v8 configs. V9 adds global `toolbar.mode` (`top-right`,
-  `left-fixed`, `left-collapsible`); toolbar visibility is ephemeral. V5 introduced grouped `appearance.liquidGlass` settings.
-  V1 `links` widgets migrate to `markdown` without losing ID, title, content, or layout.
-- Search widget height is normalized to `1` during load/save.
+## Документация по задаче
 
-## Error Handling and Security
+Читай и обновляй только относящиеся к изменению документы, без обязательной загрузки всех:
 
-- Surface storage failures to the user; do not silently accept malformed or
-  unsupported configurations.
-- Render user Markdown through the existing parse/sanitize pipeline. Never use
-  unsanitized HTML or `dangerouslySetInnerHTML`.
-- Links support HTTP/HTTPS and local file:// (stay in current tab by default, Ctrl/middle-click opens new tab). Images are absolute
-  HTTPS only and keep lazy loading plus `no-referrer`.
-- Search uses fixed HTTPS GET endpoints, never persists queries, and performs no
-  request before explicit submit.
-- Do not add backend calls, analytics, telemetry, external favicon APIs, broad
-  `host_permissions`, or executable user widgets.
+- [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) — требования и ограничения продукта.
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — границы модулей, данные и поведение подсистем.
+- [DECISIONS.md](docs/DECISIONS.md) — долговременные архитектурные решения.
+- [DEVELOPMENT.md](docs/DEVELOPMENT.md) — команды, окружение и проверка в браузере.
+- [CURRENT_STATE.md](docs/CURRENT_STATE.md) — существенные этапы и статус реализации.
 
-## Testing
-
-Run focused tests while iterating. Before handing off a code/config change, run
-the unified verification pipeline:
-
-```bash
-pnpm check
-```
-
-This runs lint, Prettier check, typecheck, unit tests, and both extension/web builds
-in a single fail-fast step.
-
-### Обязательная проверка интерфейса в браузере
-
-После изменений интерфейса, форм, виджетов, стилей или пользовательского поведения
-агент должен сам запустить приложение и прокликать изменённый сценарий в настоящем
-браузере. Обычная локальная проверка входит в реализацию задачи и не требует
-отдельного вопроса о разрешении, если пользователь явно не ограничил проверки.
-
-- Основной запуск для автоматизации — `pnpm dev:web` и `http://127.0.0.1:5173`.
-  Открывать адрес через доступный Chrome DevTools MCP, Playwright MCP,
-  Browser Use или Computer Use с управлением браузером. `pnpm dev:app` подходит
-  для отдельного окна, если инструмент умеет управлять именно этим окном.
-- Использовать доступный инструмент самостоятельно: не ограничиваться предложением
-  «проверьте вручную» и не устанавливать расширение ради обычной проверки форм.
-  Наличие MCP-сервера или управления браузером сначала проверить; не придумывать API
-  инструментов и не устанавливать новые MCP-серверы без необходимости.
-- Прокликать затронутую форму, проверить ввод и сохранение, повторное открытие
-  или reload, отмену/Escape и фокус. Для изменений сетки проверить drag/resize,
-  для оформления — затронутые темы и размеры окна. Проверить доступные ошибки
-  консоли и сделать снимок результата.
-- Найденные дефекты в рамках задачи исправить и повторить затронутый сценарий.
-  Если браузер недоступен, явно указать `NOT_RUN` и причину; unit-тесты
-  и сборка не заменяют интерактивную проверку.
-- Веб-проверка подтверждает UI и IndexedDB. Нативное меню Chrome, background,
-  permissions и Chrome Storage требуют отдельной проверки расширения.
-
-Порядок запуска, изоляции данных и отчёта — в
-[DEVELOPMENT.md](docs/DEVELOPMENT.md#браузерная-проверка-для-агента).
-Выбор инструментов и дополнительные проверки — в
-[mcp-verify](.agents/skills/mcp-verify/SKILL.md).
-
-## Commands
-
-- Install: `pnpm install`
-- Develop: `pnpm dev`
-- Develop without extension: `pnpm dev:web`
-- Separate application window: `pnpm dev:app`
-- Build / preview standalone: `pnpm build:web` / `pnpm preview:web`
-- Container: `docker compose up --build` (loopback port 5173 by default)
-- Format: `pnpm format`
-- Format check: `pnpm format:check`
-- Lint: `pnpm lint`
-- Type check: `pnpm typecheck`
-- Test: `pnpm test`
-- Build: `pnpm build`
-- Check all: `pnpm check`
-- Package: `pnpm package`
-- Preview Chrome: `pnpm preview:chrome`
-
-## Git and Commits
-
-- Do not commit or push without explicit user instruction.
-- Follow Conventional Commits in English: `<type>(<scope>): <imperative summary>`.
-  - Types and scopes based on repository history:
-    - `feat(<scope>)`: `ui`, `storage`, `state`, `backup`, `wallpaper`
-    - `fix(<scope>)`: `ui`, `storage`, etc.
-    - `docs`: documentation and design specs (scope typically omitted, e.g. `docs: document liquid glass controls`)
-    - `style(<scope>)`, `test(<scope>)`
-  - Imperative lowercase summary with no trailing period (e.g., `feat(backup): add dashboard import and export`).
-- Zero AI Footprint: never add AI, assistant, or tool attribution tags.
-- Post-change requirement: after completing any changes in the repository,
-  the agent must inspect `git status` and append a ready-to-run commit command
-  at the very end of its response. The command must stage all relevant modified
-  and untracked target files currently pending in `git status` (reflecting the
-  full accumulated working tree state rather than only the latest message's
-  diff). Do not use blanket `git add .` to avoid staging unrelated temporary
-  files; list all target files explicitly:
-
-  Предлагаю коммит:
-
-  ```bash
-  git add <file1> <file2> && git commit -m "<type>(<scope>): <message>"
-  ```
-
-## Planning Protocol ("составь план", "спланируй", "/plan")
-
-When the user requests planning (triggers: "составь план", "спланируй", "/plan", or similar):
-
-1. **Autonomous Research Phase**:
-   - Deeply inspect current codebase, `docs/` architecture documents, configurations, and existing patterns.
-   - Never ask questions that can be reliably answered from the repository.
-2. **Iterative Interview Phase (`ask_question`)**:
-   - Ask as many questions via `ask_question` as needed until zero ambiguity remains (typically 10–25 questions for large/architectural features; proportionally fewer for localized tasks).
-   - Cover where applicable: goals/behavior, architecture/patterns, UI/UX, data/APIs/state, security/performance, backward compatibility, edge cases, acceptance criteria.
-   - Clarify trade-offs when multiple viable options exist.
-   - **Multi-round follow-up loop**: after receiving user answers, evaluate whether any ambiguities or follow-up questions remain. If so, ask another round of `ask_question` instead of generating the plan prematurely; repeat until zero ambiguity exists.
-   - Exception: skip questioning only if the user explicitly specified "без вопросов" or "сразу пиши план".
-3. **Strict No-Modification Rule**:
-   - Do not begin implementation, create code files, or modify the repository during planning.
-4. **Artifact Formulation**:
-   - Once all questions are resolved, generate a comprehensive implementation plan as an interactive markdown Artifact (`RequestFeedback: true`).
-   - Structure must include: understanding & goals, assumptions & risks, step-by-step tasks, affected files/modules, test strategy, and acceptance criteria.
-   - In chat, output only a concise summary pointing to the artifact.
-5. **Awaiting Confirmation**:
-   - Do not start implementation until the user explicitly approves the plan.
-
-## Post-Plan Iterations & Defect Resolution
-
-When user feedback, bug reports, edge cases, or UX refinements arrive after a plan has been implemented:
-
-1. **Lightweight Surgical Cycle**: Do not restart the full `/plan` interview protocol unless the user explicitly requests `/plan` for a major new subsystem or schema migration. Apply a fast, focused cycle instead.
-2. **Root-Cause Isolation**: Analyze code, active tests, or provided screenshots immediately. Do not ask questions that can be diagnosed directly from the workspace state; however, if user intent, reproduction context, or desired fix behavior is unclear, ask clarifying questions instead of guessing.
-3. **Targeted Implementation**: Make minimal, surgical edits addressing the exact feedback without touching unrelated modules or styles.
-4. **Focused Verification**: Run targeted unit tests (`pnpm test <path>`) followed by the unified pipeline (`pnpm check`).
-5. **Atomic Delivery**: Provide a concise technical summary and the ready-to-run `git add <file1> <file2> && git commit ...` command.
-
-## Change Rules
-
-- Before changes, inspect the relevant implementation, tests, git status, and
-  the context files listed below.
-- Do not disturb unrelated user changes or generated directories (`.wxt/`,
-  `.output/`, `node_modules/`).
-- After architecture changes, update `docs/ARCHITECTURE.md` and, when a durable
-  choice changed, `docs/DECISIONS.md`.
-- After durable requirement changes, update `docs/PROJECT_CONTEXT.md`.
-- After a substantial milestone or status change, update
-  `docs/CURRENT_STATE.md`.
-- After command/tooling changes, update `docs/DEVELOPMENT.md` and this file if
-  needed. Do not update context docs for every small implementation edit.
-- If context docs materially disagree with code, determine the current truth,
-  complete the task from that state, and update the stale context file when it
-  is in scope.
-
-## Do Not
-
-- Do not revive the removed specialized `LinksWidget`; v2 uses Markdown.
-- Do not bypass the registry, storage repository, migrations, or sanitizer.
-- Do not persist derived view data or transient search/editor input.
-- Do not change product scope based only on the historical `PLAN.md`.
-
-## Context Loading
-
-Always read this file. Read only when the task requires it:
-
-- `docs/PROJECT_CONTEXT.md` — product behavior, constraints, limitations
-- `docs/ARCHITECTURE.md` — data flow and architectural boundaries
-- `docs/DECISIONS.md` — accepted decisions and rejected alternatives
-- `docs/DEVELOPMENT.md` — environment, commands, manual extension workflow
-- `docs/CURRENT_STATE.md` — implemented status and next logical work
+Не обновляй все документы ради каждой мелкой правки. Если документ противоречит
+коду, установи актуальное поведение и исправь противоречие в рамках задачи.
