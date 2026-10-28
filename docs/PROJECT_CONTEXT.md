@@ -19,6 +19,8 @@ Version 0.1.1 implements seven repeatable widget types:
   HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog with behavior settings.
   Кнопка «Начать работу» открывает набор HTTP/HTTPS-ссылок заметки в фоновых
   вкладках без повторов. Неудавшиеся открытия можно повторить отдельно.
+  Кнопка разворачивания открывает полноэкранный режим чтения с прокруткой,
+  безопасными ссылками и копированием кода; задачи в нём доступны только для чтения.
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and
   DuckDuckGo use fixed GET endpoints and bundled brand icons. One surface places
   the colored glass-framed engine mark on the left and the magnifier submit
@@ -93,6 +95,11 @@ Markdown. Поиск также находит текст заметок во в
 что и карточки. Диалоги остаются непрозрачными.
 
 ## Core Requirements
+
+- Markdown-заметки и изображения можно развернуть отдельной кнопкой карточки
+  в режиме просмотра и редактирования. Escape закрывает просмотр и возвращает
+  фокус, сохраняя режим редактирования и компоновку. Изображение показывается
+  целиком без сохранённого кадрирования; просмотр не сохраняет настройки.
 
 - Multiple independent widget instances with UUIDs and persisted layouts.
 - Global edit mode controls add, delete, drag, resize, widget settings, and

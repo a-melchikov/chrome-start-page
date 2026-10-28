@@ -74,7 +74,7 @@ when editing begins. A definition owns:
 
 - metadata and factory;
 - runtime type guard;
-- renderer and optional editor;
+- renderer, optional editor and optional read-only reader;
 - card/bare chrome and inline/dialog editor presentation;
 - title behavior and dialog size;
 - per-type layout constraints and resize handles.
@@ -83,6 +83,24 @@ when editing begins. A definition owns:
 for unknown types. Adding a widget type requires updating the config map,
 storage validation, registry definition, factory, renderer/editor, and tests.
 Increase the schema version only when persisted compatibility requires it.
+
+`Reader` и предикат `canRead` задаются типизированным определением
+виджета; `renderReader` проверяет конфигурацию перед созданием компонента.
+`WidgetHost` показывает независимую от режима редактирования кнопку
+разворачивания. Просмотр использует общий нативный `Dialog` на весь viewport
+с фиксированной шапкой и закрытием по Escape/кнопке. Закрытие возвращает фокус
+на кнопку карточки; содержимое освобождается после перехода закрытия.
+Состояние просмотра существует только в памяти и не меняет компоновку.
+`data-no-drag` и роль диалога исключают действия внутри просмотра из
+обработчиков перемещения и выделения нижележащей сетки.
+
+Режим подключён для Markdown и изображений. Markdown использует тот же
+санитайзер и renderer без обработчика изменения содержимого, поэтому задачи
+недоступны для изменения, а ссылки и копирование кода сохраняются.
+Изображение использует общий renderer с временным `reading`-режимом:
+`contain`, центрирование и отсутствие zoom не изменяют исходную конфигурацию.
+У пустого изображения кнопка скрыта. Таймеры и погодные эффекты в просмотре
+не дублируются.
 
 ## Command Palette
 

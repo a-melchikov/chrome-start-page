@@ -43,8 +43,10 @@ import {
   ClockWidgetEditor,
   ImageWidget,
   ImageWidgetEditor,
+  ImageWidgetReader,
   MarkdownWidget,
   MarkdownWidgetEditor,
+  MarkdownWidgetReader,
   PomodoroWidget,
   PomodoroWidgetEditor,
   SearchWidget,
@@ -97,6 +99,8 @@ interface WidgetDefinition<TConfig extends WidgetConfig> {
   isConfig: (value: unknown) => value is TConfig;
   Renderer: ComponentType<WidgetRenderProps<TConfig>>;
   Editor?: ComponentType<WidgetEditorProps<TConfig>>;
+  Reader?: ComponentType<{ config: TConfig }>;
+  canRead?: (config: TConfig) => boolean;
   canFinishEditing?: (config: TConfig) => boolean;
   presentation: WidgetPresentation;
 }
@@ -115,6 +119,7 @@ export interface RegisteredWidgetDefinition {
     onChange: (config: WidgetConfig) => void,
     onRequestFinish: () => void,
   ) => ReactNode | null;
+  renderReader?: (config: unknown) => ReactNode | null;
   canFinishEditing?: (config: unknown) => boolean;
 }
 
@@ -123,6 +128,7 @@ function defineWidget<TConfig extends WidgetConfig>(
 ): RegisteredWidgetDefinition {
   const Renderer = definition.Renderer;
   const Editor = definition.Editor;
+  const Reader = definition.Reader;
 
   return {
     type: definition.type,
@@ -154,6 +160,13 @@ function defineWidget<TConfig extends WidgetConfig>(
               onChange={onChange}
               onRequestFinish={onRequestFinish}
             />
+          ) : null
+      : undefined,
+    renderReader: Reader
+      ? (config) =>
+          definition.isConfig(config) &&
+          definition.canRead?.(config) !== false ? (
+            <Reader config={config} />
           ) : null
       : undefined,
     canFinishEditing: definition.canFinishEditing
@@ -287,6 +300,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     isConfig: isMarkdownWidgetConfig,
     Renderer: MarkdownWidget,
     Editor: MarkdownWidgetEditor,
+    Reader: MarkdownWidgetReader,
     presentation: {
       chrome: 'card',
       editor: 'dialog',
@@ -358,6 +372,8 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     isConfig: isImageWidgetConfig,
     Renderer: ImageWidget,
     Editor: ImageWidgetEditor,
+    Reader: ImageWidgetReader,
+    canRead: (config) => config.source.type !== 'none',
     presentation: {
       chrome: 'bare',
       editor: 'dialog',

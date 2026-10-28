@@ -10,6 +10,11 @@ export const MarkdownWidgetEditor = lazy(() =>
     default: module.MarkdownWidgetEditor,
   })),
 );
+export const MarkdownWidgetReader = lazy(() =>
+  import('./markdown/MarkdownWidget').then((module) => ({
+    default: module.MarkdownWidgetReader,
+  })),
+);
 export const SearchWidget = lazy(() =>
   import('./search/SearchWidget').then((module) => ({
     default: module.SearchWidget,
@@ -38,6 +43,11 @@ export const ImageWidget = lazy(() =>
 export const ImageWidgetEditor = lazy(() =>
   import('./image/ImageWidgetEditor').then((module) => ({
     default: module.ImageWidgetEditor,
+  })),
+);
+export const ImageWidgetReader = lazy(() =>
+  import('./image/ImageWidget').then((module) => ({
+    default: module.ImageWidgetReader,
   })),
 );
 export const ClockWidget = lazy(() =>

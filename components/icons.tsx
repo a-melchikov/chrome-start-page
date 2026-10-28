@@ -35,6 +35,14 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
+export function ExpandIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+    </BaseIcon>
+  );
+}
+
 export function PaletteIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

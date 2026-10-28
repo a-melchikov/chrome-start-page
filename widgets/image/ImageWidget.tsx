@@ -7,9 +7,18 @@ import type { ImageWidgetConfig } from './types';
 
 interface ImageWidgetProps {
   config: ImageWidgetConfig;
+  reading?: boolean;
 }
 
-export function ImageWidget({ config }: ImageWidgetProps) {
+export function ImageWidgetReader({ config }: { config: ImageWidgetConfig }) {
+  return (
+    <div className="h-full p-4 sm:p-6">
+      <ImageWidget config={config} reading />
+    </div>
+  );
+}
+
+export function ImageWidget({ config, reading = false }: ImageWidgetProps) {
   const { src, mimeType, error, isLoading } = useImageSource(config.source);
   const [isPaused, setIsPaused] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -91,14 +100,16 @@ export function ImageWidget({ config }: ImageWidgetProps) {
     );
   }
 
-  const fitMode = config.fitMode ?? 'cover';
+  const fitMode = reading ? 'contain' : (config.fitMode ?? 'cover');
   const objectFitClass =
     fitMode === 'contain' ? 'object-contain' : 'object-cover';
-  const zoom = config.zoom && config.zoom > 1 ? config.zoom : undefined;
+  const zoom =
+    !reading && config.zoom && config.zoom > 1 ? config.zoom : undefined;
+  const objectPosition = reading ? '50% 50%' : config.objectPosition;
   const imageStyle = {
-    objectPosition: config.objectPosition,
+    objectPosition,
     transform: zoom ? `scale(${zoom})` : undefined,
-    transformOrigin: config.objectPosition,
+    transformOrigin: objectPosition,
   };
 
   return (
@@ -134,7 +145,7 @@ export function ImageWidget({ config }: ImageWidgetProps) {
       ) : null}
       <img
         ref={imgRef}
-        alt=""
+        alt={reading ? config.altText?.trim() || 'Изображение' : ''}
         aria-hidden={isGif && isPaused}
         className={classNames(
           'h-full w-full',

@@ -19,6 +19,27 @@ interface MarkdownWidgetProps {
   onChange?: (config: MarkdownWidgetConfig) => void;
 }
 
+export function MarkdownWidgetReader({
+  config,
+}: {
+  config: MarkdownWidgetConfig;
+}) {
+  return (
+    <section
+      aria-label="Содержимое заметки"
+      tabIndex={0}
+      className="h-full overflow-y-auto overscroll-contain px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring sm:px-8"
+    >
+      <div className="mx-auto w-full max-w-[75ch]">
+        <MarkdownRenderer
+          content={config.content}
+          hideCompletedTasks={config.hideCompletedTasks}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function MarkdownWidget({ config, onChange }: MarkdownWidgetProps) {
   const websiteUrls = useMemo(
     () => getWebsiteSetUrls(config.content),

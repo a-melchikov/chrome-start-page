@@ -9,7 +9,7 @@ import {
 
 import type { WidgetConfig } from '../../storage/schema';
 import { getWidgetDefinition } from '../../widgets/registry';
-import { CloseIcon, PencilIcon } from '../icons';
+import { CloseIcon, ExpandIcon, PencilIcon } from '../icons';
 import { Dialog, IconButton } from '../ui';
 import { classNames } from '../ui/class-names';
 import {
@@ -43,12 +43,20 @@ export function WidgetHost({
   onWidgetEnterEnd,
 }: WidgetHostProps) {
   const titleId = useId();
+  const readerDialogId = useId();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const [shouldRestoreEditFocus, setShouldRestoreEditFocus] = useState(false);
   const [isEditorExiting, setIsEditorExiting] = useState(false);
+  const [readerState, setReaderState] = useState<'closed' | 'open' | 'closing'>(
+    'closed',
+  );
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
   const content = definition?.render(widget, onWidgetChange);
+  const reader = definition?.renderReader?.(widget);
+  if ((!reader || isWidgetEditing) && readerState !== 'closed') {
+    setReaderState('closed');
+  }
   const isBare = definition?.presentation.chrome === 'bare';
   const isFullBleedCard =
     !isBare && definition?.presentation.cardInset === 'none';
@@ -87,6 +95,7 @@ export function WidgetHost({
       ? definition?.renderEditor?.(widget, onWidgetChange, finishEditing)
       : null;
   const handleEditorExited = useCallback(() => setIsEditorExiting(false), []);
+  const handleReaderExited = useCallback(() => setReaderState('closed'), []);
   const enterEndRef = useRef(onWidgetEnterEnd);
   useEffect(() => {
     enterEndRef.current = onWidgetEnterEnd;
@@ -110,6 +119,28 @@ export function WidgetHost({
       Неподдерживаемый тип виджета: {widget.type}
     </p>
   );
+  const imageControlClass =
+    '!rounded-full border border-white/20 bg-black/50 text-white shadow-md backdrop-blur-md hover:bg-black/70 hover:text-white active:bg-black/80';
+  const readerButton = reader ? (
+    <IconButton
+      aria-label={'Развернуть виджет «' + displayName + '»'}
+      aria-haspopup="dialog"
+      aria-expanded={readerState === 'open'}
+      aria-controls={readerDialogId}
+      className={
+        isImageWithSource
+          ? imageControlClass
+          : 'text-theme-text-secondary hover:text-theme-text-primary'
+      }
+      disabled={isWidgetEditing || isEditorExiting}
+      size="xs"
+      title={'Развернуть для чтения: ' + displayName}
+      variant="ghost"
+      onClick={() => setReaderState('open')}
+    >
+      <ExpandIcon className="size-[18px]" />
+    </IconButton>
+  ) : null;
   const controls = (
     <div
       aria-label="Управление виджетом"
@@ -129,7 +160,7 @@ export function WidgetHost({
           aria-label={`Редактировать виджет «${displayName}»`}
           className={
             isImageWithSource
-              ? '!rounded-full border border-white/20 bg-black/50 text-white shadow-md backdrop-blur-md hover:bg-black/70 hover:text-white active:bg-black/80'
+              ? imageControlClass
               : isVisualWeather
                 ? 'text-white/85 hover:bg-white/15 hover:text-white active:bg-white/25'
                 : 'text-theme-text-secondary hover:text-theme-text-primary'
@@ -160,6 +191,12 @@ export function WidgetHost({
       >
         <CloseIcon className="size-[18px]" />
       </IconButton>
+    </div>
+  );
+  const widgetControls = (
+    <div className="flex shrink-0 items-center gap-1">
+      {readerButton}
+      {controls}
     </div>
   );
 
@@ -230,13 +267,16 @@ export function WidgetHost({
                   {content ?? fallback}
                 </div>
               )}
-              <div
-                aria-hidden={!isEditing}
-                className="edit-controls absolute right-2 top-2 z-10 p-0.5"
-                data-visible={isEditing}
-                inert={!isEditing}
-              >
-                {controls}
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 p-0.5">
+                {readerButton}
+                <div
+                  aria-hidden={!isEditing}
+                  className="edit-controls"
+                  data-visible={isEditing}
+                  inert={!isEditing}
+                >
+                  {controls}
+                </div>
               </div>
             </div>
           ) : (
@@ -250,13 +290,13 @@ export function WidgetHost({
               >
                 {content ?? fallback}
               </div>
-              {controls}
+              {widgetControls}
             </div>
           )
         ) : isTitleHidden ? (
           <>
             <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
-              {controls}
+              {widgetControls}
             </div>
             <div
               className={classNames(
@@ -286,7 +326,7 @@ export function WidgetHost({
               >
                 {displayName}
               </h2>
-              {controls}
+              {widgetControls}
             </header>
             <div
               className={classNames(
@@ -301,6 +341,57 @@ export function WidgetHost({
           </>
         )}
       </article>
+
+      {reader && readerState !== 'closed' ? (
+        <Dialog
+          id={readerDialogId}
+          role="dialog"
+          data-no-drag
+          open={readerState === 'open'}
+          size="fullscreen"
+          title={'Просмотр: ' + displayName}
+          onExited={handleReaderExited}
+          onOpenChange={(open) => setReaderState(open ? 'open' : 'closing')}
+        >
+          <div className="flex h-full min-h-0 flex-col bg-theme-surface text-theme-text-primary">
+            <header className="flex shrink-0 items-center gap-3 border-b border-theme-border px-4 py-3 sm:px-6">
+              <h2
+                className="min-w-0 flex-1 truncate text-lg font-semibold"
+                title={displayName}
+              >
+                {displayName}
+              </h2>
+              <span className="hidden shrink-0 text-xs text-theme-text-secondary sm:inline">
+                Esc — вернуться
+              </span>
+              <IconButton
+                data-dialog-initial-focus
+                aria-label="Закрыть просмотр"
+                size="xs"
+                variant="ghost"
+                title="Закрыть просмотр (Esc)"
+                onClick={() => setReaderState('closing')}
+              >
+                <CloseIcon className="size-5" />
+              </IconButton>
+            </header>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <Suspense
+                fallback={
+                  <p
+                    className="p-6 text-sm text-theme-text-secondary"
+                    role="status"
+                  >
+                    Загрузка просмотра…
+                  </p>
+                }
+              >
+                {reader}
+              </Suspense>
+            </div>
+          </div>
+        </Dialog>
+      ) : null}
 
       {usesDialogEditor && editor ? (
         <Suspense
