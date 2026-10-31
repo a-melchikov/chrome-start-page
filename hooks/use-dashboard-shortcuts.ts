@@ -217,6 +217,18 @@ export function useDashboardShortcuts({
         return;
       }
 
+      if (event.code === 'KeyP' || event.code === 'KeyO') {
+        event.preventDefault();
+        onOpenAppearance();
+        return;
+      }
+
+      if (event.code === 'KeyB') {
+        event.preventDefault();
+        onOpenBackup();
+        return;
+      }
+
       // Edit-mode only shortcuts
       if (isEditing) {
         if (selectedCount > 0 && event.code === 'KeyD' && !event.shiftKey) {
@@ -266,18 +278,6 @@ export function useDashboardShortcuts({
         if (event.code === 'KeyA') {
           event.preventDefault();
           onOpenAddWidget();
-          return;
-        }
-
-        if (event.code === 'KeyP' || event.code === 'KeyO') {
-          event.preventDefault();
-          onOpenAppearance();
-          return;
-        }
-
-        if (event.code === 'KeyB') {
-          event.preventDefault();
-          onOpenBackup();
           return;
         }
       }

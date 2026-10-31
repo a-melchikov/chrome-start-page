@@ -19,17 +19,18 @@ import {
 } from '../../storage/schema';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import {
+  CheckIcon,
   CopyIcon,
   DuplicateIcon,
-  HelpCircleIcon,
+  KeyboardIcon,
   PaletteIcon,
   PencilIcon,
   PlusIcon,
-  RotateCcwIcon,
-  RotateCwIcon,
+  RedoIcon,
   SearchIcon,
   TrashIcon,
   TransferIcon,
+  UndoIcon,
 } from '../icons';
 import { Button, IconButton } from '../ui';
 import { MotionNotice } from '../ui/MotionNotice';
@@ -454,6 +455,7 @@ export function DashboardControls({
           inert={!isEditing}
         >
           <IconButton
+            className="!p-0"
             aria-label="Отменить изменение"
             disabled={!canManageWidgets || !canUndo}
             size="small"
@@ -461,9 +463,10 @@ export function DashboardControls({
             variant="ghost"
             onClick={onUndo}
           >
-            <RotateCcwIcon className="size-6" />
+            <UndoIcon className="size-6 shrink-0" />
           </IconButton>
           <IconButton
+            className="!p-0"
             aria-label="Повторить изменение"
             disabled={!canManageWidgets || !canRedo}
             size="small"
@@ -471,7 +474,7 @@ export function DashboardControls({
             variant="ghost"
             onClick={onRedo}
           >
-            <RotateCwIcon className="size-6" />
+            <RedoIcon className="size-6 shrink-0" />
           </IconButton>
           {selectedCount > 0 ? (
             <div
@@ -488,6 +491,7 @@ export function DashboardControls({
                 {isLeft ? selectedCount : `Выбрано: ${selectedCount}`}
               </span>
               <IconButton
+                className="!p-0"
                 aria-label="Копировать выбранные виджеты"
                 disabled={!canManageWidgets}
                 size={isLeft ? 'small' : 'xs'}
@@ -495,9 +499,10 @@ export function DashboardControls({
                 variant="ghost"
                 onClick={onCopySelection}
               >
-                <CopyIcon className="size-5" />
+                <CopyIcon className="size-6 shrink-0" />
               </IconButton>
               <IconButton
+                className="!p-0"
                 aria-label="Дублировать выбранные виджеты"
                 disabled={!canManageWidgets}
                 size={isLeft ? 'small' : 'xs'}
@@ -505,9 +510,10 @@ export function DashboardControls({
                 variant="ghost"
                 onClick={onDuplicateSelection}
               >
-                <DuplicateIcon className="size-5" />
+                <DuplicateIcon className="size-6 shrink-0" />
               </IconButton>
               <IconButton
+                className="!p-0"
                 aria-label="Удалить выбранные виджеты"
                 disabled={!canManageWidgets}
                 size={isLeft ? 'small' : 'xs'}
@@ -515,51 +521,54 @@ export function DashboardControls({
                 variant="danger-ghost"
                 onClick={onRequestDeleteSelection}
               >
-                <TrashIcon className="size-5" />
+                <TrashIcon className="size-6 shrink-0" />
               </IconButton>
             </div>
           ) : null}
           <Button
             aria-label="Добавить виджет"
-            className={isLeft ? 'size-10 shrink-0 p-0' : undefined}
+            className={isLeft ? 'size-10 shrink-0 !p-0' : undefined}
             disabled={!canManageWidgets}
             size="small"
             title="Добавить виджет (A)"
             variant={isLeft ? 'ghost' : 'secondary'}
             onClick={() => setIsAddWidgetOpen(true)}
           >
-            <PlusIcon className="size-7" />
+            <PlusIcon className="size-6 shrink-0" />
             {!isLeft && 'Добавить виджет'}
           </Button>
-          <IconButton
-            aria-label="Настройки оформления"
-            disabled={!canManageWidgets || isBackupProcessing}
-            size="small"
-            title="Настройки оформления (P, O)"
-            variant="ghost"
-            onClick={() => {
-              setRequestedSection(null);
-              setIsAppearanceOpen(true);
-            }}
-          >
-            <PaletteIcon className="size-7" />
-          </IconButton>
-          <IconButton
-            aria-label="Импорт и экспорт"
-            disabled={!canManageWidgets || isWallpaperUpdating}
-            size="small"
-            title="Импорт и экспорт (B)"
-            variant="ghost"
-            onClick={() => {
-              onClearBackupError();
-              setIsBackupOpen(true);
-            }}
-          >
-            <TransferIcon className="size-7" />
-          </IconButton>
         </div>
 
         <IconButton
+          className="!p-0"
+          aria-label="Настройки оформления"
+          disabled={!canManageWidgets || isBackupProcessing}
+          size="small"
+          title="Настройки оформления (P, O)"
+          variant="ghost"
+          onClick={() => {
+            setRequestedSection(null);
+            setIsAppearanceOpen(true);
+          }}
+        >
+          <PaletteIcon className="size-6 shrink-0" />
+        </IconButton>
+        <IconButton
+          className="!p-0"
+          aria-label="Импорт и экспорт"
+          disabled={!canManageWidgets || isWallpaperUpdating}
+          size="small"
+          title="Импорт и экспорт (B)"
+          variant="ghost"
+          onClick={() => {
+            onClearBackupError();
+            setIsBackupOpen(true);
+          }}
+        >
+          <TransferIcon className="size-6 shrink-0" />
+        </IconButton>
+        <IconButton
+          className="!p-0"
           aria-label="Поиск команд"
           disabled={!canManageWidgets}
           size="small"
@@ -567,20 +576,22 @@ export function DashboardControls({
           variant="ghost"
           onClick={openPalette}
         >
-          <SearchIcon className="size-7" />
+          <SearchIcon className="size-6 shrink-0" />
         </IconButton>
 
         <IconButton
+          className="!p-0"
           aria-label="Горячие клавиши"
           size="small"
           title="Горячие клавиши (?)"
           variant="ghost"
           onClick={() => setIsHelpOpen(true)}
         >
-          <HelpCircleIcon className="size-7" />
+          <KeyboardIcon className="size-6 shrink-0" />
         </IconButton>
 
         <IconButton
+          className="!p-0"
           aria-label={
             isEditing
               ? 'Выключить режим редактирования'
@@ -591,13 +602,17 @@ export function DashboardControls({
           size="small"
           title={
             isEditing
-              ? 'Выключить режим редактирования (Esc или E)'
+              ? 'Завершить редактирование (Esc или E)'
               : 'Включить режим редактирования (E)'
           }
           variant="ghost"
           onClick={toggleEditing}
         >
-          <PencilIcon className="size-7" />
+          {isEditing ? (
+            <CheckIcon className="size-6 shrink-0" />
+          ) : (
+            <PencilIcon className="size-6 shrink-0" />
+          )}
         </IconButton>
       </DashboardToolbar>
 

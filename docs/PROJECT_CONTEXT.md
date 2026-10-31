@@ -103,8 +103,11 @@ Markdown. Поиск также находит текст заметок во в
   целиком без сохранённого кадрирования; просмотр не сохраняет настройки.
 
 - Multiple independent widget instances with UUIDs and persisted layouts.
-- Global edit mode controls add, delete, drag, resize, widget settings, and
-  appearance. Escape exits edit mode when no dialog is active.
+- Global edit mode controls add, delete, drag, resize, and widget settings.
+  Escape exits edit mode when no dialog is active.
+- В режиме редактирования кнопка с карандашом меняется на галочку для завершения.
+  Настройки оформления и импорт/экспорт доступны в обоих режимах — через панель
+  и горячие клавиши `P`/`O` и `B`.
 - В режиме редактирования доступны выделение нескольких виджетов, групповое
   перемещение и удаление, Undo/Redo для состава и компоновки, копирование и
   вставка через системный буфер, дублирование и клавиатурный сдвиг.

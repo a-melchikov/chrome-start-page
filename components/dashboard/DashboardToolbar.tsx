@@ -79,10 +79,10 @@ export function DashboardToolbar({
             title="Свернуть панель управления (M)"
             size="small"
             variant="ghost"
-            className="mx-auto mb-2"
+            className="mx-auto mb-2 !p-0"
             onClick={onCollapse}
           >
-            <ChevronLeftIcon className="size-6" />
+            <ChevronLeftIcon className="size-6 shrink-0" />
           </IconButton>
         )}
         <div

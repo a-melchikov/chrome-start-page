@@ -46,8 +46,11 @@ export function ExpandIcon(props: IconProps) {
 export function PaletteIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+      <path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z" />
+      <circle cx="7.5" cy="10.5" r="0.6" />
+      <circle cx="10" cy="6.8" r="0.6" />
+      <circle cx="14.5" cy="6.8" r="0.6" />
+      <circle cx="17.5" cy="10.5" r="0.6" />
     </BaseIcon>
   );
 }
@@ -55,7 +58,8 @@ export function PaletteIcon(props: IconProps) {
 export function TransferIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>
-      <path d="M7 3v15M3.5 6.5 7 3l3.5 3.5M17 21V6M13.5 17.5 17 21l3.5-3.5" />
+      <path d="M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+      <path d="M7 12V3M4 6l3-3 3 3M17 3v9M14 9l3 3 3-3" />
     </BaseIcon>
   );
 }
@@ -154,6 +158,31 @@ export function RotateCwIcon(props: IconProps) {
     <BaseIcon {...props}>
       <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
       <path d="M21 3v5h-5" />
+    </BaseIcon>
+  );
+}
+
+export function UndoIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m7 5-4 4 4 4M3 9h10a7 7 0 0 1 7 7v3" />
+    </BaseIcon>
+  );
+}
+
+export function RedoIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m17 5 4 4-4 4M21 9H11a7 7 0 0 0-7 7v3" />
+    </BaseIcon>
+  );
+}
+
+export function KeyboardIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M7 9h.01M12 9h.01M17 9h.01M7 12.5h.01M12 12.5h.01M17 12.5h.01M8 16h8" />
     </BaseIcon>
   );
 }

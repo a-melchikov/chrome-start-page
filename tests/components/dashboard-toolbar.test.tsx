@@ -190,6 +190,39 @@ describe('toolbar visibility and focus', () => {
 });
 
 describe('dashboard toolbar integration', () => {
+  it.each(['top-right', 'left-fixed'] as const)(
+    'opens settings and backup without editing in %s mode and restores focus',
+    async (mode) => {
+      const user = userEvent.setup();
+      await startApp(mode);
+
+      const appearanceButton = screen.getByRole('button', {
+        name: 'Настройки оформления',
+      });
+      await user.click(appearanceButton);
+      const appearanceDialog = await screen.findByRole('dialog', {
+        name: 'Оформление',
+      });
+      expect(appearanceDialog).toHaveAttribute('open');
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(appearanceButton).toHaveFocus());
+
+      const backupButton = screen.getByRole('button', {
+        name: 'Импорт и экспорт',
+      });
+      await user.click(backupButton);
+      const backupDialog = await screen.findByRole('dialog', {
+        name: 'Импорт и экспорт',
+      });
+      expect(backupDialog).toHaveAttribute('open');
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(backupButton).toHaveFocus());
+      expect(
+        screen.getByRole('button', { name: 'Включить режим редактирования' }),
+      ).toHaveAttribute('aria-pressed', 'false');
+    },
+  );
+
   it('persists the global setting immediately, keeps the dialog open, and restores focus to the reveal button', async () => {
     const user = userEvent.setup();
     const { config } = await startApp('top-right');

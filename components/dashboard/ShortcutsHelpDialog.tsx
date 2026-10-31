@@ -44,6 +44,15 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
         description: 'Выбрать рабочее пространство',
       },
       {
+        keys: ['P', 'O'],
+        separator: 'или',
+        description: 'Настройки оформления',
+      },
+      {
+        keys: ['B'],
+        description: 'Импорт и экспорт (резервная копия)',
+      },
+      {
         keys: ['Esc'],
         description: 'Закрыть окно или выйти из редактирования',
       },
@@ -55,15 +64,6 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       {
         keys: ['A'],
         description: 'Добавить виджет',
-      },
-      {
-        keys: ['P', 'O'],
-        separator: 'или',
-        description: 'Настройки оформления',
-      },
-      {
-        keys: ['B'],
-        description: 'Импорт и экспорт (резервная копия)',
       },
       {
         keys: ['Ctrl+Z', 'Ctrl+Shift+Z'],

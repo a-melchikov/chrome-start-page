@@ -390,7 +390,9 @@ export function WorkspaceSelector({
       >
         <LayersIcon
           className={
-            compact ? 'size-7' : 'size-4 shrink-0 text-theme-text-secondary'
+            compact
+              ? 'size-6 shrink-0'
+              : 'size-4 shrink-0 text-theme-text-secondary'
           }
         />
         {!compact && (

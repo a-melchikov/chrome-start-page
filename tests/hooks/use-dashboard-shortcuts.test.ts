@@ -427,7 +427,7 @@ describe('useDashboardShortcuts', () => {
     });
   });
 
-  describe('edit-mode actions (A, P, O, B)', () => {
+  describe('widget and settings actions (A, P, O, B)', () => {
     it('opens add widget dialog on KeyA in edit mode', () => {
       renderHook(() =>
         useDashboardShortcuts({ ...defaultOptions, isEditing: true }),
@@ -438,10 +438,8 @@ describe('useDashboardShortcuts', () => {
       expect(onOpenAddWidget).toHaveBeenCalledTimes(1);
     });
 
-    it('opens appearance dialog on KeyP and KeyO in edit mode', () => {
-      renderHook(() =>
-        useDashboardShortcuts({ ...defaultOptions, isEditing: true }),
-      );
+    it.each([false, true])('opens appearance with editing=%s', (isEditing) => {
+      renderHook(() => useDashboardShortcuts({ ...defaultOptions, isEditing }));
 
       fireKey('KeyP');
       expect(onOpenAppearance).toHaveBeenCalledTimes(1);
@@ -450,29 +448,22 @@ describe('useDashboardShortcuts', () => {
       expect(onOpenAppearance).toHaveBeenCalledTimes(2);
     });
 
-    it('opens backup dialog on KeyB in edit mode', () => {
-      renderHook(() =>
-        useDashboardShortcuts({ ...defaultOptions, isEditing: true }),
-      );
+    it.each([false, true])('opens backup with editing=%s', (isEditing) => {
+      renderHook(() => useDashboardShortcuts({ ...defaultOptions, isEditing }));
 
       const event = fireKey('KeyB');
       expect(event.defaultPrevented).toBe(true);
       expect(onOpenBackup).toHaveBeenCalledTimes(1);
     });
 
-    it('does not trigger A, P, O, B when not in edit mode', () => {
+    it('does not add widgets when not in edit mode', () => {
       renderHook(() =>
         useDashboardShortcuts({ ...defaultOptions, isEditing: false }),
       );
 
       fireKey('KeyA');
-      fireKey('KeyP');
-      fireKey('KeyO');
-      fireKey('KeyB');
 
       expect(onOpenAddWidget).not.toHaveBeenCalled();
-      expect(onOpenAppearance).not.toHaveBeenCalled();
-      expect(onOpenBackup).not.toHaveBeenCalled();
     });
   });
 });
