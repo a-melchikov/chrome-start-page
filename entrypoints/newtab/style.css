@@ -222,17 +222,13 @@
     transform: translateX(var(--toolbar-canvas-shift, 0px));
   }
 
-  .dashboard-root:has(.dashboard-toolbar-left) .dashboard-canvas {
-    margin-left: 16px;
-  }
-
   .dashboard-root:has(.dashboard-toolbar-left) .dashboard-canvas-grid {
     transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .dashboard-root:has(.dashboard-toolbar-left[data-open='true'])
     .dashboard-canvas {
-    --toolbar-canvas-shift: 72px;
+    --toolbar-canvas-shift: 88px;
   }
 
   .dashboard-toolbar-left {
