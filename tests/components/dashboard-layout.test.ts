@@ -168,12 +168,12 @@ describe('dashboard layout', () => {
         h: 6,
         minW: WIDGET_MIN_WIDTH,
         minH: WIDGET_MIN_HEIGHT,
-        resizeHandles: ['se'],
+        resizeHandles: ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'],
       },
     ]);
   });
 
-  it('fixes SearchWidget height and exposes only its east resize handle', () => {
+  it('fixes SearchWidget height and exposes only horizontal resize handles', () => {
     expect(
       createGridLayout([
         createSearchWidget('search', { x: 2, y: 4, w: 6, h: 3 }),
@@ -188,7 +188,7 @@ describe('dashboard layout', () => {
         minW: 3,
         minH: 1,
         maxH: 1,
-        resizeHandles: ['e'],
+        resizeHandles: ['e', 'w'],
       },
     ]);
   });

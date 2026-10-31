@@ -15,7 +15,10 @@ import {
 } from 'react-grid-layout';
 
 import type { WidgetConfig } from '../../storage/schema';
-import { getWidgetDefinition } from '../../widgets/registry';
+import {
+  DEFAULT_WIDGET_RESIZE_HANDLES,
+  getWidgetDefinition,
+} from '../../widgets/registry';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
 import { createDashboardDragConfig } from './dashboard-drag';
 import {
@@ -268,7 +271,7 @@ export function WidgetCanvas({
                 layout={gridLayout}
                 resizeConfig={{
                   enabled: isEditing && editingWidgetId === null,
-                  handles: ['se'],
+                  handles: [...DEFAULT_WIDGET_RESIZE_HANDLES],
                 }}
                 width={getDashboardGridWidth(width)}
                 onDragStart={() => onInteractionChange?.(true)}

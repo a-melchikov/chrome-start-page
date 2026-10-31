@@ -2,6 +2,7 @@ import type { Layout, LayoutItem } from 'react-grid-layout';
 
 import type { WidgetConfig } from '../../storage/schema';
 import {
+  DEFAULT_WIDGET_RESIZE_HANDLES,
   getWidgetDefinition,
   type WidgetLayoutConstraints,
 } from '../../widgets/registry';
@@ -17,7 +18,7 @@ export const WIDGET_MIN_HEIGHT = 3;
 const DEFAULT_LAYOUT_CONSTRAINTS: WidgetLayoutConstraints = {
   minW: WIDGET_MIN_WIDTH,
   minH: WIDGET_MIN_HEIGHT,
-  resizeHandles: ['se'],
+  resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
 };
 
 export function getDashboardGridWidth(containerWidth: number): number {

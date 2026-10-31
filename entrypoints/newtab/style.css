@@ -1,3 +1,4 @@
+@import 'react-grid-layout/css/styles.css' layer(vendor);
 @import 'tailwindcss' source('../..');
 @import './themes.css';
 
@@ -604,35 +605,32 @@
 
   .dashboard-grid--editing > .react-grid-item > .react-resizable-handle {
     position: absolute;
-    width: 22px;
-    height: 22px;
-    bottom: 4px;
-    right: 4px;
+    width: 12px;
+    height: 12px;
+    top: auto;
+    left: auto;
+    bottom: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    transform: none;
     cursor: se-resize;
     z-index: 20;
+    opacity: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-sm, 4px);
-    background: color-mix(
+    background: transparent;
+    color: color-mix(
       in srgb,
-      var(--theme-surface-bg, #000000) 80%,
+      var(--theme-text-primary, #ffffff) 45%,
       transparent
     );
-    color: var(--theme-text-primary, #ffffff);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.2));
-    transition:
-      transform 0.15s ease,
-      background-color 0.15s ease;
   }
 
   .dashboard-grid--editing > .react-grid-item > .react-resizable-handle:hover {
-    background: var(--theme-accent, #3b82f6);
-    color: #ffffff;
-    transform: scale(1.1);
+    opacity: 1;
   }
 
   .dashboard-grid--editing > .react-grid-item > .react-resizable-handle::after {
@@ -642,6 +640,111 @@
     height: 8px;
     border-right: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > :is(.react-resizable-handle-e, .react-resizable-handle-w) {
+    top: 0;
+    bottom: auto;
+    width: 8px;
+    height: 100%;
+    cursor: ew-resize;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-e {
+    right: 0;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-w {
+    left: 0;
+    right: auto;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > :is(.react-resizable-handle-n, .react-resizable-handle-s) {
+    left: 0;
+    right: auto;
+    width: 100%;
+    height: 8px;
+    cursor: ns-resize;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-n {
+    top: 0;
+    bottom: auto;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-s {
+    bottom: 0;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > :is(
+      .react-resizable-handle-ne,
+      .react-resizable-handle-nw,
+      .react-resizable-handle-se,
+      .react-resizable-handle-sw
+    ) {
+    z-index: 21;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-ne {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    cursor: ne-resize;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-nw {
+    top: 0;
+    left: 0;
+    bottom: auto;
+    right: auto;
+    cursor: nw-resize;
+  }
+
+  .dashboard-grid--editing > .react-grid-item > .react-resizable-handle-sw {
+    left: 0;
+    bottom: 0;
+    right: auto;
+    cursor: sw-resize;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > :is(.react-resizable-handle-e, .react-resizable-handle-w)::after {
+    width: 0;
+    height: 16px;
+    border-bottom: 0;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > :is(.react-resizable-handle-n, .react-resizable-handle-s)::after {
+    width: 16px;
+    height: 0;
+    border-right: 0;
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > .react-resizable-handle-ne::after {
+    transform: rotate(-90deg);
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > .react-resizable-handle-nw::after {
+    transform: rotate(180deg);
+  }
+
+  .dashboard-grid--editing
+    > .react-grid-item
+    > .react-resizable-handle-sw::after {
+    transform: rotate(90deg);
   }
 
   .widget-clock-container {

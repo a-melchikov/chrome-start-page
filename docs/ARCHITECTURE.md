@@ -262,7 +262,11 @@ intact and is surfaced in the appearance dialog.
 `dashboard-layout.ts` converts domain layouts to/from `react-grid-layout` and
 applies registry constraints. The grid has 12 columns, 48 px rows, and 16 px
 gaps. Markdown defaults to `4×3` with minimum `3×3`; Search defaults to `6×1`,
-minimum width 3, fixed height 1, and east-only resize.
+minimum width 3, fixed height 1, and horizontal resize from either side.
+
+В режиме редактирования размер виджетов можно менять за любую сторону или угол.
+Боковые зоны захвата проходят вдоль краёв; у поиска доступны только левый и правый
+края, а высота остаётся равной одной строке.
 
 Dragging/resizing is edit-mode-only. The no-compaction strategy blocks
 collisions but preserves explicit coordinates. Dragging is intentionally

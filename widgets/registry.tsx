@@ -60,7 +60,19 @@ export interface WidgetMetadata {
   description: string;
 }
 
-export type WidgetResizeHandle = 'e' | 'se';
+export type WidgetResizeHandle =
+  'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+
+export const DEFAULT_WIDGET_RESIZE_HANDLES: readonly WidgetResizeHandle[] = [
+  'n',
+  's',
+  'e',
+  'w',
+  'ne',
+  'nw',
+  'se',
+  'sw',
+];
 
 export interface WidgetLayoutConstraints {
   minW: number;
@@ -317,7 +329,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: 3,
         minH: 3,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
@@ -340,7 +352,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
         minW: 3,
         minH: 1,
         maxH: 1,
-        resizeHandles: ['e'],
+        resizeHandles: ['e', 'w'],
       },
     },
   }),
@@ -364,7 +376,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: 3,
         minH: 4,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
@@ -390,7 +402,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_IMAGE_WIDGET_LAYOUT.minW,
         minH: DEFAULT_IMAGE_WIDGET_LAYOUT.minH,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
@@ -414,7 +426,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_CLOCK_WIDGET_LAYOUT.minW,
         minH: DEFAULT_CLOCK_WIDGET_LAYOUT.minH,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
@@ -440,7 +452,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_WEATHER_WIDGET_LAYOUT.minW,
         minH: DEFAULT_WEATHER_WIDGET_LAYOUT.minH,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
@@ -465,7 +477,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minW,
         minH: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minH,
-        resizeHandles: ['se'],
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },
   }),
