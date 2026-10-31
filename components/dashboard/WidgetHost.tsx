@@ -137,11 +137,12 @@ export function WidgetHost({
       aria-haspopup="dialog"
       aria-expanded={readerState === 'open'}
       aria-controls={readerDialogId}
-      className={
+      className={classNames(
+        'widget-reader-button',
         isImageWithSource
           ? imageControlClass
-          : 'text-theme-text-secondary hover:text-theme-text-primary'
-      }
+          : 'text-theme-text-secondary hover:text-theme-text-primary',
+      )}
       disabled={isWidgetEditing || isEditorExiting}
       size="xs"
       title={'Развернуть для чтения: ' + displayName}

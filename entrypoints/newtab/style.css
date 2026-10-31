@@ -329,6 +329,19 @@
     }
   }
 
+  @media (hover: hover) {
+    .widget-reader-button {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    [data-widget-id]:hover .widget-reader-button,
+    [data-widget-id]:focus-within .widget-reader-button {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
   .edit-controls {
     display: none;
     opacity: 0;
