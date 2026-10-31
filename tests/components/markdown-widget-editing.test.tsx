@@ -105,11 +105,16 @@ describe('MarkdownWidget editing', () => {
       screen.queryByRole('button', { name: /Начать работу/ }),
     ).not.toBeInTheDocument();
     await openWidgetEditor(user, 'Сайты');
-    const toggle = await screen.findByRole('checkbox', {
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const toggle = await screen.findByRole('switch', {
       name: 'Кнопка «Начать работу»',
     });
     expect(toggle).not.toBeChecked();
-    await user.click(toggle);
+    await user.click(
+      within(toggle).getByText('Открывать сайты заметки одной кнопкой'),
+    );
+    expect(toggle).toBeChecked();
+    await user.keyboard('{Escape}');
     await user.keyboard('{Escape}');
     expect(
       await screen.findByRole('button', {
@@ -131,11 +136,13 @@ describe('MarkdownWidget editing', () => {
     ).toBeVisible();
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Сайты');
-    const savedToggle = await screen.findByRole('checkbox', {
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const savedToggle = await screen.findByRole('switch', {
       name: 'Кнопка «Начать работу»',
     });
     expect(savedToggle).toBeChecked();
-    await user.click(savedToggle);
+    await user.click(screen.getByText('Кнопка «Начать работу»'));
+    expect(savedToggle).not.toBeChecked();
     await user.click(screen.getByRole('button', { name: 'Готово' }));
     expect(
       screen.queryByRole('button', { name: /Начать работу/ }),
@@ -144,6 +151,134 @@ describe('MarkdownWidget editing', () => {
       expect((await getStoredMarkdownWidget())?.showWebsiteSetButton).toBe(
         false,
       ),
+    );
+  });
+
+  it('opens settings on demand, closes them without leaving the editor, and persists choices', async () => {
+    await seedWidgets([createMarkdownWidget('notes', 'Заметки', 'Текст')]);
+    const user = userEvent.setup();
+    render(<App />);
+    await enableDashboardEditing(user);
+    await openWidgetEditor(user, 'Заметки');
+
+    const settingsButton = await screen.findByRole('button', {
+      name: 'Настройки',
+    });
+    const editorPane = screen.getByRole('region', {
+      name: 'Редактор Markdown',
+    });
+    expect(
+      within(editorPane).getByRole('textbox', { name: 'Заголовок' }),
+    ).toHaveValue('Заметки');
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+    expect(
+      screen.queryByRole('combobox', { name: 'Шаблон виджета' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Изменения сохраняются автоматически'),
+    ).not.toBeInTheDocument();
+
+    await user.click(settingsButton);
+    const templatePicker = screen.getByRole('combobox', {
+      name: 'Шаблон виджета',
+    });
+    await user.click(templatePicker);
+    await user.keyboard('{Escape}');
+    expect(templatePicker).toHaveAttribute('aria-expanded', 'false');
+    expect(templatePicker).toHaveFocus();
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+    await user.click(templatePicker);
+    await user.click(screen.getByRole('option', { name: 'Задачи' }));
+    expect(templatePicker).toHaveTextContent('Задачи');
+    expect(templatePicker).toHaveFocus();
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+    // Temporary blur must not dismiss the menu before another control receives focus.
+    fireEvent.blur(templatePicker, { relatedTarget: null });
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+    await user.click(screen.getByText('Быстрое добавление'));
+    expect(
+      screen.getByRole('switch', { name: 'Быстрое добавление' }),
+    ).toBeChecked();
+    await user.keyboard(' ');
+    expect(
+      screen.getByRole('switch', { name: 'Быстрое добавление' }),
+    ).not.toBeChecked();
+    await user.keyboard('{Enter}');
+    expect(
+      screen.getByRole('switch', { name: 'Быстрое добавление' }),
+    ).toBeChecked();
+    await user.click(screen.getByText('Скрывать выполненные задачи'));
+    expect(
+      screen.getByRole('switch', { name: 'Только незавершённые' }),
+    ).toBeChecked();
+    await user.keyboard('{Escape}');
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+    expect(settingsButton).toHaveFocus();
+    expect(
+      screen.getByRole('dialog', { name: 'Редактор Markdown' }),
+    ).toHaveAttribute('open');
+
+    await user.click(settingsButton);
+    expect(
+      screen.getByRole('combobox', { name: 'Шаблон виджета' }),
+    ).toHaveTextContent('Задачи');
+    expect(
+      screen.getByRole('switch', { name: 'Быстрое добавление' }),
+    ).toBeChecked();
+    await user.click(
+      screen.getByRole('textbox', { name: 'Markdown-содержимое' }),
+    );
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await waitFor(async () =>
+      expect(await getStoredMarkdownWidget()).toMatchObject({
+        title: 'Заметки',
+        content: 'Текст',
+        template: 'tasks',
+        quickAddEnabled: true,
+        hideCompletedTasks: true,
+      }),
+    );
+  });
+
+  it('formats the source selection from the shared toolbar and closes its menu before the editor', async () => {
+    await seedWidgets([
+      createMarkdownWidget('notes', 'Заметки', 'Текст заметки'),
+    ]);
+    const user = userEvent.setup();
+    render(<App />);
+    await enableDashboardEditing(user);
+    await openWidgetEditor(user, 'Заметки');
+
+    const sizeButton = await screen.findByRole('button', {
+      name: 'Размер текста',
+    });
+    const textarea = screen.getByRole<HTMLTextAreaElement>('textbox', {
+      name: 'Markdown-содержимое',
+    });
+    expect(
+      screen.queryByRole('heading', { name: 'Предпросмотр' }),
+    ).not.toBeInTheDocument();
+    await user.click(textarea);
+    textarea.setSelectionRange(0, 5);
+    await user.click(sizeButton);
+    await user.keyboard('{Escape}');
+    expect(sizeButton).toHaveAttribute('aria-expanded', 'false');
+    expect(sizeButton).toHaveFocus();
+    expect(
+      screen.getByRole('dialog', { name: 'Редактор Markdown' }),
+    ).toHaveAttribute('open');
+
+    await user.click(sizeButton);
+    await user.click(screen.getByRole('menuitem', { name: 'Крупный — 18 px' }));
+    expect(textarea).toHaveValue(':large[Текст] заметки');
+    await waitFor(() => expect(textarea).toHaveFocus());
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    await waitFor(async () =>
+      expect(await getStoredMarkdownWidget()).toMatchObject({
+        title: 'Заметки',
+        content: ':large[Текст] заметки',
+      }),
     );
   });
 

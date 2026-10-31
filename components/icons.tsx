@@ -64,6 +64,25 @@ export function TransferIcon(props: IconProps) {
   );
 }
 
+export function TextSizeIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 7V4h12v3M9 4v16M6 20h6M16 13v-2h6v2M19 11v9M17 20h4" />
+    </BaseIcon>
+  );
+}
+
+export function SlidersIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M3 6h4m4 0h10M3 12h10m4 0h4M3 18h4m4 0h10" />
+      <circle cx="9" cy="6" r="2" />
+      <circle cx="15" cy="12" r="2" />
+      <circle cx="9" cy="18" r="2" />
+    </BaseIcon>
+  );
+}
+
 export function LinkIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>
