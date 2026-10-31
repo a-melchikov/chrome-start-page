@@ -296,7 +296,7 @@ export function WidgetHost({
               >
                 {content ?? fallback}
               </div>
-              {widgetControls}
+              {isEditing || readerButton ? widgetControls : null}
             </div>
           )
         ) : isTitleHidden ? (

@@ -14,6 +14,7 @@ import { WidgetHost } from '../../components/dashboard/WidgetHost';
 import { App } from '../../entrypoints/newtab/App';
 import { DASHBOARD_STORAGE_KEY } from '../../storage/dashboard-storage';
 import type { DashboardConfig, WidgetConfig } from '../../storage/schema';
+import { createDefaultSearchWidget } from '../../widgets/search/defaults';
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -82,6 +83,33 @@ async function getStoredConfig() {
 describe('widget lifecycle', () => {
   beforeEach(() => {
     fakeBrowser.reset();
+  });
+
+  it('does not reserve space for search controls outside edit mode', async () => {
+    const props = {
+      widget: createDefaultSearchWidget('search', 0),
+      onRequestEdit: vi.fn(),
+      onRequestDelete: vi.fn(),
+    };
+    const { rerender } = render(<WidgetHost {...props} isEditing={false} />);
+    const form = await screen.findByRole('search', { name: 'Поиск в Google' });
+    const row = form.closest('article')!.firstElementChild!;
+    expect(row.children).toHaveLength(1);
+    expect(
+      screen.queryByRole('toolbar', { hidden: true }),
+    ).not.toBeInTheDocument();
+
+    rerender(<WidgetHost {...props} isEditing />);
+    expect(row.children).toHaveLength(2);
+    expect(
+      screen.getByRole('button', { name: 'Редактировать виджет «Поиск»' }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: 'Удалить виджет «Поиск»' }),
+    ).toBeEnabled();
+
+    rerender(<WidgetHost {...props} isEditing={false} />);
+    expect(row.children).toHaveLength(1);
   });
 
   it('creates and immediately persists a MarkdownWidget', async () => {
