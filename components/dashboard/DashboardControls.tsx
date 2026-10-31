@@ -525,7 +525,7 @@ export function DashboardControls({
             disabled={!canManageWidgets}
             size="small"
             title="Добавить виджет (A)"
-            variant="secondary"
+            variant={isLeft ? 'ghost' : 'secondary'}
             onClick={() => setIsAddWidgetOpen(true)}
           >
             <PlusIcon className="size-7" />
