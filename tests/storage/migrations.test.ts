@@ -23,6 +23,38 @@ function createTestDashboardWithWidgets(widgets: unknown[]) {
 }
 
 describe('migrateDashboardConfig', () => {
+  it.each([undefined, 0, 12, 40])(
+    'preserves compatible widget rounding %s without changing other spaces',
+    (widgetBorderRadius) => {
+      const config = createDefaultDashboardConfig();
+      if (widgetBorderRadius !== undefined) {
+        config.workspaces[0]!.appearance.widgetBorderRadius =
+          widgetBorderRadius;
+      }
+      expect(migrateDashboardConfig(config)).toBe(config);
+      expect(
+        config.workspaces[1]!.appearance.widgetBorderRadius,
+      ).toBeUndefined();
+    },
+  );
+
+  it.each([-1, 41, 12.5, NaN, Infinity, '12', null])(
+    'rejects malformed widget rounding %s',
+    (widgetBorderRadius) => {
+      const config = createDefaultDashboardConfig();
+      const invalid = {
+        ...config,
+        workspaces: config.workspaces.map((workspace) => ({
+          ...workspace,
+          appearance: { ...workspace.appearance, widgetBorderRadius },
+        })),
+      };
+      expect(() => migrateDashboardConfig(invalid)).toThrow(
+        InvalidDashboardConfigError,
+      );
+    },
+  );
+
   it.each([undefined, false, true])(
     'accepts the optional website button setting %s',
     (showWebsiteSetButton) => {

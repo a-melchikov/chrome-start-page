@@ -8,6 +8,10 @@ import {
   type AppearanceConfig,
   type ToolbarConfig,
 } from '../../storage/schema';
+import {
+  DEFAULT_WIDGET_BORDER_RADIUS,
+  MAX_WIDGET_BORDER_RADIUS,
+} from '../../storage/defaults';
 import { isToolbarConfig } from '../../storage/migrations';
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
@@ -649,6 +653,61 @@ export function AppearanceDialog({
             }
           >
             <div className="space-y-5 px-4 pb-4 pt-1">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <label className="font-medium" htmlFor="widget-border-radius">
+                    Скругление углов
+                  </label>
+                  <output
+                    className="min-w-12 text-right font-mono text-xs tabular-nums text-theme-text-secondary"
+                    htmlFor="widget-border-radius"
+                  >
+                    {appearance.widgetBorderRadius ??
+                      DEFAULT_WIDGET_BORDER_RADIUS}{' '}
+                    px
+                  </output>
+                </div>
+                <input
+                  className="block h-5 w-full cursor-pointer accent-theme-accent"
+                  id="widget-border-radius"
+                  max={MAX_WIDGET_BORDER_RADIUS}
+                  min="0"
+                  step="1"
+                  type="range"
+                  value={
+                    appearance.widgetBorderRadius ??
+                    DEFAULT_WIDGET_BORDER_RADIUS
+                  }
+                  onBlur={onFlushAppearancePreview}
+                  onChange={(event) =>
+                    onAppearancePreview({
+                      widgetBorderRadius: Number(event.target.value),
+                    })
+                  }
+                  onKeyUp={onFlushAppearancePreview}
+                  onPointerUp={onFlushAppearancePreview}
+                />
+                <p className="text-xs text-theme-text-secondary">
+                  Для всех виджетов текущего пространства, включая поиск и
+                  изображения.
+                </p>
+                <Button
+                  disabled={
+                    (appearance.widgetBorderRadius ??
+                      DEFAULT_WIDGET_BORDER_RADIUS) ===
+                    DEFAULT_WIDGET_BORDER_RADIUS
+                  }
+                  size="small"
+                  variant="secondary"
+                  onClick={() =>
+                    onAppearanceChange({
+                      widgetBorderRadius: DEFAULT_WIDGET_BORDER_RADIUS,
+                    })
+                  }
+                >
+                  Вернуть стандартное скругление
+                </Button>
+              </div>
               <label className="flex cursor-pointer items-center justify-between gap-4">
                 <span className="text-sm font-medium text-theme-text-primary">
                   Эффект Liquid Glass

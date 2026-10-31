@@ -177,9 +177,19 @@ Current migration behavior:
 
 `useDashboardConfig` keeps state plus a synchronous ref so rapid updates compose
 against the latest config. Add/remove, ordinary appearance, and completed layout
-changes save immediately. Liquid Glass sliders update React state for live
-preview and persist after pointer/keyboard completion, blur, dialog close,
-`pagehide`, or unmount. Widget/editor changes use a 300 ms debounce. Saves are
+changes save immediately.
+
+Поле `appearance.widgetBorderRadius` необязательно: отсутствие означает `12 px`,
+допустимы целые значения `0–40`. Это совместимое дополнение схемы v9;
+старые конфигурации и резервные копии сохраняют прежний вид без миграции.
+CSS-переменная `--widget-border-radius` применяется к поверхностям виджетов,
+поиску и вложенным оболочкам изображений и погоды.
+
+Ползунки Liquid Glass и скругления обновляют React state для предпросмотра и
+сохраняют изменения после завершения ввода мышью или клавиатурой, потери фокуса,
+закрытия диалога, `pagehide` или unmount.
+
+Widget/editor changes use a 300 ms debounce. Saves are
 queued to prevent an older slow write from overwriting newer state; pending
 widget changes flush on editor finish, Escape, `pagehide`, and unmount.
 

@@ -17,6 +17,9 @@ export const DEFAULT_LIQUID_GLASS: Readonly<LiquidGlassConfig> = {
   shadow: 50,
 };
 
+export const DEFAULT_WIDGET_BORDER_RADIUS = 12;
+export const MAX_WIDGET_BORDER_RADIUS = 40;
+
 export const DEFAULT_TOOLBAR: Readonly<ToolbarConfig> = { mode: 'top-right' };
 
 export const DEFAULT_APPEARANCE: Readonly<AppearanceConfig> = {

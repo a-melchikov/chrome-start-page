@@ -243,10 +243,10 @@ export function WidgetHost({
           isNew && 'new-widget',
           isBare
             ? isOverlayControls
-              ? 'flex-col overflow-hidden rounded-xl'
+              ? 'flex-col overflow-hidden widget-rounded'
               : 'items-center overflow-visible'
             : classNames(
-                'widget-card-surface liquid-glass-surface flex-col overflow-hidden rounded-xl',
+                'widget-card-surface liquid-glass-surface flex-col overflow-hidden widget-rounded',
                 isFullBleedCard ? 'widget-card-surface--full-bleed' : 'p-4',
               ),
           isEditing && 'cursor-move',
@@ -260,13 +260,13 @@ export function WidgetHost({
       >
         {isBare ? (
           isOverlayControls ? (
-            <div className="relative h-full w-full overflow-hidden rounded-xl">
+            <div className="relative h-full w-full overflow-hidden widget-rounded">
               {!hasImage ? (
                 <button
                   type="button"
                   aria-label="Настроить изображение"
                   disabled={isEditing || isWidgetEditing || !onRequestEdit}
-                  className="h-full w-full min-w-0 cursor-pointer rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring disabled:pointer-events-none"
+                  className="h-full w-full min-w-0 cursor-pointer widget-rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring disabled:pointer-events-none"
                   inert={isEditing ? true : undefined}
                   onClick={startEditing}
                 >

@@ -65,7 +65,7 @@ export function ImageWidget({ config, reading = false }: ImageWidgetProps) {
 
   if (isLoading) {
     return (
-      <div className="widget-card-surface liquid-glass-surface flex h-full w-full flex-col items-center justify-center rounded-xl p-6 text-center">
+      <div className="widget-card-surface liquid-glass-surface flex h-full w-full flex-col items-center justify-center widget-rounded p-6 text-center">
         <div className="flex size-14 animate-pulse items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-text-secondary/60 shadow-xs">
           <PhotoIcon className="size-7" />
         </div>
@@ -75,7 +75,7 @@ export function ImageWidget({ config, reading = false }: ImageWidgetProps) {
 
   if (error) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-theme-danger-border bg-theme-danger-bg p-4 text-center text-theme-danger-text backdrop-blur-md">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 widget-rounded border border-theme-danger-border bg-theme-danger-bg p-4 text-center text-theme-danger-text backdrop-blur-md">
         <div className="flex size-10 items-center justify-center rounded-full border border-theme-danger-border bg-theme-danger-hover-bg text-theme-danger">
           <PhotoIcon className="size-5" />
         </div>
@@ -86,7 +86,7 @@ export function ImageWidget({ config, reading = false }: ImageWidgetProps) {
 
   if (!src || config.source.type === 'none') {
     return (
-      <div className="widget-card-surface liquid-glass-surface group relative flex h-full w-full cursor-pointer select-none flex-col items-center justify-center overflow-hidden rounded-xl p-6 text-center transition-[border-color,box-shadow] duration-150 hover:border-theme-accent/60">
+      <div className="widget-card-surface liquid-glass-surface group relative flex h-full w-full cursor-pointer select-none flex-col items-center justify-center overflow-hidden widget-rounded p-6 text-center transition-[border-color,box-shadow] duration-150 hover:border-theme-accent/60">
         <div className="flex size-14 items-center justify-center rounded-full border border-theme-border bg-theme-surface-elevated text-theme-accent shadow-xs transition-[transform,border-color,background-color,box-shadow] duration-150 group-hover:scale-110 group-hover:border-theme-accent group-hover:bg-theme-accent/15 group-hover:shadow-md">
           <PhotoIcon className="size-7 transition-transform duration-150 group-hover:scale-105" />
         </div>
@@ -122,7 +122,7 @@ export function ImageWidget({ config, reading = false }: ImageWidgetProps) {
           : undefined
       }
       className={classNames(
-        'widget-image-media relative h-full w-full overflow-hidden rounded-xl',
+        'widget-image-media relative h-full w-full overflow-hidden widget-rounded',
         isGif &&
           'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-ring',
       )}

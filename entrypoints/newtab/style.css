@@ -27,6 +27,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@utility widget-rounded {
+  border-radius: var(--widget-border-radius, 12px);
+}
+
 @layer base {
   *,
   *::before,
@@ -382,7 +386,7 @@
     height: 100%;
     padding: 4px;
     border: 1px solid var(--theme-border);
-    border-radius: var(--radius-xl);
+    border-radius: var(--widget-border-radius, var(--radius-xl));
     background-color: var(--theme-surface-bg);
     box-shadow: 0 4px 14px -7px rgba(0, 0, 0, 0.24);
   }
@@ -568,7 +572,7 @@
 
   .dashboard-grid--editing > .react-grid-placeholder {
     border: 2px dashed var(--theme-accent, var(--color-zinc-500));
-    border-radius: var(--radius-xl);
+    border-radius: var(--widget-border-radius, var(--radius-xl));
     background: color-mix(
       in srgb,
       var(--theme-accent, var(--color-zinc-500)) 16%,

@@ -44,6 +44,34 @@ function renderDialog(
 }
 
 describe('AppearanceDialog wallpaper controls', () => {
+  it('keeps rounding available without Liquid Glass and commits on pointer, keyboard, and blur', async () => {
+    const user = userEvent.setup();
+    const { props } = renderDialog({
+      appearance: {
+        ...appearance,
+        liquidGlass: { ...appearance.liquidGlass, enabled: false },
+      },
+    });
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    const radius = screen.getByRole('slider', { name: 'Скругление углов' });
+    expect(radius).toBeEnabled();
+    expect(radius).toHaveValue('12');
+    expect(radius).toHaveAttribute('min', '0');
+    expect(radius).toHaveAttribute('max', '40');
+    expect(
+      screen.getByRole('button', { name: 'Вернуть стандартное скругление' }),
+    ).toBeDisabled();
+    fireEvent.change(radius, { target: { value: '0' } });
+    expect(props.onAppearancePreview).toHaveBeenLastCalledWith({
+      widgetBorderRadius: 0,
+    });
+    expect(props.onAppearanceChange).not.toHaveBeenCalled();
+    fireEvent.pointerUp(radius);
+    fireEvent.keyUp(radius, { key: 'ArrowRight' });
+    fireEvent.blur(radius);
+    expect(props.onFlushAppearancePreview).toHaveBeenCalledTimes(3);
+  });
+
   it('starts with every appearance section collapsed', () => {
     const { container } = renderDialog();
 

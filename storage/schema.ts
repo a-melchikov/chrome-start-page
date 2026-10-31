@@ -54,6 +54,7 @@ export interface AppearanceConfig {
   backgroundColor: BackgroundColorConfig;
   wallpaper: WallpaperConfig;
   liquidGlass: LiquidGlassConfig;
+  widgetBorderRadius?: number;
 }
 
 export interface WidgetConfigMap {

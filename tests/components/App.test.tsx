@@ -556,6 +556,63 @@ describe('App', () => {
     },
   );
 
+  it('previews rounding, flushes on Escape, restores after remount, and resets only the active space', async () => {
+    const user = userEvent.setup();
+    const config = createDefaultDashboardConfig();
+    config.workspaces[1]!.appearance.widgetBorderRadius = 30;
+    await saveDashboardConfig(config);
+    const view = render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    const radius = screen.getByRole('slider', { name: 'Скругление углов' });
+    expect(
+      screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
+    ).toBe('12px');
+    fireEvent.change(radius, { target: { value: '40' } });
+    expect(
+      screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
+    ).toBe('40px');
+    expect(
+      (await storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY))
+        ?.workspaces[0]?.appearance.widgetBorderRadius,
+    ).toBeUndefined();
+    await user.keyboard('{Escape}');
+    await waitFor(async () => {
+      const saved = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(saved?.workspaces[0]?.appearance.widgetBorderRadius).toBe(40);
+      expect(saved?.workspaces[1]?.appearance.widgetBorderRadius).toBe(30);
+    });
+    view.unmount();
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Настройки оформления' }),
+    );
+    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    expect(
+      screen.getByRole('slider', { name: 'Скругление углов' }),
+    ).toHaveValue('40');
+    expect(
+      screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
+    ).toBe('40px');
+    await user.click(
+      screen.getByRole('button', { name: 'Вернуть стандартное скругление' }),
+    );
+    await waitFor(async () => {
+      const saved = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(saved?.workspaces[0]?.appearance.widgetBorderRadius).toBe(12);
+      expect(saved?.workspaces[1]?.appearance.widgetBorderRadius).toBe(30);
+      expect(saved?.workspaces[0]?.appearance.liquidGlass).toEqual(
+        config.workspaces[0]!.appearance.liquidGlass,
+      );
+    });
+  });
+
   it('previews, persists, resets, and toggles Liquid Glass settings', async () => {
     const user = userEvent.setup();
     render(<App />);

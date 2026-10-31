@@ -240,7 +240,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
       aria-label={`Погода в ${locationTitle}: ${formatTemperature(
         current.temperature,
       )}, ${condition.label}`}
-      className={`relative flex h-full w-full select-none flex-col justify-between overflow-hidden rounded-xl ${isVisual ? 'weather-visual text-white' : 'p-4 text-theme-text-primary'}`}
+      className={`relative flex h-full w-full select-none flex-col justify-between overflow-hidden widget-rounded ${isVisual ? 'weather-visual text-white' : 'p-4 text-theme-text-primary'}`}
     >
       {scene && (
         <>

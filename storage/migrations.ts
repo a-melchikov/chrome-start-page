@@ -24,6 +24,7 @@ import type { WeatherLocation } from '../widgets/weather/types';
 import {
   DEFAULT_LIQUID_GLASS,
   DEFAULT_TOOLBAR,
+  MAX_WIDGET_BORDER_RADIUS,
   createDefaultWorkWorkspace,
 } from './defaults';
 import {
@@ -624,6 +625,16 @@ export function isWorkspaceConfig(
   if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
   if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
   if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  const radius = value.appearance.widgetBorderRadius;
+  if (
+    radius !== undefined &&
+    (typeof radius !== 'number' ||
+      !Number.isInteger(radius) ||
+      radius < 0 ||
+      radius > MAX_WIDGET_BORDER_RADIUS)
+  ) {
+    return false;
+  }
   return true;
 }
 

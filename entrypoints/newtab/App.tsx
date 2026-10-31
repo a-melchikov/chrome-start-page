@@ -16,7 +16,11 @@ import { MotionNotice } from '../../components/ui/MotionNotice';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
 import { useWallpaperImage } from '../../hooks/use-wallpaper-image';
-import { DEFAULT_APPEARANCE, DEFAULT_TOOLBAR } from '../../storage/defaults';
+import {
+  DEFAULT_APPEARANCE,
+  DEFAULT_TOOLBAR,
+  DEFAULT_WIDGET_BORDER_RADIUS,
+} from '../../storage/defaults';
 import { isWallpaperEnabled } from '../../storage/schema';
 
 import {
@@ -38,6 +42,7 @@ type DashboardStyle = CSSProperties & {
   '--liquid-glass-opacity': number;
   '--liquid-glass-blur': string;
   '--liquid-glass-shadow': number;
+  '--widget-border-radius': string;
 };
 
 export function App() {
@@ -168,6 +173,7 @@ export function App() {
 
   const dashboardStyle: DashboardStyle = {
     backgroundColor: effectiveBgColor,
+    '--widget-border-radius': `${appearance.widgetBorderRadius ?? DEFAULT_WIDGET_BORDER_RADIUS}px`,
     '--liquid-glass-opacity': 1 - liquidGlass.transparency / 100,
     '--liquid-glass-blur': `${liquidGlass.blur}px`,
     '--liquid-glass-shadow': liquidGlass.shadow / 100,
