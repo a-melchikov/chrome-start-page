@@ -54,6 +54,10 @@ export function WidgetHost({
   );
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
+  const visibleTitle =
+    definition?.presentation.emptyTitle === 'blank'
+      ? (widget.title?.trim() ?? '')
+      : displayName;
   const content = definition?.render(
     widget,
     onWidgetChange,
@@ -228,8 +232,12 @@ export function WidgetHost({
               : 'Пробел выбирает виджет.'
             : undefined
         }
-        aria-label={isBare || isTitleHidden ? displayName : undefined}
-        aria-labelledby={isBare || isTitleHidden ? undefined : titleId}
+        aria-label={
+          isBare || isTitleHidden || !visibleTitle ? displayName : undefined
+        }
+        aria-labelledby={
+          isBare || isTitleHidden || !visibleTitle ? undefined : titleId
+        }
         className={classNames(
           'relative flex h-full min-w-0',
           isNew && 'new-widget',
@@ -329,6 +337,7 @@ export function WidgetHost({
           <>
             <header className="mb-3 flex min-h-8 shrink-0 items-center justify-between gap-2">
               <h2
+                aria-hidden={!visibleTitle || undefined}
                 className={classNames(
                   'theme-glow min-w-0 flex-1 truncate font-semibold text-theme-text-primary',
                   definition?.presentation.titleStyle === 'prominent'
@@ -336,9 +345,9 @@ export function WidgetHost({
                     : 'text-sm',
                 )}
                 id={titleId}
-                title={displayName}
+                title={visibleTitle || undefined}
               >
-                {displayName}
+                {visibleTitle}
               </h2>
               <div
                 ref={setHeaderActionsTarget}
@@ -375,10 +384,11 @@ export function WidgetHost({
           <div className="flex h-full min-h-0 flex-col bg-theme-surface text-theme-text-primary">
             <header className="flex shrink-0 items-center gap-3 border-b border-theme-border px-4 py-3 sm:px-6">
               <h2
+                aria-hidden={!visibleTitle || undefined}
                 className="min-w-0 flex-1 truncate text-lg font-semibold"
-                title={displayName}
+                title={visibleTitle || undefined}
               >
-                {displayName}
+                {visibleTitle}
               </h2>
               <span className="hidden shrink-0 text-xs text-theme-text-secondary sm:inline">
                 Esc — вернуться

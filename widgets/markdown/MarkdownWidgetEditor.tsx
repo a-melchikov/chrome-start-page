@@ -507,8 +507,11 @@ export function MarkdownWidgetEditor({
           className="flex min-w-0 flex-1 flex-col"
         >
           <div className="min-h-0 flex-1 overflow-auto overscroll-contain p-5">
-            <h2 className="mb-4 text-xl font-semibold">
-              {config.title?.trim() || 'Markdown'}
+            <h2
+              aria-hidden={!config.title?.trim() || undefined}
+              className="mb-4 min-h-7 text-xl font-semibold"
+            >
+              {config.title?.trim()}
             </h2>
             <MarkdownRenderer
               content={config.content}

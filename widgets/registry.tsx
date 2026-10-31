@@ -86,6 +86,7 @@ export interface WidgetPresentation {
   cardInset?: 'default' | 'none';
   editor: 'inline' | 'dialog';
   allowCustomTitle: boolean;
+  emptyTitle?: 'type-name' | 'blank';
   editorTitle?: string;
   editorDialogSize?: 'default' | 'fullscreen';
   titleStyle?: 'default' | 'prominent';
@@ -323,6 +324,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       chrome: 'card',
       editor: 'dialog',
       allowCustomTitle: true,
+      emptyTitle: 'blank',
       editorTitle: 'Редактор Markdown',
       editorDialogSize: 'fullscreen',
       titleStyle: 'prominent',

@@ -327,6 +327,57 @@ describe('MarkdownWidget editing', () => {
     );
   });
 
+  it.each(['', '   '])(
+    'keeps an empty or whitespace-only title visually blank: %j',
+    async (title) => {
+      await seedWidgets([
+        createMarkdownWidget('note', 'Заметка', 'Содержимое заметки'),
+      ]);
+      const user = userEvent.setup();
+      const { unmount } = render(<App />);
+      await enableDashboardEditing(user);
+      await openWidgetEditor(user, 'Заметка');
+      const titleInput = await screen.findByRole('textbox', {
+        name: 'Заголовок',
+      });
+      await user.clear(titleInput);
+      if (title) await user.type(titleInput, title);
+
+      const preview = screen.getByRole('region', {
+        name: 'Предпросмотр Markdown',
+      });
+      expect(within(preview).queryByRole('heading')).not.toBeInTheDocument();
+      expect(within(preview).getByText('Содержимое заметки')).toBeVisible();
+      await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+      const article = screen.getByRole('article', { name: 'Markdown' });
+      expect(within(article).queryByRole('heading')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Редактировать виджет «Markdown»' }),
+      ).toBeEnabled();
+      await user.click(
+        screen.getByRole('button', { name: 'Развернуть виджет «Markdown»' }),
+      );
+      const reader = await screen.findByRole('dialog', {
+        name: 'Просмотр: Markdown',
+      });
+      expect(
+        within(reader).queryByRole('heading', { name: 'Markdown' }),
+      ).not.toBeInTheDocument();
+      expect(within(reader).getByText('Содержимое заметки')).toBeVisible();
+      await user.keyboard('{Escape}');
+      await waitFor(async () =>
+        expect((await getStoredMarkdownWidget())?.title?.trim()).toBe(''),
+      );
+
+      unmount();
+      render(<App />);
+      const restored = await screen.findByRole('article', { name: 'Markdown' });
+      expect(within(restored).queryByRole('heading')).not.toBeInTheDocument();
+      expect(within(restored).getByText('Содержимое заметки')).toBeVisible();
+    },
+  );
+
   it('flushes title and content on Escape, closes, and restores focus', async () => {
     await seedWidgets([
       createMarkdownWidget('work-markdown', 'Работа', 'Старый текст'),
