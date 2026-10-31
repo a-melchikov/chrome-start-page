@@ -18,7 +18,8 @@ Version 0.1.1 implements seven repeatable widget types:
   all-completed empty state, sanitized CommonMark/GFM rendering, interactive task lists, safe links (HTTP/HTTPS and local file://) and
   HTTPS images. Editing uses a fullscreen 50/50 Markdown/live-preview dialog with behavior settings.
   Кнопка «Начать работу» открывает набор HTTP/HTTPS-ссылок заметки в фоновых
-  вкладках без повторов. Неудавшиеся открытия можно повторить отдельно.
+  вкладках без повторов. По умолчанию кнопка скрыта, включается отдельно
+  в редакторе каждой заметки. Неудавшиеся открытия можно повторить отдельно.
   Кнопка разворачивания открывает полноэкранный режим чтения с прокруткой,
   безопасными ссылками и копированием кода; задачи в нём доступны только для чтения.
 - **Search** — a bare `6×1` search row by default. Google, Yandex, Bing, and

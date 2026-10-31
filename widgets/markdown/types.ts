@@ -8,4 +8,5 @@ export interface MarkdownWidgetConfig extends BaseWidgetConfig<'markdown'> {
   template: MarkdownTemplateId;
   quickAddEnabled: boolean;
   hideCompletedTasks: boolean;
+  showWebsiteSetButton?: boolean;
 }

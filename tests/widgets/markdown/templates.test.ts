@@ -55,6 +55,7 @@ describe('markdown templates', () => {
       template: 'daily-plan',
       quickAddEnabled: true,
       hideCompletedTasks: false,
+      showWebsiteSetButton: false,
       layout: {
         x: 0,
         y: 6,

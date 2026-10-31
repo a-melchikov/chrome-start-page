@@ -94,6 +94,59 @@ describe('MarkdownWidget editing', () => {
     fakeBrowser.reset();
   });
 
+  it('opts into the website launch button per note and persists both choices', async () => {
+    await seedWidgets([
+      createMarkdownWidget('sites', 'Сайты', '[A](https://example.com)'),
+    ]);
+    const user = userEvent.setup();
+    const { unmount } = render(<App />);
+    await enableDashboardEditing(user);
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+    await openWidgetEditor(user, 'Сайты');
+    const toggle = await screen.findByRole('checkbox', {
+      name: 'Кнопка «Начать работу»',
+    });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await user.keyboard('{Escape}');
+    expect(
+      await screen.findByRole('button', {
+        name: 'Начать работу: открыть сайты (1)',
+      }),
+    ).toBeVisible();
+    await waitFor(async () =>
+      expect((await getStoredMarkdownWidget())?.showWebsiteSetButton).toBe(
+        true,
+      ),
+    );
+    unmount();
+
+    render(<App />);
+    expect(
+      await screen.findByRole('button', {
+        name: 'Начать работу: открыть сайты (1)',
+      }),
+    ).toBeVisible();
+    await enableDashboardEditing(user);
+    await openWidgetEditor(user, 'Сайты');
+    const savedToggle = await screen.findByRole('checkbox', {
+      name: 'Кнопка «Начать работу»',
+    });
+    expect(savedToggle).toBeChecked();
+    await user.click(savedToggle);
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+    await waitFor(async () =>
+      expect((await getStoredMarkdownWidget())?.showWebsiteSetButton).toBe(
+        false,
+      ),
+    );
+  });
+
   it('opens a fullscreen split editor with live preview and autosave', async () => {
     const initialContent = '# Старый заголовок';
     await seedWidgets([

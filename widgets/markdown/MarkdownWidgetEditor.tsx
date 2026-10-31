@@ -198,6 +198,21 @@ export function MarkdownWidgetEditor({
 
           <label className="flex cursor-pointer select-none items-center gap-1.5 text-theme-text-primary">
             <input
+              checked={config.showWebsiteSetButton ?? false}
+              className="size-3.5 cursor-pointer rounded accent-theme-accent"
+              type="checkbox"
+              onChange={(event) =>
+                onChange({
+                  ...config,
+                  showWebsiteSetButton: event.target.checked,
+                })
+              }
+            />
+            <span>Кнопка «Начать работу»</span>
+          </label>
+
+          <label className="flex cursor-pointer select-none items-center gap-1.5 text-theme-text-primary">
+            <input
               checked={config.quickAddEnabled}
               className="size-3.5 cursor-pointer rounded accent-theme-accent"
               type="checkbox"

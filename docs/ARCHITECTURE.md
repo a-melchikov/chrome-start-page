@@ -79,7 +79,7 @@ Renderer-derived state is not persisted.
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`,
 `template` (`'blank' | 'tasks' | 'daily-plan' | 'links' | 'draft'`),
-`quickAddEnabled`, and `hideCompletedTasks`, Search
+`quickAddEnabled`, `hideCompletedTasks`, and optional `showWebsiteSetButton`, Search
 adds `engine`, Pomodoro adds duration and sound settings, Image adds `source`,
 `objectPosition`, and optional `altText`, Clock adds `timeFormat`, `showTime`,
 `showSeconds`, `showDate`, `dateFormat`, `showDayOfWeek`, `timezone`,
@@ -322,6 +322,10 @@ and sends title and content changes through the normal debounced persistence pat
 Текущая вкладка остаётся активной; новые разрешения Chrome не нужны.
 Компактная кнопка запуска в заголовке карточки показывает иконку и число сайтов;
 полное действие «Начать работу» доступно в подсказке и accessible name.
+Кнопка по умолчанию скрыта; редактор заметки сохраняет её видимость в
+необязательном boolean-поле `showWebsiteSetButton`. Отсутствие поля означает
+`false`, поэтому существующие конфигурации и резервные копии совместимы без
+изменения версии схемы. При включённой настройке кнопка видна только при наличии сайтов.
 Кнопка блокируется до завершения запуска, результат остаётся под содержимым.
 При частичной ошибке повтор открывает только
 неудавшиеся адреса. Состояние запуска и повторов существует только в памяти

@@ -101,7 +101,7 @@ export function MarkdownWidget({
     ? 'Повторить открытие сайтов (' + failedUrls.length + ')'
     : 'Начать работу: открыть сайты (' + websiteUrls.length + ')';
   const websiteAction =
-    websiteUrls.length > 0 ? (
+    config.showWebsiteSetButton && websiteUrls.length > 0 ? (
       <Button
         aria-label={websiteActionLabel}
         aria-busy={isOpeningWebsites}
@@ -153,9 +153,7 @@ export function MarkdownWidget({
               <CheckSquareIcon className="size-3.5" />
               <span
                 className={
-                  websiteUrls.length > 0
-                    ? 'hidden @min-[18rem]:inline'
-                    : undefined
+                  inlineWebsiteAction ? 'hidden @min-[18rem]:inline' : undefined
                 }
               >
                 Только открытые

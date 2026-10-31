@@ -23,6 +23,47 @@ function createTestDashboardWithWidgets(widgets: unknown[]) {
 }
 
 describe('migrateDashboardConfig', () => {
+  it.each([undefined, false, true])(
+    'accepts the optional website button setting %s',
+    (showWebsiteSetButton) => {
+      const widget = {
+        id: 'sites',
+        type: 'markdown',
+        content: '[A](https://example.com)',
+        template: 'blank',
+        quickAddEnabled: false,
+        hideCompletedTasks: false,
+        layout: { x: 0, y: 0, w: 4, h: 3 },
+        ...(showWebsiteSetButton === undefined ? {} : { showWebsiteSetButton }),
+      };
+      const config = createTestDashboardWithWidgets([widget]);
+      expect(migrateDashboardConfig(config).workspaces[0]!.widgets[0]).toEqual(
+        widget,
+      );
+    },
+  );
+
+  it.each(['true', 1, null])(
+    'rejects malformed website button setting %s',
+    (showWebsiteSetButton) => {
+      const config = createTestDashboardWithWidgets([
+        {
+          id: 'sites',
+          type: 'markdown',
+          content: '',
+          template: 'blank',
+          quickAddEnabled: false,
+          hideCompletedTasks: false,
+          showWebsiteSetButton,
+          layout: { x: 0, y: 0, w: 4, h: 3 },
+        },
+      ]);
+      expect(() => migrateDashboardConfig(config)).toThrow(
+        InvalidDashboardConfigError,
+      );
+    },
+  );
+
   it('accepts the current version without changing it', () => {
     const config = createDefaultDashboardConfig();
 

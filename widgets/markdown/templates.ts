@@ -92,6 +92,7 @@ export function createMarkdownWidgetWithTemplate(
     template: template.id,
     quickAddEnabled: template.defaultQuickAdd,
     hideCompletedTasks: false,
+    showWebsiteSetButton: false,
     layout: {
       x: 0,
       y: index * DEFAULT_MARKDOWN_WIDGET_HEIGHT,

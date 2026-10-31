@@ -34,6 +34,7 @@ describe('widget reading view', () => {
     const widget = {
       ...createMarkdownWidgetWithTemplate('note', 0, 'tasks'),
       title: 'Материалы',
+      showWebsiteSetButton: true,
       content:
         '# Инструкция\n\n- [ ] Проверить документ\n\n[Документация](https://example.com)\n\n<script>alert(1)</script>',
     };
@@ -76,11 +77,13 @@ describe('widget reading view', () => {
     const first = {
       ...createMarkdownWidgetWithTemplate('first', 0),
       title: 'Первый набор',
+      showWebsiteSetButton: true,
       content: '[A](https://one.example.com)',
     };
     const second = {
       ...createMarkdownWidgetWithTemplate('second', 1),
       title: 'Второй набор',
+      showWebsiteSetButton: true,
       content: '[B](https://two.example.com) [C](https://three.example.com)',
     };
     const props = hostProps(second);

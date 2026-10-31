@@ -196,7 +196,10 @@ function isMarkdownWidgetConfig(value: unknown): value is MarkdownWidgetConfig {
       'boolean' &&
     'hideCompletedTasks' in value &&
     typeof (value as { hideCompletedTasks: unknown }).hideCompletedTasks ===
-      'boolean'
+      'boolean' &&
+    (!('showWebsiteSetButton' in value) ||
+      value.showWebsiteSetButton === undefined ||
+      typeof value.showWebsiteSetButton === 'boolean')
   );
 }
 

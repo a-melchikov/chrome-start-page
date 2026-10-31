@@ -310,7 +310,9 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
       typeof candidate.content === 'string' &&
       isMarkdownTemplateId(candidate.template) &&
       typeof candidate.quickAddEnabled === 'boolean' &&
-      typeof candidate.hideCompletedTasks === 'boolean'
+      typeof candidate.hideCompletedTasks === 'boolean' &&
+      (candidate.showWebsiteSetButton === undefined ||
+        typeof candidate.showWebsiteSetButton === 'boolean')
     );
   }
 

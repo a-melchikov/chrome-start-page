@@ -52,6 +52,7 @@ describe('MarkdownWidget', () => {
       template: 'blank',
       quickAddEnabled: false,
       hideCompletedTasks: false,
+      showWebsiteSetButton: false,
       layout: { x: 0, y: 6, w: 4, h: 3 },
     });
     expect(createDefaultMarkdownWidget('another-id', 2).id).toBe('another-id');
@@ -369,6 +370,26 @@ describe('MarkdownWidget', () => {
 });
 
 describe('MarkdownWidget website sets', () => {
+  const createWebsiteSetConfig = (content: string) =>
+    createConfig(content, { showWebsiteSetButton: true });
+
+  it('hides the launch button by default and when explicitly disabled', () => {
+    const content = '[A](https://one.example.com)';
+    const { rerender } = render(
+      <MarkdownWidget config={createConfig(content)} />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+    rerender(
+      <MarkdownWidget
+        config={createConfig(content, { showWebsiteSetButton: false })}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Начать работу/ }),
+    ).not.toBeInTheDocument();
+  });
   beforeEach(() => {
     fakeBrowser.reset();
     vi.clearAllMocks();
@@ -383,7 +404,7 @@ describe('MarkdownWidget website sets', () => {
     const onChange = vi.fn();
     render(
       <MarkdownWidget
-        config={createConfig(
+        config={createWebsiteSetConfig(
           '[A](https://one.example.com) [B](https://two.example.com) [A2](https://one.example.com/)',
         )}
         onChange={onChange}
@@ -408,13 +429,15 @@ describe('MarkdownWidget website sets', () => {
 
   it('does not offer a website launch for an empty note or file-only links', () => {
     const { rerender } = render(
-      <MarkdownWidget config={createConfig('Обычная заметка')} />,
+      <MarkdownWidget config={createWebsiteSetConfig('Обычная заметка')} />,
     );
     expect(
       screen.queryByRole('button', { name: /Начать работу/ }),
     ).not.toBeInTheDocument();
     rerender(
-      <MarkdownWidget config={createConfig('[Файл](file:///tmp/doc.md)')} />,
+      <MarkdownWidget
+        config={createWebsiteSetConfig('[Файл](file:///tmp/doc.md)')}
+      />,
     );
     expect(
       screen.queryByRole('button', { name: /Начать работу/ }),
@@ -431,7 +454,9 @@ describe('MarkdownWidget website sets', () => {
         }),
     );
     render(
-      <MarkdownWidget config={createConfig('[A](https://one.example.com)')} />,
+      <MarkdownWidget
+        config={createWebsiteSetConfig('[A](https://one.example.com)')}
+      />,
     );
     const button = screen.getByRole('button', { name: /Начать работу/ });
     await user.click(button);
@@ -448,7 +473,7 @@ describe('MarkdownWidget website sets', () => {
       .spyOn(fakeBrowser.tabs, 'create')
       .mockRejectedValueOnce(new Error('Tab failed'))
       .mockResolvedValue({} as never);
-    const config = createConfig(
+    const config = createWebsiteSetConfig(
       '[A](https://one.example.com) [B](https://two.example.com)',
     );
     const { rerender } = render(<MarkdownWidget config={config} />);
