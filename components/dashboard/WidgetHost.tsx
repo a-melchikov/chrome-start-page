@@ -200,7 +200,15 @@ export function WidgetHost({
     </div>
   );
   const widgetControls = (
-    <div className="flex shrink-0 items-center gap-1">
+    <div
+      className={classNames(
+        'flex shrink-0 items-center gap-1',
+        isEditing &&
+          isBare &&
+          !isOverlayControls &&
+          'pr-8 [&_button]:w-7 [&_button]:!p-0',
+      )}
+    >
       {readerButton}
       {controls}
     </div>
