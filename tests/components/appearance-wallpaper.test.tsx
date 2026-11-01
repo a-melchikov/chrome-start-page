@@ -2,7 +2,31 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { AppearanceDialog } from '../../components/dashboard/AppearanceDialog';
+import { AppearanceSettings } from '../../components/dashboard/AppearanceSettings';
+import { SettingsPanel } from '../../components/dashboard/SettingsPanel';
+
+function AppearanceDialog({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof AppearanceSettings> & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <SettingsPanel
+      open={open}
+      section="appearance"
+      onSectionChange={() => {}}
+      onOpenChange={(next) => {
+        if (!next) props.onFlushAppearancePreview();
+        onOpenChange(next);
+      }}
+    >
+      {open && <AppearanceSettings {...props} />}
+    </SettingsPanel>
+  );
+}
 import type { AppearanceConfig } from '../../storage/schema';
 
 const appearance: AppearanceConfig = {
@@ -22,8 +46,6 @@ function renderDialog(
 ) {
   const props: React.ComponentProps<typeof AppearanceDialog> = {
     appearance,
-    toolbar: { mode: 'top-right' },
-    onToolbarChange: vi.fn(),
     isWallpaperUpdating: false,
     open: true,
     wallpaperError: null,
@@ -70,30 +92,6 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(props.onFlushAppearancePreview).toHaveBeenCalledTimes(3);
   });
 
-  it('separates global settings and supports keyboard tab navigation', async () => {
-    const user = userEvent.setup();
-    const { props } = renderDialog();
-    const appearanceTab = screen.getByRole('tab', { name: 'Оформление' });
-    expect(screen.getByRole('heading', { name: 'Карточки' })).toBeVisible();
-    expect(
-      screen.queryByRole('combobox', { name: 'Расположение и видимость' }),
-    ).not.toBeInTheDocument();
-    appearanceTab.focus();
-    await user.keyboard('{ArrowRight}');
-    expect(screen.getByRole('tab', { name: 'Интерфейс' })).toHaveFocus();
-    expect(screen.getByRole('tab', { name: 'Интерфейс' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(
-      screen.getByText('Настройка применяется ко всем рабочим пространствам.'),
-    ).toBeVisible();
-    expect(props.onAppearanceChange).not.toHaveBeenCalled();
-    await user.keyboard('{Home}');
-    expect(appearanceTab).toHaveFocus();
-    expect(screen.getByRole('heading', { name: 'Карточки' })).toBeVisible();
-  });
-
   it('hides glass controls when the effect is disabled', () => {
     renderDialog({
       appearance: {
@@ -133,9 +131,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(themeSection).toHaveAttribute('aria-expanded', 'true');
 
     rerender(<AppearanceDialog {...props} open={false} />);
-    await waitFor(() =>
-      expect(themeSection).toHaveAttribute('aria-expanded', 'false'),
-    );
+    await waitFor(() => expect(themeSection).not.toBeInTheDocument());
     rerender(<AppearanceDialog {...props} open />);
 
     expect(
@@ -352,7 +348,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       receivedSignal = signal;
       return new Promise<void>(() => undefined);
     });
-    const { props } = renderDialog({ onSetUrlWallpaper });
+    const { props, rerender } = renderDialog({ onSetUrlWallpaper });
 
     await user.click(
       screen.getByText('Использовать ссылку', { selector: 'button' }),
@@ -369,11 +365,12 @@ describe('AppearanceDialog wallpaper controls', () => {
 
     await user.click(screen.getByRole('button', { name: 'Закрыть' }));
 
-    await waitFor(() => expect(receivedSignal?.aborted).toBe(true));
     expect(props.onOpenChange).toHaveBeenCalledWith(false);
+    rerender(<AppearanceDialog {...props} open={false} />);
+    await waitFor(() => expect(receivedSignal?.aborted).toBe(true));
   });
 
-  it('shows persisted local wallpaper status instead of a native empty filename', async () => {
+  it('shows the saved wallpaper preview and replacement action without repeating its source', async () => {
     renderDialog({
       appearance: {
         ...appearance,
@@ -385,9 +382,13 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'blob:wallpaper',
     });
 
-    await waitFor(() =>
-      expect(screen.getByText('Локальные обои установлены')).toBeVisible(),
+    expect(screen.getByTestId('wallpaper-preview')).toHaveAttribute(
+      'src',
+      'blob:wallpaper',
     );
+    expect(
+      screen.queryByText('Локальные обои установлены'),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Заменить файл' })).toBeVisible();
     expect(screen.getByLabelText('Локальное изображение')).toHaveClass(
       'sr-only',

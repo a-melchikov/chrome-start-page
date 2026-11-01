@@ -223,7 +223,7 @@ describe('App', () => {
     );
     await waitFor(() => expect(click).toHaveBeenCalledOnce());
     expect(
-      screen.queryByRole('dialog', { name: 'Импорт и экспорт' }),
+      screen.queryByRole('dialog', { name: 'Настройки' }),
     ).not.toBeInTheDocument();
     expect(await screen.findByRole('status')).toHaveTextContent(
       'Резервная копия скачана',
@@ -262,7 +262,7 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Добавить виджет' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
+      screen.getByRole('button', { name: 'Настройки' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Импорт и экспорт' }),
@@ -435,9 +435,7 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     const themeSection = screen.getByText('Выбрать тему', {
       selector: 'button',
     });
@@ -476,9 +474,7 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
     await user.click(screen.getByRole('button', { name: 'Tokyo Night' }));
 
@@ -517,9 +513,7 @@ describe('App', () => {
           name: 'Включить режим редактирования',
         }),
       );
-      await user.click(
-        screen.getByRole('button', { name: 'Настройки оформления' }),
-      );
+      await user.click(screen.getByRole('button', { name: 'Настройки' }));
       await user.click(
         screen.getByText('Выбрать тему', { selector: 'button' }),
       );
@@ -564,9 +558,7 @@ describe('App', () => {
     config.workspaces[1]!.appearance.widgetBorderRadius = 30;
     await saveDashboardConfig(config);
     const view = render(<App />);
-    await user.click(
-      await screen.findByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
     const radius = screen.getByRole('slider', { name: 'Скругление углов' });
     expect(
@@ -590,9 +582,7 @@ describe('App', () => {
     });
     view.unmount();
     render(<App />);
-    await user.click(
-      await screen.findByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
     expect(
       screen.getByRole('slider', { name: 'Скругление углов' }),
@@ -630,9 +620,7 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
 
     const transparency = screen.getByRole('slider', {
@@ -699,9 +687,7 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
 
     expect(screen.getByRole('button', { name: 'Светлая' })).toHaveAttribute(
@@ -791,9 +777,7 @@ describe('App', () => {
         name: 'Включить режим редактирования',
       }),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     await user.click(
       screen.getByText('Использовать ссылку', { selector: 'button' }),
     );
@@ -907,7 +891,7 @@ describe('App', () => {
     expect(helpButton).toBeInTheDocument();
 
     await user.click(helpButton);
-    const helpDialog = screen.getByRole('dialog', { name: 'Горячие клавиши' });
+    const helpDialog = screen.getByRole('dialog', { name: 'Настройки' });
     expect(helpDialog).toHaveAttribute('open');
 
     await user.keyboard('{Escape}');
@@ -958,7 +942,7 @@ describe('App', () => {
     // 'b' opens backup dialog
     await user.keyboard('{b}');
     const backupDialog = screen.getByRole('dialog', {
-      name: 'Импорт и экспорт',
+      name: 'Настройки',
     });
     expect(backupDialog).toHaveAttribute('open');
     await user.keyboard('{Escape}');
@@ -1010,9 +994,7 @@ describe('App', () => {
       name: 'Включить режим редактирования',
     });
     await user.keyboard('e');
-    await user.click(
-      await screen.findByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
     await user.click(
       await screen.findByRole('button', { name: 'Выбрать тему' }),
     );
@@ -1042,7 +1024,11 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Отмена' }));
     await user.click(screen.getByRole('button', { name: 'Не сохранять' }));
     await screen.findByRole('dialog', { name: 'Настройки' });
-    await waitFor(() => expect(opener).toHaveFocus());
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: /Добавить собственную/ }),
+      ).toHaveFocus(),
+    );
     expect(
       screen.queryByRole('dialog', { name: 'Создание темы' }),
     ).not.toBeInTheDocument();

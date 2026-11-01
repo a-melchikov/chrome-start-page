@@ -3,7 +3,28 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { BackupDialog } from '../../components/dashboard/BackupDialog';
+import { BackupSettings } from '../../components/dashboard/BackupSettings';
+import { SettingsPanel } from '../../components/dashboard/SettingsPanel';
+
+function BackupDialog({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof BackupSettings> & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <SettingsPanel
+      open={open}
+      section="backup"
+      onSectionChange={() => {}}
+      onOpenChange={onOpenChange}
+    >
+      {open && <BackupSettings {...props} />}
+    </SettingsPanel>
+  );
+}
 import type {
   DashboardBackupDownload,
   DashboardImportResult,
@@ -95,12 +116,55 @@ describe('BackupDialog', () => {
       'Дашборд восстановлен',
     );
     expect(screen.queryByText(/my-backup\.json/)).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Выбрать файл' }),
+      ).toHaveFocus(),
+    );
   });
 
   it('shows import errors in the dialog', () => {
     render(<BackupDialog {...createProps({ error: 'Файл повреждён' })} />);
 
     expect(screen.getByRole('alert')).toHaveTextContent('Файл повреждён');
+  });
+
+  it('aborts an in-flight import when navigating to another section', async () => {
+    const user = userEvent.setup();
+    let receivedSignal: AbortSignal | undefined;
+    const onImport = vi.fn((_file: File, signal?: AbortSignal) => {
+      receivedSignal = signal;
+      return new Promise<DashboardImportResult>(() => {});
+    });
+    function Harness() {
+      const [section, setSection] = useState<'backup' | 'shortcuts'>('backup');
+      return (
+        <SettingsPanel
+          open
+          section={section}
+          onOpenChange={() => {}}
+          onSectionChange={(next) => {
+            if (next === 'shortcuts') setSection(next);
+          }}
+        >
+          {section === 'backup' && (
+            <BackupSettings {...createProps({ onImport })} />
+          )}
+        </SettingsPanel>
+      );
+    }
+    render(<Harness />);
+    await user.upload(
+      screen.getByLabelText('Файл резервной копии'),
+      new File(['{}'], 'test.json', { type: 'application/json' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+    expect(receivedSignal?.aborted).toBe(false);
+    await user.click(screen.getByRole('tab', { name: 'Горячие клавиши' }));
+    expect(receivedSignal?.aborted).toBe(true);
+    expect(screen.getByRole('dialog', { name: 'Настройки' })).toHaveAttribute(
+      'open',
+    );
   });
 
   it('closes on Escape and restores focus to the trigger', async () => {
@@ -125,11 +189,9 @@ describe('BackupDialog', () => {
     });
     await user.click(trigger);
 
-    const dialog = screen.getByRole('dialog', { name: 'Импорт и экспорт' });
+    const dialog = screen.getByRole('dialog', { name: 'Настройки' });
     expect(dialog).toHaveAttribute('open');
-    expect(
-      screen.getByRole('button', { name: 'Скачать резервную копию' }),
-    ).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Резервные копии' })).toHaveFocus();
 
     await user.keyboard('{Escape}');
 

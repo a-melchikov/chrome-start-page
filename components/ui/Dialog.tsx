@@ -22,6 +22,7 @@ export type DialogProps = Omit<
   title: ReactNode;
   description?: ReactNode;
   footer?: ReactNode;
+  navigation?: ReactNode;
   closeLabel?: string;
   size?: DialogSize;
   showCloseButton?: boolean;
@@ -38,6 +39,7 @@ export function Dialog({
   title,
   description,
   footer,
+  navigation,
   closeLabel = 'Закрыть',
   size = 'default',
   showCloseButton = true,
@@ -228,6 +230,9 @@ export function Dialog({
             ) : null}
           </header>
         )}
+        {navigation ? (
+          <div className="shrink-0 px-5 py-3">{navigation}</div>
+        ) : null}
         {children ? (
           <div
             className={classNames(

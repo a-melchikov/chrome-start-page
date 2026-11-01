@@ -274,7 +274,7 @@ export function CustomThemeEditorDialog({
         }}
         returnFocusFallback={() =>
           document.querySelector<HTMLButtonElement>(
-            '.dashboard-toolbar[data-open="true"] button[aria-label="Настройки оформления"], button[aria-label="Раскрыть панель управления"]',
+            '.dashboard-toolbar[data-open="true"] button[aria-label="Настройки"], button[aria-label="Раскрыть панель управления"]',
           )
         }
       >

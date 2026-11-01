@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { WorkspaceConfig } from '../../storage/schema';
 import {
   ArrowDownIcon,
@@ -9,7 +9,7 @@ import {
   PlusIcon,
   TrashIcon,
 } from '../icons';
-import { Button, Dialog, IconButton } from '../ui';
+import { Button, IconButton } from '../ui';
 import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
 import { classNames } from '../ui/class-names';
 
@@ -23,9 +23,7 @@ function formatWidgetCountRu(count: number): string {
   return `${count} виджетов`;
 }
 
-interface WorkspaceManagerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface WorkspaceSettingsProps {
   workspaces: readonly WorkspaceConfig[];
   activeWorkspaceId: string | null;
   onSwitchWorkspace: (id: string) => void;
@@ -36,9 +34,7 @@ interface WorkspaceManagerDialogProps {
   onReorderWorkspaces: (orderedIds: readonly string[]) => void;
 }
 
-export function WorkspaceManagerDialog({
-  open,
-  onOpenChange,
+export function WorkspaceSettings({
   workspaces,
   activeWorkspaceId,
   onSwitchWorkspace,
@@ -47,7 +43,8 @@ export function WorkspaceManagerDialog({
   onDuplicateWorkspace,
   onDeleteWorkspace,
   onReorderWorkspaces,
-}: WorkspaceManagerDialogProps) {
+}: WorkspaceSettingsProps) {
+  const listRef = useRef<HTMLDivElement>(null);
   const [workspaceToDelete, setWorkspaceToDelete] =
     useState<WorkspaceConfig | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -76,6 +73,17 @@ export function WorkspaceManagerDialog({
     setEditingName(workspace.name);
   };
 
+  const focusRenameButton = (id: string) => {
+    requestAnimationFrame(() => {
+      const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>(
+        '[data-rename-workspace]',
+      );
+      [...(buttons ?? [])]
+        .find((button) => button.dataset.renameWorkspace === id)
+        ?.focus();
+    });
+  };
+
   const finishInlineEdit = () => {
     if (editingId && editingName.trim()) {
       onRenameWorkspace(editingId, editingName.trim());
@@ -101,32 +109,16 @@ export function WorkspaceManagerDialog({
 
   return (
     <>
-      <Dialog
-        open={open}
-        title="Управление рабочими пространствами"
-        description="Создавайте, переименовывайте, сортируйте и удаляйте независимые профили."
-        onOpenChange={onOpenChange}
-        footer={
-          <div className="flex w-full items-center justify-between">
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={() => onAddWorkspace()}
-            >
-              <PlusIcon className="size-4" />
-              Добавить пространство
-            </Button>
-            <Button
-              variant="primary"
-              size="small"
-              onClick={() => onOpenChange(false)}
-            >
-              Готово
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-2 py-1 max-h-[380px] overflow-y-auto">
+      <div className="space-y-4">
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={() => onAddWorkspace()}
+        >
+          <PlusIcon className="size-4" />
+          Добавить пространство
+        </Button>
+        <div ref={listRef} className="space-y-3">
           {workspaces.map((workspace, index) => {
             const isActive = workspace.id === activeWorkspaceId;
             const isEditingThis = editingId === workspace.id;
@@ -135,75 +127,86 @@ export function WorkspaceManagerDialog({
               <div
                 key={workspace.id}
                 className={classNames(
-                  'flex items-center justify-between gap-3 rounded-xl border border-theme-border/70 p-2.5 transition-colors',
+                  'space-y-2 rounded-xl border border-theme-border/70 p-2.5 transition-colors',
                   isActive
                     ? 'bg-theme-surface-muted/60 border-theme-accent/50'
                     : 'bg-theme-surface/40 hover:bg-theme-surface-hover/50',
                 )}
               >
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <IconButton
-                    aria-label="Переместить вверх"
-                    disabled={index === 0}
-                    size="xs"
-                    title="Переместить вверх"
-                    variant="ghost"
-                    onClick={() => handleMoveUp(index)}
-                  >
-                    <ArrowUpIcon className="size-4" />
-                  </IconButton>
-                  <IconButton
-                    aria-label="Переместить вниз"
-                    disabled={index === workspaces.length - 1}
-                    size="xs"
-                    title="Переместить вниз"
-                    variant="ghost"
-                    onClick={() => handleMoveDown(index)}
-                  >
-                    <ArrowDownIcon className="size-4" />
-                  </IconButton>
-                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <IconButton
+                      aria-label="Переместить вверх"
+                      disabled={index === 0}
+                      size="xs"
+                      title="Переместить вверх"
+                      variant="ghost"
+                      onClick={() => handleMoveUp(index)}
+                    >
+                      <ArrowUpIcon className="size-4" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Переместить вниз"
+                      disabled={index === workspaces.length - 1}
+                      size="xs"
+                      title="Переместить вниз"
+                      variant="ghost"
+                      onClick={() => handleMoveDown(index)}
+                    >
+                      <ArrowDownIcon className="size-4" />
+                    </IconButton>
+                  </div>
 
-                <div className="flex-1 min-w-0">
-                  {isEditingThis ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      maxLength={64}
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onBlur={finishInlineEdit}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') finishInlineEdit();
-                        if (e.key === 'Escape') setEditingId(null);
-                      }}
-                      className="w-full rounded-lg border border-theme-accent bg-theme-surface-muted px-2.5 py-1 text-sm font-medium text-theme-text-primary focus:outline-none"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => startInlineEdit(workspace)}
-                        title="Нажмите, чтобы переименовать"
-                        className="truncate text-left text-sm font-medium text-theme-text-primary hover:underline cursor-pointer"
-                      >
-                        {workspace.name}
-                      </button>
-                      {isActive && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-theme-accent/15 px-2 py-0.5 text-[11px] font-semibold text-theme-accent">
-                          <CheckIcon className="size-3" />
-                          Текущее
-                        </span>
-                      )}
+                  <div className="min-w-24 flex-1">
+                    {isEditingThis ? (
+                      <input
+                        autoFocus
+                        aria-label="Название пространства"
+                        type="text"
+                        maxLength={64}
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={finishInlineEdit}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            finishInlineEdit();
+                            focusRenameButton(workspace.id);
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setEditingId(null);
+                            focusRenameButton(workspace.id);
+                          }
+                        }}
+                        className="w-full rounded-lg border border-theme-accent bg-theme-surface-muted px-2.5 py-1 text-sm font-medium text-theme-text-primary focus:outline-none"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startInlineEdit(workspace)}
+                          title="Нажмите, чтобы переименовать"
+                          className="truncate text-left text-sm font-medium text-theme-text-primary hover:underline cursor-pointer"
+                        >
+                          {workspace.name}
+                        </button>
+                        {isActive && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-theme-accent/15 px-2 py-0.5 text-[11px] font-semibold text-theme-accent">
+                            <CheckIcon className="size-3" />
+                            Текущее
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-xs text-theme-text-secondary mt-0.5">
+                      {formatWidgetCountRu(workspace.widgets.length)}
                     </div>
-                  )}
-                  <div className="text-xs text-theme-text-secondary mt-0.5">
-                    {formatWidgetCountRu(workspace.widgets.length)}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center justify-end gap-1">
                   <IconButton
+                    data-rename-workspace={workspace.id}
                     aria-label="Переименовать пространство"
                     size="small"
                     title="Переименовать"
@@ -249,7 +252,7 @@ export function WorkspaceManagerDialog({
             );
           })}
         </div>
-      </Dialog>
+      </div>
 
       {workspaceToDelete && (
         <ConfirmWidgetDeleteDialog

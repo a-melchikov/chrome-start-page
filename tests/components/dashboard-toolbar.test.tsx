@@ -197,7 +197,7 @@ describe('dashboard toolbar integration', () => {
       await startApp(mode);
 
       const appearanceButton = screen.getByRole('button', {
-        name: 'Настройки оформления',
+        name: 'Настройки',
       });
       await user.click(appearanceButton);
       const appearanceDialog = await screen.findByRole('dialog', {
@@ -212,7 +212,7 @@ describe('dashboard toolbar integration', () => {
       });
       await user.click(backupButton);
       const backupDialog = await screen.findByRole('dialog', {
-        name: 'Импорт и экспорт',
+        name: 'Настройки',
       });
       expect(backupDialog).toHaveAttribute('open');
       await user.keyboard('{Escape}');
@@ -227,9 +227,7 @@ describe('dashboard toolbar integration', () => {
     const user = userEvent.setup();
     const { config } = await startApp('top-right');
     await user.keyboard('e');
-    await user.click(
-      screen.getByRole('button', { name: 'Настройки оформления' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Настройки' }));
     await user.click(screen.getByRole('tab', { name: 'Интерфейс' }));
     await chooseMode(user, 'Слева — скрываемая');
     await waitFor(async () =>
@@ -291,7 +289,7 @@ describe('dashboard toolbar integration', () => {
     await user.keyboard('m');
     const help = screen.getByRole('button', { name: 'Горячие клавиши' });
     await user.click(help);
-    const dialog = screen.getByRole('dialog', { name: 'Горячие клавиши' });
+    const dialog = screen.getByRole('dialog', { name: 'Настройки' });
     fireEvent.pointerDown(dialog);
     expect(panel()).toHaveAttribute('data-open', 'true');
     await user.keyboard('m');
@@ -326,8 +324,8 @@ describe('dashboard toolbar integration', () => {
     );
     await user.click(screen.getByRole('option', { name: /Панель управления/ }));
     expect(
-      await screen.findByRole('tab', { name: 'Интерфейс' }),
-    ).toHaveAttribute('aria-selected', 'true');
+      await screen.findByRole('tab', { name: 'Интерфейс', selected: true }),
+    ).toHaveTextContent('Интерфейс');
     expect(
       screen.getByRole('heading', { name: 'Панель управления' }),
     ).toBeVisible();

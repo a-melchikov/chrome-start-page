@@ -37,21 +37,23 @@ import { MotionNotice } from '../ui/MotionNotice';
 import { AddWidgetDialog } from './AddWidgetDialog';
 import { SelectTemplateDialog } from '../../widgets/markdown/SelectTemplateDialog';
 import type { MarkdownTemplateId } from '../../widgets/markdown/types';
-import { ShortcutsHelpDialog } from './ShortcutsHelpDialog';
+import { ShortcutsHelp } from './ShortcutsHelp';
+import { InterfaceSettings } from './InterfaceSettings';
+import { SettingsPanel, type SettingsSection } from './SettingsPanel';
 import { WorkspaceSelector } from './WorkspaceSelector';
-import { WorkspaceManagerDialog } from './WorkspaceManagerDialog';
+import { WorkspaceSettings } from './WorkspaceSettings';
 import { downloadBackup } from './download-backup';
 import type { AppearanceSection, PaletteCommand } from './command-catalog';
 import { openLocalFileLink } from '../../widgets/markdown/open-file-link';
 
-const AppearanceDialog = lazy(() =>
-  import('./AppearanceDialog').then((module) => ({
-    default: module.AppearanceDialog,
+const AppearanceSettings = lazy(() =>
+  import('./AppearanceSettings').then((module) => ({
+    default: module.AppearanceSettings,
   })),
 );
-const BackupDialog = lazy(() =>
-  import('./BackupDialog').then((module) => ({
-    default: module.BackupDialog,
+const BackupSettings = lazy(() =>
+  import('./BackupSettings').then((module) => ({
+    default: module.BackupSettings,
   })),
 );
 const CommandPalette = lazy(() =>
@@ -177,15 +179,11 @@ export function DashboardControls({
   onDeleteWorkspace,
   onReorderWorkspaces,
 }: DashboardControlsProps) {
-  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
-  const [hasOpenedAppearance, setHasOpenedAppearance] = useState(false);
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection | null>(null);
   const [isAddWidgetOpen, setIsAddWidgetOpen] = useState(false);
   const [isMarkdownTemplateOpen, setIsMarkdownTemplateOpen] = useState(false);
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
-  const [isWorkspaceManagerOpen, setIsWorkspaceManagerOpen] = useState(false);
-  const [isBackupOpen, setIsBackupOpen] = useState(false);
-  const [hasOpenedBackup, setHasOpenedBackup] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [hasOpenedPalette, setHasOpenedPalette] = useState(false);
   const isLeft = toolbar.mode !== 'top-right';
@@ -205,30 +203,34 @@ export function DashboardControls({
     workspaceId: string;
     widgetId: string;
   } | null>(null);
-  const [themeEditorOpener, setThemeEditorOpener] =
-    useState<HTMLElement | null>(null);
+  const [themeEditorTarget, setThemeEditorTarget] = useState('create');
 
   const [prevReopenToken, setPrevReopenToken] = useState(
     reopenAppearanceToken ?? 0,
   );
 
-  if (isAppearanceOpen && !hasOpenedAppearance) setHasOpenedAppearance(true);
-  if (isBackupOpen && !hasOpenedBackup) setHasOpenedBackup(true);
-
   if (reopenAppearanceToken && reopenAppearanceToken > prevReopenToken) {
     setPrevReopenToken(reopenAppearanceToken);
     setRequestedSection({ section: 'theme', token: reopenAppearanceToken });
-    setIsAppearanceOpen(true);
+    setSettingsSection('appearance');
   }
 
-  const handleOpenThemeEditor = (themeToEdit?: CustomTheme) => {
-    setThemeEditorOpener(
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null,
-    );
-    setIsAppearanceOpen(false);
+  const closeSettings = () => {
+    onFlushAppearancePreview();
+    setSettingsSection(null);
     setRequestedSection(null);
+  };
+
+  const openSettings = (section: SettingsSection) => {
+    onFlushAppearancePreview();
+    setRequestedSection(null);
+    if (section === 'backup') onClearBackupError();
+    setSettingsSection(section);
+  };
+
+  const handleOpenThemeEditor = (themeToEdit?: CustomTheme) => {
+    setThemeEditorTarget(themeToEdit?.id ?? 'create');
+    closeSettings();
     onOpenThemeEditor?.(themeToEdit);
   };
 
@@ -268,32 +270,23 @@ export function DashboardControls({
     onEditingChange(nextValue);
 
     if (!nextValue) {
-      setIsAppearanceOpen(false);
+      closeSettings();
       setIsAddWidgetOpen(false);
-      setIsBackupOpen(false);
-      setIsHelpOpen(false);
       setIsPaletteOpen(false);
       setIsWorkspaceMenuOpen(false);
-      setIsWorkspaceManagerOpen(false);
     }
   };
 
   useDashboardShortcuts({
     canManageWidgets,
     isEditing,
-    isHelpOpen,
+    isHelpOpen: settingsSection === 'shortcuts',
     onToggleEditing: toggleEditing,
-    onOpenHelp: () => setIsHelpOpen(true),
-    onCloseHelp: () => setIsHelpOpen(false),
+    onOpenHelp: () => openSettings('shortcuts'),
+    onCloseHelp: closeSettings,
     onOpenAddWidget: () => setIsAddWidgetOpen(true),
-    onOpenAppearance: () => {
-      setRequestedSection(null);
-      setIsAppearanceOpen(true);
-    },
-    onOpenBackup: () => {
-      onClearBackupError();
-      setIsBackupOpen(true);
-    },
+    onOpenAppearance: () => openSettings('appearance'),
+    onOpenBackup: () => openSettings('backup'),
     onOpenPalette: openPalette,
     onToggleToolbar:
       toolbar.mode === 'left-collapsible' ? toolbarState.toggle : undefined,
@@ -327,12 +320,10 @@ export function DashboardControls({
         setIsAddWidgetOpen(true);
       }
       if (command.action === 'appearance') {
-        setRequestedSection(null);
-        setIsAppearanceOpen(true);
+        openSettings('appearance');
       }
       if (command.action === 'backup' && !isWallpaperUpdating) {
-        onClearBackupError();
-        setIsBackupOpen(true);
+        openSettings('backup');
       }
       if (command.action === 'export' && !isWallpaperUpdating) {
         onClearBackupError();
@@ -350,7 +341,7 @@ export function DashboardControls({
         handleOpenThemeEditor();
       }
       if (command.action === 'workspaces') {
-        setIsWorkspaceManagerOpen(true);
+        openSettings('workspaces');
       }
       if (command.action === 'add-workspace') {
         onAddWorkspace?.();
@@ -369,7 +360,9 @@ export function DashboardControls({
 
     if (command.kind === 'section') {
       setRequestedSection({ section: command.section, token: Date.now() });
-      setIsAppearanceOpen(true);
+      setSettingsSection(
+        command.section === 'toolbar' ? 'interface' : 'appearance',
+      );
     } else if (command.kind === 'add') {
       if (command.widgetType === 'markdown') {
         setIsMarkdownTemplateOpen(true);
@@ -444,7 +437,7 @@ export function DashboardControls({
             onRenameWorkspace={onRenameWorkspace ?? (() => {})}
             onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
             onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
-            onOpenManager={() => setIsWorkspaceManagerOpen(true)}
+            onOpenManager={() => openSettings('workspaces')}
           />
         ) : null}
 
@@ -541,14 +534,13 @@ export function DashboardControls({
 
         <IconButton
           className="!p-0"
-          aria-label="Настройки оформления"
+          aria-label="Настройки"
           disabled={!canManageWidgets || isBackupProcessing}
           size="small"
-          title="Настройки оформления (P, O)"
+          title="Настройки (P, O)"
           variant="ghost"
           onClick={() => {
-            setRequestedSection(null);
-            setIsAppearanceOpen(true);
+            openSettings('appearance');
           }}
         >
           <PaletteIcon className="size-6 shrink-0" />
@@ -561,8 +553,7 @@ export function DashboardControls({
           title="Импорт и экспорт (B)"
           variant="ghost"
           onClick={() => {
-            onClearBackupError();
-            setIsBackupOpen(true);
+            openSettings('backup');
           }}
         >
           <TransferIcon className="size-6 shrink-0" />
@@ -585,7 +576,7 @@ export function DashboardControls({
           size="small"
           title="Горячие клавиши (?)"
           variant="ghost"
-          onClick={() => setIsHelpOpen(true)}
+          onClick={() => openSettings('shortcuts')}
         >
           <KeyboardIcon className="size-6 shrink-0" />
         </IconButton>
@@ -616,54 +607,87 @@ export function DashboardControls({
         </IconButton>
       </DashboardToolbar>
 
-      <Suspense fallback={null}>
-        {hasOpenedAppearance && (
-          <AppearanceDialog
-            appearance={appearance}
-            toolbar={toolbar}
-            onToolbarChange={onToolbarChange}
-            returnFocusFallback={toolbarState.getReturnFocus}
-            requestedFocus={
-              requestedSection?.token === reopenAppearanceToken
-                ? themeEditorOpener
-                : null
-            }
-            customThemes={config?.customThemes ?? []}
-            requestedSection={requestedSection}
-            isWallpaperUpdating={isWallpaperUpdating}
-            open={isAppearanceOpen}
-            wallpaperError={wallpaperError}
-            wallpaperPreviewSrc={wallpaperPreviewSrc}
-            onAppearanceChange={onAppearanceChange}
-            onAppearancePreview={onAppearancePreview}
-            onClearWallpaperError={onClearWallpaperError}
-            onFlushAppearancePreview={onFlushAppearancePreview}
-            onOpenChange={(open) => {
-              setIsAppearanceOpen(open);
-              if (!open) setRequestedSection(null);
-            }}
-            onRemoveWallpaper={onRemoveWallpaper}
-            onSetWallpaperEnabled={onSetWallpaperEnabled}
-            onSetLocalWallpaper={onSetLocalWallpaper}
-            onSetUrlWallpaper={onSetUrlWallpaper}
-            onSelectTheme={onSelectTheme}
-            onOpenThemeEditor={handleOpenThemeEditor}
-            onDuplicateCustomTheme={onDuplicateCustomTheme}
-            onDeleteCustomTheme={onDeleteCustomTheme}
-          />
-        )}
-        {hasOpenedBackup && (
-          <BackupDialog
-            error={backupError}
-            isProcessing={isBackupProcessing}
-            open={isBackupOpen}
-            onClearError={onClearBackupError}
-            onExport={onExportDashboard}
-            onImport={onImportDashboard}
-            onOpenChange={setIsBackupOpen}
-          />
-        )}
-      </Suspense>
+      <SettingsPanel
+        open={settingsSection !== null}
+        section={settingsSection ?? 'appearance'}
+        onSectionChange={openSettings}
+        onOpenChange={(open) => {
+          if (!open) closeSettings();
+        }}
+        returnFocusFallback={toolbarState.getReturnFocus}
+        disabledSections={[
+          ...(!canManageWidgets
+            ? (['appearance', 'interface', 'workspaces'] as const)
+            : []),
+          ...(isWallpaperUpdating ? (['backup'] as const) : []),
+        ]}
+      >
+        <Suspense
+          fallback={
+            <p role="status" className="text-sm text-theme-text-secondary">
+              Загрузка раздела…
+            </p>
+          }
+        >
+          {settingsSection === 'appearance' && (
+            <AppearanceSettings
+              appearance={appearance}
+              customThemes={config?.customThemes ?? []}
+              requestedSection={requestedSection}
+              requestedThemeEditor={
+                requestedSection?.token === reopenAppearanceToken
+                  ? themeEditorTarget
+                  : undefined
+              }
+              isWallpaperUpdating={isWallpaperUpdating}
+              wallpaperError={wallpaperError}
+              wallpaperPreviewSrc={wallpaperPreviewSrc}
+              onAppearanceChange={onAppearanceChange}
+              onAppearancePreview={onAppearancePreview}
+              onClearWallpaperError={onClearWallpaperError}
+              onRemoveWallpaper={onRemoveWallpaper}
+              onSetWallpaperEnabled={onSetWallpaperEnabled}
+              onSetLocalWallpaper={onSetLocalWallpaper}
+              onSetUrlWallpaper={onSetUrlWallpaper}
+              onSelectTheme={onSelectTheme}
+              onOpenThemeEditor={handleOpenThemeEditor}
+              onDuplicateCustomTheme={onDuplicateCustomTheme}
+              onDeleteCustomTheme={onDeleteCustomTheme}
+              onFlushAppearancePreview={onFlushAppearancePreview}
+            />
+          )}
+          {settingsSection === 'interface' && (
+            <InterfaceSettings
+              toolbar={toolbar}
+              onToolbarChange={onToolbarChange}
+            />
+          )}
+          {settingsSection === 'backup' && (
+            <BackupSettings
+              error={backupError}
+              isProcessing={isBackupProcessing}
+              onClearError={onClearBackupError}
+              onExport={onExportDashboard}
+              onImport={onImportDashboard}
+            />
+          )}
+          {settingsSection === 'shortcuts' && <ShortcutsHelp />}
+          {settingsSection === 'workspaces' &&
+            workspaces &&
+            onReorderWorkspaces && (
+              <WorkspaceSettings
+                workspaces={workspaces}
+                activeWorkspaceId={activeWorkspaceId ?? null}
+                onSwitchWorkspace={onSwitchWorkspace ?? (() => {})}
+                onAddWorkspace={onAddWorkspace ?? (() => {})}
+                onRenameWorkspace={onRenameWorkspace ?? (() => {})}
+                onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
+                onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
+                onReorderWorkspaces={onReorderWorkspaces}
+              />
+            )}
+        </Suspense>
+      </SettingsPanel>
       <AddWidgetDialog
         open={isAddWidgetOpen}
         onSelectWidgetType={(type) => {
@@ -683,21 +707,6 @@ export function DashboardControls({
           if (!isEditing) onEditingChange(true);
         }}
       />
-      <ShortcutsHelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
-      {workspaces && onReorderWorkspaces ? (
-        <WorkspaceManagerDialog
-          open={isWorkspaceManagerOpen}
-          onOpenChange={setIsWorkspaceManagerOpen}
-          workspaces={workspaces}
-          activeWorkspaceId={activeWorkspaceId ?? null}
-          onSwitchWorkspace={onSwitchWorkspace ?? (() => {})}
-          onAddWorkspace={onAddWorkspace ?? (() => {})}
-          onRenameWorkspace={onRenameWorkspace ?? (() => {})}
-          onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
-          onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
-          onReorderWorkspaces={onReorderWorkspaces}
-        />
-      ) : null}
       {hasOpenedPalette ? (
         <Suspense fallback={null}>
           <CommandPalette

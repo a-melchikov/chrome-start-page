@@ -349,6 +349,7 @@ export function WorkspaceSelector({
         role="menuitem"
         onClick={() => {
           closeMenu();
+          triggerRef.current?.focus();
           onOpenManager();
         }}
         className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-hover/60 hover:text-theme-text-primary cursor-pointer"

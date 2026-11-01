@@ -105,7 +105,11 @@ describe('MarkdownWidget editing', () => {
       screen.queryByRole('button', { name: /Начать работу/ }),
     ).not.toBeInTheDocument();
     await openWidgetEditor(user, 'Сайты');
-    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(
+      await within(
+        await screen.findByRole('dialog', { name: 'Редактор Markdown' }),
+      ).findByRole('button', { name: 'Настройки' }),
+    );
     const toggle = await screen.findByRole('switch', {
       name: 'Кнопка «Начать работу»',
     });
@@ -136,7 +140,11 @@ describe('MarkdownWidget editing', () => {
     ).toBeVisible();
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Сайты');
-    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(
+      await within(
+        await screen.findByRole('dialog', { name: 'Редактор Markdown' }),
+      ).findByRole('button', { name: 'Настройки' }),
+    );
     const savedToggle = await screen.findByRole('switch', {
       name: 'Кнопка «Начать работу»',
     });
@@ -161,9 +169,9 @@ describe('MarkdownWidget editing', () => {
     await enableDashboardEditing(user);
     await openWidgetEditor(user, 'Заметки');
 
-    const settingsButton = await screen.findByRole('button', {
-      name: 'Настройки',
-    });
+    const settingsButton = await within(
+      await screen.findByRole('dialog', { name: 'Редактор Markdown' }),
+    ).findByRole('button', { name: 'Настройки' });
     const editorPane = screen.getByRole('region', {
       name: 'Редактор Markdown',
     });

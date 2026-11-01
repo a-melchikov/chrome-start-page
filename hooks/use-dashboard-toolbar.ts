@@ -114,7 +114,7 @@ export function useDashboardToolbar({
     if (mode === 'left-collapsible' && !isOpen) return revealRef.current;
     return (
       panelRef.current?.querySelector<HTMLButtonElement>(
-        '[aria-label="Настройки оформления"]:not(:disabled)',
+        '[aria-label="Настройки"]:not(:disabled)',
       ) ?? revealRef.current
     );
   }, [mode, isOpen]);

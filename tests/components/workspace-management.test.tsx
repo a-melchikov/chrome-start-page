@@ -119,7 +119,7 @@ describe('Workspace management', () => {
     await user.click(manageButton);
 
     const dialog = await screen.findByRole('dialog', {
-      name: 'Управление рабочими пространствами',
+      name: 'Настройки',
     });
     expect(dialog).toBeVisible();
 

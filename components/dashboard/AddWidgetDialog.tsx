@@ -44,7 +44,12 @@ export function AddWidgetDialog({
   };
 
   return (
-    <Dialog open={open} title="Добавить виджет" onOpenChange={onOpenChange}>
+    <Dialog
+      size="drawer"
+      open={open}
+      title="Добавить виджет"
+      onOpenChange={onOpenChange}
+    >
       <div className="space-y-2 pb-2">
         {getAvailableWidgetDefinitions().map((definition, index) => {
           const Icon = WIDGET_ICONS[definition.type];

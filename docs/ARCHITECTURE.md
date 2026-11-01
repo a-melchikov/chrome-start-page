@@ -390,7 +390,7 @@ remains enabled only for user Markdown links.
 Состояние и параметры хранятся в `appearance.liquidGlass`: переключатель,
 прозрачность `0–100%`, размытие `0–40 px` и тень `0–100%`. Стандартные значения
 `40% / 18 px / 50%` можно восстановить отдельной кнопкой без изменения
-переключателя. Настройки находятся в разделе «Карточки» вкладки «Оформление»
+переключателя. Настройки находятся в блоке «Карточки» раздела «Оформление»
 боковой панели «Настройки». Ползунки доступны через «Настроить эффект» при
 включённом стекле; скругление доступно всегда.
 
@@ -455,7 +455,7 @@ visual tokens from widget logic and components:
 - `entrypoints/newtab/style.css` defines the Tailwind CSS 4 `@theme` block
   mapping semantic utility classes (`bg-theme-surface`, `text-theme-text-primary`,
   `border-theme-border`, `bg-theme-accent`) to these custom properties.
-- `AppearanceDialog.tsx` displays built-in themes alongside custom user themes with
+- `AppearanceSettings.tsx` displays built-in themes alongside custom user themes with
   cards for creating, editing, duplicating, and deleting custom themes.
 - `CustomThemeEditorDialog.tsx` provides full-screen editing with live auto-derivation,
   manual overrides, WCAG contrast alerts, a passive `ThemePreview` thumbnail, and
@@ -596,8 +596,22 @@ Motion используется только в этих интерактивн�
 виджета меняет только прозрачность и имеет резервную очистку временного флага;
 координатами и transform сетки по-прежнему управляет `react-grid-layout`.
 
-Окна оформления и резервных копий впервые монтируются по запросу, затем
-сохраняют экземпляр для переходов закрытия и восстановления фокуса. При
+`DashboardControls` хранит один `settingsSection`; `SettingsPanel` владеет единственным
+`Dialog` размера `drawer` и видимыми вкладками в фиксированной области навигации.
+Вкладки используют `tablist`/`tab`/`tabpanel`, перемещаемый Tab-фокус и активацию
+стрелками и Home/End с пропуском недоступных разделов. Доступное имя содержимого
+связано с вкладкой через `aria-labelledby`; отдельного повторного заголовка нет.
+`AppearanceSettings`, `InterfaceSettings`, `WorkspaceSettings`, `BackupSettings` и
+`ShortcutsHelp` содержат только интерфейс своих разделов. Оформление и резервные
+копии загружаются лениво. Переход между разделами сохраняет экземпляр диалога и
+исходную точку возврата фокуса, сбрасывает прокрутку и освобождает содержимое
+предыдущего раздела. Переход или закрытие сохраняет ожидающий предпросмотр
+оформления; unmount отменяет проверку обоев или незавершённый импорт. При возврате
+из редактора темы фокус восстанавливается по идентификатору действия, поскольку
+содержимое оформления создаётся заново. Ограничения доступа к изменению данных и
+резервным копиям действуют также для вкладок панели.
+
+При
 активных обоях управляющие кнопки и всплывающие меню получают непрозрачную
 подложку темы; подписи карточек усиливаются без изменения палитры и параметров
 Liquid Glass. Изображения и погодные сцены остаются без дополнительного слоя.

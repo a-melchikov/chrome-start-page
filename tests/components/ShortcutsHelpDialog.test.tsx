@@ -1,8 +1,20 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ShortcutsHelpDialog } from '../../components/dashboard/ShortcutsHelpDialog';
+import { ShortcutsHelp } from '../../components/dashboard/ShortcutsHelp';
+import { SettingsPanel } from '../../components/dashboard/SettingsPanel';
+
+function ShortcutsHelpDialog(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <SettingsPanel {...props} section="shortcuts" onSectionChange={() => {}}>
+      <ShortcutsHelp />
+    </SettingsPanel>
+  );
+}
 
 describe('ShortcutsHelpDialog', () => {
   beforeEach(() => {
@@ -22,25 +34,27 @@ describe('ShortcutsHelpDialog', () => {
     render(<ShortcutsHelpDialog open={true} onOpenChange={vi.fn()} />);
 
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Горячие клавиши' }),
+      screen.getByRole('tabpanel', { name: 'Горячие клавиши' }),
     ).toBeInTheDocument();
 
     expect(screen.getByText('Общие')).toBeInTheDocument();
     expect(screen.getByText('В режиме редактирования')).toBeInTheDocument();
 
-    expect(
-      screen.getByText('Включить или выключить режим редактирования'),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Открыть поиск команд')).toBeInTheDocument();
-    expect(screen.getByText('Справка по горячим клавишам')).toBeInTheDocument();
+    expect(screen.getByText('Режим редактирования')).toBeInTheDocument();
+    expect(screen.getByText('Поиск команд')).toBeInTheDocument();
+    expect(screen.getByText('Справка')).toBeInTheDocument();
     expect(
       screen.getByText('Закрыть окно или выйти из редактирования'),
     ).toBeInTheDocument();
 
     expect(screen.getByText('Добавить виджет')).toBeInTheDocument();
-    expect(screen.getByText('Настройки оформления')).toBeInTheDocument();
     expect(
-      screen.getByText('Импорт и экспорт (резервная копия)'),
+      screen.getByText('Настройки', { selector: 'span' }),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole('tabpanel', { name: 'Горячие клавиши' }),
+      ).getByText('Резервные копии'),
     ).toBeInTheDocument();
 
     expect(screen.getByText('E')).toBeInTheDocument();
