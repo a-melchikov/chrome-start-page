@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 
 import { Button, Dialog, Input, Select } from '../ui';
 import { classNames } from '../ui/class-names';
@@ -75,6 +75,10 @@ export function AppearanceDialog({
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
 }: AppearanceDialogProps) {
+  const panelId = useId();
+  const [activeTab, setActiveTab] = useState<'appearance' | 'interface'>(
+    requestedSection?.section === 'toolbar' ? 'interface' : 'appearance',
+  );
   const [openSections, setOpenSections] = useState<
     Partial<Record<AppearanceSection, boolean>>
   >(() =>
@@ -84,6 +88,10 @@ export function AppearanceDialog({
   const [previousRequest, setPreviousRequest] = useState(requestedSection);
   if (open !== previousOpen || requestedSection !== previousRequest) {
     setPreviousOpen(open);
+    if (open)
+      setActiveTab(
+        requestedSection?.section === 'toolbar' ? 'interface' : 'appearance',
+      );
     setPreviousRequest(requestedSection);
     setOpenSections(
       open
@@ -139,7 +147,8 @@ export function AppearanceDialog({
       const target =
         requestedFocus?.isConnected && !requestedFocus.closest('[inert]')
           ? requestedFocus
-          : section.querySelector('button');
+          : section.querySelector<HTMLElement>('button, input');
+      section.scrollIntoView?.({ block: 'nearest' });
       target?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
@@ -196,585 +205,657 @@ export function AppearanceDialog({
   return (
     <>
       <Dialog
-        description="Настройте тему, фон, обои и оформление виджетов новой вкладки."
+        description="Изменения сохраняются автоматически."
+        size="drawer"
         open={open}
-        title="Оформление"
+        title="Настройки"
         returnFocusFallback={returnFocusFallback}
         onOpenChange={(nextOpen) =>
           nextOpen ? onOpenChange(true) : closeDialog()
         }
       >
-        <div ref={sectionsRef} className="space-y-3">
-          <Disclosure
-            title="Тема"
-            data-dialog-initial-focus
-            resetKey={open}
-            data-appearance-section="theme"
-            open={Boolean(openSections.theme)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, theme: next }))
-            }
+        <div ref={sectionsRef} className="space-y-4">
+          <div
+            role="tablist"
+            aria-label="Раздел настроек"
+            className="flex gap-5 border-b border-theme-border"
           >
-            <fieldset aria-label="Тема" className="space-y-4 px-4 pb-4 pt-1">
-              {/* Custom Themes Sub-section */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-theme-text-secondary">
-                    Собственные темы
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onOpenThemeEditor?.()}
-                    className="flex items-center gap-1 rounded-md border border-theme-border bg-theme-surface-elevated px-2.5 py-1 text-xs font-medium text-theme-accent transition-colors hover:border-theme-accent hover:bg-theme-surface"
-                  >
-                    <span>+</span> Добавить собственную
-                  </button>
+            {(
+              [
+                ['appearance', 'Оформление'],
+                ['interface', 'Интерфейс'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                role="tab"
+                id={`${panelId}-${id}-tab`}
+                aria-selected={activeTab === id}
+                aria-controls={`${panelId}-${id}`}
+                tabIndex={activeTab === id ? 0 : -1}
+                data-dialog-initial-focus={activeTab === id ? '' : undefined}
+                className={classNames(
+                  'border-b-2 px-1 pb-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-theme-ring',
+                  activeTab === id
+                    ? 'border-theme-accent text-theme-text-primary'
+                    : 'border-transparent text-theme-text-secondary',
+                )}
+                onClick={() => setActiveTab(id)}
+                onKeyDown={(event) => {
+                  if (
+                    ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
+                      event.key,
+                    )
+                  ) {
+                    event.preventDefault();
+                    const next =
+                      event.key === 'Home'
+                        ? 'appearance'
+                        : event.key === 'End'
+                          ? 'interface'
+                          : activeTab === 'appearance'
+                            ? 'interface'
+                            : 'appearance';
+                    setActiveTab(next);
+                    document.getElementById(`${panelId}-${next}-tab`)?.focus();
+                  }
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div
+            role="tabpanel"
+            id={`${panelId}-appearance`}
+            aria-labelledby={`${panelId}-appearance-tab`}
+            hidden={activeTab !== 'appearance'}
+            className="space-y-5"
+          >
+            <p className="text-xs text-theme-text-secondary">
+              Для текущего пространства
+            </p>
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Тема</h3>
+              <div className="flex items-center gap-3">
+                <div
+                  aria-hidden="true"
+                  className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg border border-theme-border"
+                  style={{ backgroundColor: effectiveBgColor }}
+                >
+                  <div className="h-8 w-12 rounded border border-theme-border bg-theme-surface p-1.5">
+                    <div className="h-1 w-6 rounded bg-theme-accent" />
+                    <div className="mt-1.5 h-1 w-8 rounded bg-theme-text-secondary" />
+                  </div>
                 </div>
-
-                {customThemes.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    {customThemes.map((cTheme) => {
-                      const isSelected =
-                        normalizedThemeRef.type === 'custom' &&
-                        normalizedThemeRef.id === cTheme.id;
-
-                      return (
-                        <div
-                          key={cTheme.id}
-                          className={classNames(
-                            'group flex flex-col justify-between gap-2 rounded-lg border p-3 text-left transition-[background-color,border-color] duration-150',
-                            isSelected
-                              ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
-                              : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',
-                          )}
-                        >
+                <span className="text-sm font-medium">
+                  {normalizedThemeRef.type === 'builtin'
+                    ? THEMES.find((theme) => theme.id === normalizedThemeRef.id)
+                        ?.name
+                    : customThemes.find(
+                        (theme) => theme.id === normalizedThemeRef.id,
+                      )?.name}
+                </span>
+              </div>
+              <Disclosure
+                title="Выбрать тему"
+                resetKey={open}
+                data-appearance-section="theme"
+                open={Boolean(openSections.theme)}
+                onOpenChange={(next) =>
+                  setOpenSections((sections) => ({ ...sections, theme: next }))
+                }
+              >
+                <fieldset aria-label="Тема" className="space-y-4 ">
+                  {/* Built-in Themes Sub-section */}
+                  <div className="space-y-2 pt-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-theme-text-secondary">
+                      Встроенные темы
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {THEMES.map((theme) => {
+                        const isSelected =
+                          normalizedThemeRef.type === 'builtin' &&
+                          normalizedThemeRef.id === theme.id;
+                        return (
                           <button
-                            type="button"
-                            aria-label={cTheme.name}
+                            key={theme.id}
+                            aria-label={theme.name}
                             aria-pressed={isSelected}
+                            className={classNames(
+                              'group flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left transition-[background-color,border-color] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-theme-ring',
+                              isSelected
+                                ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
+                                : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',
+                            )}
+                            type="button"
                             onClick={() =>
-                              selectTheme({ type: 'custom', id: cTheme.id })
+                              selectTheme({ type: 'builtin', id: theme.id })
                             }
-                            className="flex flex-col gap-1.5 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-sm font-semibold text-theme-text-primary">
-                                {cTheme.name}
+                                {theme.name}
                               </span>
                               <span className="flex items-center rounded-full border border-theme-border px-1.5 py-0.5 text-[10px] font-medium text-theme-text-secondary">
-                                {cTheme.mode === 'light' ? 'Светлая' : 'Тёмная'}
+                                {theme.mode === 'system'
+                                  ? 'Авто'
+                                  : theme.mode === 'light'
+                                    ? 'Светлая'
+                                    : 'Тёмная'}
                               </span>
                             </div>
-                            {cTheme.description && (
-                              <p className="line-clamp-2 text-xs text-theme-text-secondary">
-                                {cTheme.description}
-                              </p>
-                            )}
-                          </button>
 
-                          <div className="mt-auto flex items-center justify-between pt-1">
-                            {/* Color swatches on the left */}
-                            <div className="flex items-center gap-1.5">
+                            <div className="mt-1 flex items-center gap-1.5">
                               <span
                                 aria-hidden="true"
-                                className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                className="size-4 rounded-full border border-black/20 shadow-xs"
                                 style={{
-                                  backgroundColor: cTheme.colors.canvasBg,
+                                  backgroundColor: theme.previewColors.bg,
                                 }}
-                                title="Фон страницы"
+                                title="Фон"
                               />
                               <span
                                 aria-hidden="true"
-                                className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                className="size-4 rounded-full border border-black/20 shadow-xs"
                                 style={{
-                                  backgroundColor: cTheme.colors.surfaceBg,
+                                  backgroundColor: theme.previewColors.surface,
                                 }}
                                 title="Карточка"
                               />
                               <span
                                 aria-hidden="true"
-                                className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                className="size-4 rounded-full border border-black/20 shadow-xs"
                                 style={{
-                                  backgroundColor: cTheme.colors.accent,
+                                  backgroundColor: theme.previewColors.accent,
                                 }}
                                 title="Акцент"
                               />
                             </div>
-
-                            {/* Action icons on the right */}
-                            <div className="flex items-center gap-0.5">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenThemeEditor?.(cTheme);
-                                }}
-                                className="flex size-7 items-center justify-center rounded-md text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
-                                title="Редактировать тему"
-                                aria-label={`Редактировать тему «${cTheme.name}»`}
-                              >
-                                <PencilIcon className="size-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDuplicateCustomTheme?.(cTheme.id);
-                                }}
-                                className="flex size-7 items-center justify-center rounded-md text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
-                                title="Дублировать тему"
-                                aria-label={`Дублировать тему «${cTheme.name}»`}
-                              >
-                                <CopyIcon className="size-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setThemeToDelete(cTheme);
-                                }}
-                                className="flex size-7 items-center justify-center rounded-md text-theme-danger transition-colors hover:bg-theme-danger-bg hover:text-theme-danger"
-                                title="Удалить тему"
-                                aria-label={`Удалить тему «${cTheme.name}»`}
-                              >
-                                <TrashIcon className="size-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-xs text-theme-text-secondary">
-                    У вас пока нет собственных тем. Нажмите «Добавить
-                    собственную», чтобы создать новую.
-                  </p>
-                )}
-              </div>
-
-              {/* Built-in Themes Sub-section */}
-              <div className="space-y-2 pt-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-theme-text-secondary">
-                  Встроенные темы
-                </span>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  {THEMES.map((theme) => {
-                    const isSelected =
-                      normalizedThemeRef.type === 'builtin' &&
-                      normalizedThemeRef.id === theme.id;
-                    return (
+                  {/* Custom Themes Sub-section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-theme-text-secondary">
+                        Собственные темы
+                      </span>
                       <button
-                        key={theme.id}
-                        aria-label={theme.name}
-                        aria-pressed={isSelected}
-                        className={classNames(
-                          'group flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-left transition-[background-color,border-color] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-theme-ring',
-                          isSelected
-                            ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
-                            : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',
-                        )}
                         type="button"
-                        onClick={() =>
-                          selectTheme({ type: 'builtin', id: theme.id })
-                        }
+                        onClick={() => onOpenThemeEditor?.()}
+                        className="flex items-center gap-1 rounded-md border border-theme-border bg-theme-surface-elevated px-2.5 py-1 text-xs font-medium text-theme-accent transition-colors hover:border-theme-accent hover:bg-theme-surface"
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-semibold text-theme-text-primary">
-                            {theme.name}
-                          </span>
-                          <span className="flex items-center rounded-full border border-theme-border px-1.5 py-0.5 text-[10px] font-medium text-theme-text-secondary">
-                            {theme.mode === 'system'
-                              ? 'Авто'
-                              : theme.mode === 'light'
-                                ? 'Светлая'
-                                : 'Тёмная'}
-                          </span>
-                        </div>
-                        <p className="line-clamp-2 text-xs text-theme-text-secondary">
-                          {theme.description}
-                        </p>
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span
-                            aria-hidden="true"
-                            className="size-4 rounded-full border border-black/20 shadow-xs"
-                            style={{ backgroundColor: theme.previewColors.bg }}
-                            title="Фон"
-                          />
-                          <span
-                            aria-hidden="true"
-                            className="size-4 rounded-full border border-black/20 shadow-xs"
-                            style={{
-                              backgroundColor: theme.previewColors.surface,
-                            }}
-                            title="Карточка"
-                          />
-                          <span
-                            aria-hidden="true"
-                            className="size-4 rounded-full border border-black/20 shadow-xs"
-                            style={{
-                              backgroundColor: theme.previewColors.accent,
-                            }}
-                            title="Акцент"
-                          />
-                        </div>
+                        <span>+</span> Добавить собственную
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </fieldset>
-          </Disclosure>
+                    </div>
 
-          <Disclosure
-            title="Цвет фона"
-            resetKey={open}
-            data-appearance-section="background"
-            open={Boolean(openSections.background)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, background: next }))
-            }
-          >
-            <div className="flex flex-wrap items-center gap-3 px-4 pb-4 pt-1">
-              <label className="sr-only" htmlFor="background-color">
+                    {customThemes.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {customThemes.map((cTheme) => {
+                          const isSelected =
+                            normalizedThemeRef.type === 'custom' &&
+                            normalizedThemeRef.id === cTheme.id;
+
+                          return (
+                            <div
+                              key={cTheme.id}
+                              className={classNames(
+                                'group flex flex-col justify-between gap-2 rounded-lg border p-3 text-left transition-[background-color,border-color] duration-150',
+                                isSelected
+                                  ? 'border-theme-accent bg-theme-surface-elevated ring-1 ring-theme-accent shadow-xs'
+                                  : 'border-theme-border bg-theme-surface hover:border-theme-accent/50 hover:bg-theme-surface-elevated/60',
+                              )}
+                            >
+                              <button
+                                type="button"
+                                aria-label={cTheme.name}
+                                aria-pressed={isSelected}
+                                onClick={() =>
+                                  selectTheme({ type: 'custom', id: cTheme.id })
+                                }
+                                className="flex flex-col gap-1.5 rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-theme-ring"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-semibold text-theme-text-primary">
+                                    {cTheme.name}
+                                  </span>
+                                  <span className="flex items-center rounded-full border border-theme-border px-1.5 py-0.5 text-[10px] font-medium text-theme-text-secondary">
+                                    {cTheme.mode === 'light'
+                                      ? 'Светлая'
+                                      : 'Тёмная'}
+                                  </span>
+                                </div>
+                                {cTheme.description && (
+                                  <p className="line-clamp-2 text-xs text-theme-text-secondary">
+                                    {cTheme.description}
+                                  </p>
+                                )}
+                              </button>
+
+                              <div className="mt-auto flex items-center justify-between pt-1">
+                                {/* Color swatches on the left */}
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    aria-hidden="true"
+                                    className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                    style={{
+                                      backgroundColor: cTheme.colors.canvasBg,
+                                    }}
+                                    title="Фон страницы"
+                                  />
+                                  <span
+                                    aria-hidden="true"
+                                    className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                    style={{
+                                      backgroundColor: cTheme.colors.surfaceBg,
+                                    }}
+                                    title="Карточка"
+                                  />
+                                  <span
+                                    aria-hidden="true"
+                                    className="size-3.5 rounded-full border border-black/20 shadow-xs"
+                                    style={{
+                                      backgroundColor: cTheme.colors.accent,
+                                    }}
+                                    title="Акцент"
+                                  />
+                                </div>
+
+                                {/* Action icons on the right */}
+                                <div className="flex items-center gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenThemeEditor?.(cTheme);
+                                    }}
+                                    className="flex size-7 items-center justify-center rounded-md text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
+                                    title="Редактировать тему"
+                                    aria-label={`Редактировать тему «${cTheme.name}»`}
+                                  >
+                                    <PencilIcon className="size-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onDuplicateCustomTheme?.(cTheme.id);
+                                    }}
+                                    className="flex size-7 items-center justify-center rounded-md text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
+                                    title="Дублировать тему"
+                                    aria-label={`Дублировать тему «${cTheme.name}»`}
+                                  >
+                                    <CopyIcon className="size-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setThemeToDelete(cTheme);
+                                    }}
+                                    className="flex size-7 items-center justify-center rounded-md text-theme-danger transition-colors hover:bg-theme-danger-bg hover:text-theme-danger"
+                                    title="Удалить тему"
+                                    aria-label={`Удалить тему «${cTheme.name}»`}
+                                  >
+                                    <TrashIcon className="size-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                </fieldset>
+              </Disclosure>
+            </section>
+            <section className="space-y-4" data-appearance-section="background">
+              <h3 className="text-sm font-semibold">Фон</h3>
+              <label
+                className="block text-xs text-theme-text-secondary"
+                htmlFor="background-color"
+              >
                 Цвет фона
               </label>
-              <Input
-                id="background-color"
-                className="h-10 w-16 cursor-pointer p-1"
-                type="color"
-                value={effectiveBgColor}
-                onChange={(event) =>
-                  onAppearanceChange({
-                    backgroundColor: {
-                      type: 'custom',
-                      color: event.target.value,
-                    },
-                  })
-                }
-              />
-              <code className="text-sm text-theme-text-secondary">
-                {effectiveBgColor}
-              </code>
-              {typeof appearance.backgroundColor !== 'string' &&
-                appearance.backgroundColor.type === 'custom' && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onAppearanceChange({
-                        backgroundColor: { type: 'theme' },
-                      })
-                    }
-                    className="ml-auto rounded-md border border-theme-border px-2.5 py-1 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
-                  >
-                    Сбросить на цвет темы
-                  </button>
-                )}
-            </div>
-          </Disclosure>
-
-          <Disclosure
-            title="Обои"
-            resetKey={open}
-            data-appearance-section="wallpaper"
-            open={Boolean(openSections.wallpaper)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, wallpaper: next }))
-            }
-          >
-            <div className="space-y-4 px-4 pb-4 pt-1">
-              <p className="text-sm text-theme-text-secondary">
-                Изображение заполнит весь экран; края могут быть обрезаны.
-              </p>
-
-              {appearance.wallpaper.type !== 'none' ? (
-                <label className="flex cursor-pointer items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-theme-text-primary">
-                    Показывать обои
-                  </span>
-                  <input
-                    aria-label="Показывать обои"
-                    checked={isWallpaperEnabled(appearance.wallpaper)}
-                    className="size-5 accent-theme-accent"
-                    disabled={isWallpaperUpdating}
-                    role="switch"
-                    type="checkbox"
-                    onChange={(event) =>
-                      void runWallpaperAction(() =>
-                        onSetWallpaperEnabled(event.target.checked),
-                      )
-                    }
-                  />
-                </label>
-              ) : null}
-
-              {wallpaperPreviewSrc ? (
-                <div
-                  className={classNames(
-                    'relative overflow-hidden rounded-lg border border-theme-border bg-theme-surface-muted',
-                    !isWallpaperEnabled(appearance.wallpaper) && 'opacity-60',
-                  )}
-                >
-                  <img
-                    aria-hidden="true"
-                    alt=""
-                    className="aspect-video w-full object-cover object-center"
-                    data-testid="wallpaper-preview"
-                    draggable={false}
-                    referrerPolicy="no-referrer"
-                    src={wallpaperPreviewSrc}
-                  />
-                  {!isWallpaperEnabled(appearance.wallpaper) ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-theme-surface/40 backdrop-blur-xs">
-                      <span className="rounded-md border border-theme-border bg-theme-surface px-2.5 py-1 text-xs font-medium text-theme-text-secondary shadow-sm">
-                        Отключено
-                      </span>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <Disclosure title="Локальное изображение" resetKey={open}>
-                <div className="space-y-3 px-3 pb-3 pt-1">
-                  {appearance.wallpaper.type === 'local' ? (
-                    <p className="text-sm text-theme-text-secondary">
-                      Локальные обои установлены
-                    </p>
-                  ) : null}
-                  <input
-                    ref={fileInputRef}
-                    accept={ACCEPTED_WALLPAPER_FILES}
-                    aria-label="Локальное изображение"
-                    className="sr-only"
-                    disabled={isWallpaperUpdating}
-                    id="wallpaper-file"
-                    type="file"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = '';
-
-                      if (file) {
-                        void runWallpaperAction((signal) =>
-                          onSetLocalWallpaper(file, signal),
-                        );
-                      }
-                    }}
-                  />
-                  <Button
-                    disabled={isWallpaperUpdating}
-                    size="small"
-                    variant="secondary"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {appearance.wallpaper.type === 'local'
-                      ? 'Заменить файл'
-                      : 'Выбрать файл'}
-                  </Button>
-                  <p className="text-xs text-theme-text-secondary">
-                    PNG, JPEG, WebP, GIF, AVIF или SVG. Файлы больше 6 МБ будут
-                    сжаты без потери качества, если это возможно.
-                  </p>
-                </div>
-              </Disclosure>
-
-              <Disclosure title="По ссылке" resetKey={open}>
-                <form className="space-y-2 px-3 pb-3 pt-1" onSubmit={submitUrl}>
-                  {appearance.wallpaper.type === 'url' ? (
-                    <p className="text-sm text-theme-text-secondary">
-                      Обои установлены по ссылке
-                    </p>
-                  ) : null}
-                  <label
-                    className="block text-sm font-medium text-theme-text-primary"
-                    htmlFor="wallpaper-url"
-                  >
-                    Ссылка на изображение
-                  </label>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input
-                      disabled={isWallpaperUpdating}
-                      id="wallpaper-url"
-                      inputMode="url"
-                      placeholder="https://example.com/wallpaper.jpg"
-                      type="url"
-                      value={urlDraft}
-                      onChange={(event) => setUrlDraft(event.target.value)}
-                    />
-                    <Button
-                      className="shrink-0"
-                      disabled={isWallpaperUpdating || !urlDraft.trim()}
-                      size="small"
-                      type="submit"
-                      variant="secondary"
-                    >
-                      Установить по ссылке
-                    </Button>
-                  </div>
-                </form>
-              </Disclosure>
-
-              {isWallpaperUpdating ? (
-                <p
-                  aria-live="polite"
-                  className="text-sm text-theme-text-secondary"
-                >
-                  Проверяем изображение…
-                </p>
-              ) : null}
-
-              {wallpaperError ? (
-                <p className="text-sm text-theme-danger" role="alert">
-                  {wallpaperError}
-                </p>
-              ) : null}
-
-              <Button
-                disabled={
-                  isWallpaperUpdating || appearance.wallpaper.type === 'none'
-                }
-                size="small"
-                variant="danger"
-                onClick={() =>
-                  void runWallpaperAction(() => onRemoveWallpaper())
-                }
-              >
-                Удалить обои
-              </Button>
-            </div>
-          </Disclosure>
-
-          <Disclosure
-            title="Виджеты"
-            resetKey={open}
-            data-appearance-section="widgets"
-            open={Boolean(openSections.widgets)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, widgets: next }))
-            }
-          >
-            <div className="space-y-5 px-4 pb-4 pt-1">
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <label className="font-medium" htmlFor="widget-border-radius">
-                    Скругление углов
-                  </label>
-                  <output
-                    className="min-w-12 text-right font-mono text-xs tabular-nums text-theme-text-secondary"
-                    htmlFor="widget-border-radius"
-                  >
-                    {appearance.widgetBorderRadius ??
-                      DEFAULT_WIDGET_BORDER_RADIUS}{' '}
-                    px
-                  </output>
-                </div>
-                <input
-                  className="block h-5 w-full cursor-pointer accent-theme-accent"
-                  id="widget-border-radius"
-                  max={MAX_WIDGET_BORDER_RADIUS}
-                  min="0"
-                  step="1"
-                  type="range"
-                  value={
-                    appearance.widgetBorderRadius ??
-                    DEFAULT_WIDGET_BORDER_RADIUS
-                  }
-                  onBlur={onFlushAppearancePreview}
-                  onChange={(event) =>
-                    onAppearancePreview({
-                      widgetBorderRadius: Number(event.target.value),
-                    })
-                  }
-                  onKeyUp={onFlushAppearancePreview}
-                  onPointerUp={onFlushAppearancePreview}
-                />
-                <p className="text-xs text-theme-text-secondary">
-                  Для всех виджетов текущего пространства, включая поиск и
-                  изображения.
-                </p>
-                <Button
-                  disabled={
-                    (appearance.widgetBorderRadius ??
-                      DEFAULT_WIDGET_BORDER_RADIUS) ===
-                    DEFAULT_WIDGET_BORDER_RADIUS
-                  }
-                  size="small"
-                  variant="secondary"
-                  onClick={() =>
-                    onAppearanceChange({
-                      widgetBorderRadius: DEFAULT_WIDGET_BORDER_RADIUS,
-                    })
-                  }
-                >
-                  Вернуть стандартное скругление
-                </Button>
-              </div>
-              <label className="flex cursor-pointer items-center justify-between gap-4">
-                <span className="text-sm font-medium text-theme-text-primary">
-                  Эффект Liquid Glass
-                </span>
-                <input
-                  aria-label="Эффект Liquid Glass"
-                  checked={appearance.liquidGlass.enabled}
-                  className="size-5 accent-theme-accent"
-                  role="switch"
-                  type="checkbox"
+              <div className="flex flex-wrap items-center gap-3 ">
+                <Input
+                  id="background-color"
+                  style={{ width: 64 }}
+                  className="h-10 w-16 cursor-pointer p-1"
+                  type="color"
+                  value={effectiveBgColor}
                   onChange={(event) =>
                     onAppearanceChange({
-                      liquidGlass: {
-                        ...appearance.liquidGlass,
-                        enabled: event.target.checked,
+                      backgroundColor: {
+                        type: 'custom',
+                        color: event.target.value,
                       },
                     })
                   }
                 />
-              </label>
-              <LiquidGlassSettings
-                settings={appearance.liquidGlass}
-                onChange={(liquidGlass) => onAppearancePreview({ liquidGlass })}
-                onCommit={onFlushAppearancePreview}
-                onReset={(liquidGlass) => onAppearanceChange({ liquidGlass })}
-              />
-            </div>
-          </Disclosure>
-          <Disclosure
-            title="Панель управления"
-            resetKey={open}
-            data-appearance-section="toolbar"
-            open={Boolean(openSections.toolbar)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, toolbar: next }))
-            }
+                <code className="text-sm text-theme-text-secondary">
+                  {effectiveBgColor}
+                </code>
+                {typeof appearance.backgroundColor !== 'string' &&
+                  appearance.backgroundColor.type === 'custom' && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onAppearanceChange({
+                          backgroundColor: { type: 'theme' },
+                        })
+                      }
+                      className="ml-auto rounded-md border border-theme-border px-2.5 py-1 text-xs text-theme-text-secondary transition-colors hover:bg-theme-surface-elevated hover:text-theme-text-primary"
+                    >
+                      Использовать цвет темы
+                    </button>
+                  )}
+              </div>
+              <div data-appearance-section="wallpaper">
+                <div className="space-y-4 ">
+                  {appearance.wallpaper.type !== 'none' ? (
+                    <label className="flex cursor-pointer items-center justify-between gap-4">
+                      <span className="text-sm font-medium text-theme-text-primary">
+                        Показывать обои
+                      </span>
+                      <input
+                        aria-label="Показывать обои"
+                        checked={isWallpaperEnabled(appearance.wallpaper)}
+                        className="size-5 accent-theme-accent"
+                        disabled={isWallpaperUpdating}
+                        role="switch"
+                        type="checkbox"
+                        onChange={(event) =>
+                          void runWallpaperAction(() =>
+                            onSetWallpaperEnabled(event.target.checked),
+                          )
+                        }
+                      />
+                    </label>
+                  ) : null}
+
+                  {wallpaperPreviewSrc ? (
+                    <div
+                      className={classNames(
+                        'relative overflow-hidden rounded-lg border border-theme-border bg-theme-surface-muted',
+                        !isWallpaperEnabled(appearance.wallpaper) &&
+                          'opacity-60',
+                      )}
+                    >
+                      <img
+                        aria-hidden="true"
+                        alt=""
+                        className="aspect-video w-full object-cover object-center"
+                        data-testid="wallpaper-preview"
+                        draggable={false}
+                        referrerPolicy="no-referrer"
+                        src={wallpaperPreviewSrc}
+                      />
+                      {!isWallpaperEnabled(appearance.wallpaper) ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-theme-surface/40 backdrop-blur-xs">
+                          <span className="rounded-md border border-theme-border bg-theme-surface px-2.5 py-1 text-xs font-medium text-theme-text-secondary shadow-sm">
+                            Отключено
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div>
+                    <div className="space-y-3">
+                      {appearance.wallpaper.type === 'local' ? (
+                        <p className="text-sm text-theme-text-secondary">
+                          Локальные обои установлены
+                        </p>
+                      ) : null}
+                      <input
+                        ref={fileInputRef}
+                        accept={ACCEPTED_WALLPAPER_FILES}
+                        aria-label="Локальное изображение"
+                        className="sr-only"
+                        disabled={isWallpaperUpdating}
+                        id="wallpaper-file"
+                        type="file"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = '';
+
+                          if (file) {
+                            void runWallpaperAction((signal) =>
+                              onSetLocalWallpaper(file, signal),
+                            );
+                          }
+                        }}
+                      />
+                      <Button
+                        disabled={isWallpaperUpdating}
+                        size="small"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {appearance.wallpaper.type === 'local'
+                          ? 'Заменить файл'
+                          : 'Выбрать файл'}
+                      </Button>
+                      <p className="text-xs text-theme-text-secondary">
+                        PNG, JPEG, WebP, GIF, AVIF или SVG
+                      </p>
+                    </div>
+                  </div>
+
+                  <Disclosure title="Использовать ссылку" resetKey={open}>
+                    <form
+                      className="space-y-2 px-3 pb-3 pt-1"
+                      onSubmit={submitUrl}
+                    >
+                      {appearance.wallpaper.type === 'url' ? (
+                        <p className="text-sm text-theme-text-secondary">
+                          Обои установлены по ссылке
+                        </p>
+                      ) : null}
+                      <label
+                        className="block text-sm font-medium text-theme-text-primary"
+                        htmlFor="wallpaper-url"
+                      >
+                        Ссылка на изображение
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          disabled={isWallpaperUpdating}
+                          id="wallpaper-url"
+                          inputMode="url"
+                          placeholder="https://example.com/wallpaper.jpg"
+                          type="url"
+                          value={urlDraft}
+                          onChange={(event) => setUrlDraft(event.target.value)}
+                        />
+                        <Button
+                          className="shrink-0"
+                          disabled={isWallpaperUpdating || !urlDraft.trim()}
+                          size="small"
+                          type="submit"
+                          variant="secondary"
+                        >
+                          Установить по ссылке
+                        </Button>
+                      </div>
+                    </form>
+                  </Disclosure>
+
+                  {isWallpaperUpdating ? (
+                    <p
+                      aria-live="polite"
+                      className="text-sm text-theme-text-secondary"
+                    >
+                      Проверяем изображение…
+                    </p>
+                  ) : null}
+
+                  {wallpaperError ? (
+                    <p className="text-sm text-theme-danger" role="alert">
+                      {wallpaperError}
+                    </p>
+                  ) : null}
+
+                  {appearance.wallpaper.type !== 'none' && (
+                    <Button
+                      disabled={isWallpaperUpdating}
+                      size="small"
+                      variant="danger"
+                      onClick={() =>
+                        void runWallpaperAction(() => onRemoveWallpaper())
+                      }
+                    >
+                      Удалить обои
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </section>
+            <section className="space-y-4" data-appearance-section="widgets">
+              <h3 className="text-sm font-semibold">Карточки</h3>
+              <div className="space-y-5 ">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <label
+                      className="font-medium"
+                      htmlFor="widget-border-radius"
+                    >
+                      Скругление углов
+                    </label>
+                    <output
+                      className="min-w-12 text-right font-mono text-xs tabular-nums text-theme-text-secondary"
+                      htmlFor="widget-border-radius"
+                    >
+                      {appearance.widgetBorderRadius ??
+                        DEFAULT_WIDGET_BORDER_RADIUS}{' '}
+                      px
+                    </output>
+                  </div>
+                  <input
+                    className="block h-5 w-full cursor-pointer accent-theme-accent"
+                    id="widget-border-radius"
+                    max={MAX_WIDGET_BORDER_RADIUS}
+                    min="0"
+                    step="1"
+                    type="range"
+                    value={
+                      appearance.widgetBorderRadius ??
+                      DEFAULT_WIDGET_BORDER_RADIUS
+                    }
+                    onBlur={onFlushAppearancePreview}
+                    onChange={(event) =>
+                      onAppearancePreview({
+                        widgetBorderRadius: Number(event.target.value),
+                      })
+                    }
+                    onKeyUp={onFlushAppearancePreview}
+                    onPointerUp={onFlushAppearancePreview}
+                  />
+                  <p className="text-xs text-theme-text-secondary">
+                    Для всех виджетов текущего пространства, включая поиск и
+                    изображения.
+                  </p>
+                  <Button
+                    disabled={
+                      (appearance.widgetBorderRadius ??
+                        DEFAULT_WIDGET_BORDER_RADIUS) ===
+                      DEFAULT_WIDGET_BORDER_RADIUS
+                    }
+                    size="small"
+                    variant="secondary"
+                    onClick={() =>
+                      onAppearanceChange({
+                        widgetBorderRadius: DEFAULT_WIDGET_BORDER_RADIUS,
+                      })
+                    }
+                  >
+                    Сбросить скругление
+                  </Button>
+                </div>
+                <label className="flex cursor-pointer items-center justify-between gap-4">
+                  <span className="text-sm font-medium text-theme-text-primary">
+                    Эффект стекла
+                  </span>
+                  <input
+                    aria-label="Эффект стекла"
+                    checked={appearance.liquidGlass.enabled}
+                    className="size-5 accent-theme-accent"
+                    role="switch"
+                    type="checkbox"
+                    onChange={(event) =>
+                      onAppearanceChange({
+                        liquidGlass: {
+                          ...appearance.liquidGlass,
+                          enabled: event.target.checked,
+                        },
+                      })
+                    }
+                  />
+                </label>
+                {appearance.liquidGlass.enabled && (
+                  <Disclosure title="Настроить эффект" resetKey={open}>
+                    <LiquidGlassSettings
+                      settings={appearance.liquidGlass}
+                      onChange={(liquidGlass) =>
+                        onAppearancePreview({ liquidGlass })
+                      }
+                      onCommit={onFlushAppearancePreview}
+                      onReset={(liquidGlass) =>
+                        onAppearanceChange({ liquidGlass })
+                      }
+                    />
+                  </Disclosure>
+                )}
+              </div>
+            </section>
+          </div>
+          <div
+            role="tabpanel"
+            id={`${panelId}-interface`}
+            aria-labelledby={`${panelId}-interface-tab`}
+            hidden={activeTab !== 'interface'}
           >
-            <div className="space-y-3 px-4 pb-4 pt-1">
-              <label className="block space-y-2 text-sm">
-                <span>Расположение и видимость</span>
-                <Select
-                  dropdownPosition="static"
-                  aria-label="Расположение и видимость"
-                  value={toolbar.mode}
-                  options={[
-                    { value: 'top-right', label: 'Справа сверху' },
-                    { value: 'left-fixed', label: 'Слева — всегда видна' },
-                    { value: 'left-collapsible', label: 'Слева — скрываемая' },
-                  ]}
-                  onValueChange={(mode) => {
-                    const next = { mode };
-                    if (isToolbarConfig(next)) onToolbarChange(next);
-                  }}
-                />
-              </label>
-              <p className="text-sm text-theme-text-secondary">
-                Настройка применяется ко всем рабочим пространствам.
-              </p>
-              {toolbar.mode === 'left-collapsible' && (
+            <section className="space-y-4" data-appearance-section="toolbar">
+              <h3 className="text-sm font-semibold">Панель управления</h3>
+              <div className="space-y-3 ">
+                <label className="block space-y-2 text-sm">
+                  <span>Расположение и видимость</span>
+                  <Select
+                    dropdownPosition="static"
+                    aria-label="Расположение и видимость"
+                    value={toolbar.mode}
+                    options={[
+                      { value: 'top-right', label: 'Справа сверху' },
+                      { value: 'left-fixed', label: 'Слева — всегда видна' },
+                      {
+                        value: 'left-collapsible',
+                        label: 'Слева — скрываемая',
+                      },
+                    ]}
+                    onValueChange={(mode) => {
+                      const next = { mode };
+                      if (isToolbarConfig(next)) onToolbarChange(next);
+                    }}
+                  />
+                </label>
                 <p className="text-sm text-theme-text-secondary">
-                  Подведите курсор к левому краю и нажмите появившуюся стрелку
-                  или клавишу M. Раскрытая панель сдвигает виджеты, освобождая
-                  место для управления.
+                  Настройка применяется ко всем рабочим пространствам.
                 </p>
-              )}
-            </div>
-          </Disclosure>
+                {toolbar.mode === 'left-collapsible' && (
+                  <p className="text-sm text-theme-text-secondary">
+                    Подведите курсор к левому краю и нажмите появившуюся стрелку
+                    или клавишу M. Раскрытая панель сдвигает виджеты, освобождая
+                    место для управления.
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
         </div>
       </Dialog>
 

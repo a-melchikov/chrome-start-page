@@ -45,21 +45,19 @@ function renderDialog(
 
 describe('AppearanceDialog wallpaper controls', () => {
   it('keeps rounding available without Liquid Glass and commits on pointer, keyboard, and blur', async () => {
-    const user = userEvent.setup();
     const { props } = renderDialog({
       appearance: {
         ...appearance,
         liquidGlass: { ...appearance.liquidGlass, enabled: false },
       },
     });
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
     const radius = screen.getByRole('slider', { name: 'Скругление углов' });
     expect(radius).toBeEnabled();
     expect(radius).toHaveValue('12');
     expect(radius).toHaveAttribute('min', '0');
     expect(radius).toHaveAttribute('max', '40');
     expect(
-      screen.getByRole('button', { name: 'Вернуть стандартное скругление' }),
+      screen.getByRole('button', { name: 'Сбросить скругление' }),
     ).toBeDisabled();
     fireEvent.change(radius, { target: { value: '0' } });
     expect(props.onAppearancePreview).toHaveBeenLastCalledWith({
@@ -72,7 +70,46 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(props.onFlushAppearancePreview).toHaveBeenCalledTimes(3);
   });
 
-  it('starts with every appearance section collapsed', () => {
+  it('separates global settings and supports keyboard tab navigation', async () => {
+    const user = userEvent.setup();
+    const { props } = renderDialog();
+    const appearanceTab = screen.getByRole('tab', { name: 'Оформление' });
+    expect(screen.getByRole('heading', { name: 'Карточки' })).toBeVisible();
+    expect(
+      screen.queryByRole('combobox', { name: 'Расположение и видимость' }),
+    ).not.toBeInTheDocument();
+    appearanceTab.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Интерфейс' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Интерфейс' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(
+      screen.getByText('Настройка применяется ко всем рабочим пространствам.'),
+    ).toBeVisible();
+    expect(props.onAppearanceChange).not.toHaveBeenCalled();
+    await user.keyboard('{Home}');
+    expect(appearanceTab).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Карточки' })).toBeVisible();
+  });
+
+  it('hides glass controls when the effect is disabled', () => {
+    renderDialog({
+      appearance: {
+        ...appearance,
+        liquidGlass: { ...appearance.liquidGlass, enabled: false },
+      },
+    });
+    expect(
+      screen.queryByRole('button', { name: 'Настроить эффект' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('slider', { name: 'Скругление углов' }),
+    ).toBeEnabled();
+  });
+
+  it('starts with advanced settings collapsed', () => {
     const { container } = renderDialog();
 
     expect(
@@ -88,9 +125,11 @@ describe('AppearanceDialog wallpaper controls', () => {
   it('collapses opened sections before the dialog is opened again', async () => {
     const user = userEvent.setup();
     const { container, props, rerender } = renderDialog();
-    const themeSection = screen.getByText('Тема', { selector: 'button' });
+    const themeSection = screen.getByText('Выбрать тему', {
+      selector: 'button',
+    });
 
-    await user.click(screen.getByText('Тема', { selector: 'button' }));
+    await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
     expect(themeSection).toHaveAttribute('aria-expanded', 'true');
 
     rerender(<AppearanceDialog {...props} open={false} />);
@@ -106,18 +145,13 @@ describe('AppearanceDialog wallpaper controls', () => {
     ).toBe(true);
   });
 
-  it('shows a collapsed widget section and toggles Liquid Glass', async () => {
+  it('shows card settings immediately and toggles glass', async () => {
     const user = userEvent.setup();
     const { props } = renderDialog();
-    const widgetsSection = screen.getByText('Виджеты', {
-      selector: 'button',
-    });
+    expect(screen.getByRole('heading', { name: 'Карточки' })).toBeVisible();
 
-    expect(widgetsSection).toHaveAttribute('aria-expanded', 'false');
-
-    await user.click(widgetsSection);
     const glassSwitch = screen.getByRole('switch', {
-      name: 'Эффект Liquid Glass',
+      name: 'Эффект стекла',
     });
     expect(glassSwitch).toBeChecked();
 
@@ -136,7 +170,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     const { props } = renderDialog();
 
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
@@ -174,7 +208,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       appearance: {
         ...appearance,
         liquidGlass: {
-          enabled: false,
+          enabled: true,
           transparency: 70,
           blur: 8,
           shadow: 90,
@@ -182,11 +216,11 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
     });
 
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
 
-    expect(screen.getByRole('slider', { name: 'Прозрачность' })).toBeDisabled();
-    expect(screen.getByRole('slider', { name: 'Размытие' })).toBeDisabled();
-    expect(screen.getByRole('slider', { name: 'Тень' })).toBeDisabled();
+    expect(screen.getByRole('slider', { name: 'Прозрачность' })).toBeEnabled();
+    expect(screen.getByRole('slider', { name: 'Размытие' })).toBeEnabled();
+    expect(screen.getByRole('slider', { name: 'Тень' })).toBeEnabled();
 
     await user.click(
       screen.getByRole('button', { name: 'Вернуть стандартные параметры' }),
@@ -194,7 +228,7 @@ describe('AppearanceDialog wallpaper controls', () => {
 
     expect(props.onAppearanceChange).toHaveBeenCalledWith({
       liquidGlass: {
-        enabled: false,
+        enabled: true,
         transparency: 40,
         blur: 18,
         shadow: 50,
@@ -223,11 +257,6 @@ describe('AppearanceDialog wallpaper controls', () => {
     const onSetLocalWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetLocalWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(
-      screen.getByText('Локальное изображение', { selector: 'button' }),
-    );
-
     const input = screen.getByLabelText('Локальное изображение');
     expect(input).toHaveAttribute(
       'accept',
@@ -254,8 +283,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     const onSetUrlWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetUrlWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
+    await user.click(
+      screen.getByText('Использовать ссылку', { selector: 'button' }),
+    );
 
     const input = screen.getByLabelText('Ссылка на изображение');
     await user.type(input, 'https://example.com/wallpaper.jpg');
@@ -287,8 +317,6 @@ describe('AppearanceDialog wallpaper controls', () => {
       onRemoveWallpaper,
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-
     expect(screen.getByTestId('wallpaper-preview')).toHaveAttribute(
       'src',
       'https://example.com/wallpaper.jpg',
@@ -305,8 +333,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     renderDialog({ isWallpaperUpdating: true });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
+    await user.click(
+      screen.getByText('Использовать ссылку', { selector: 'button' }),
+    );
 
     expect(screen.getByLabelText('Локальное изображение')).toBeDisabled();
     expect(screen.getByLabelText('Ссылка на изображение')).toBeDisabled();
@@ -325,8 +354,9 @@ describe('AppearanceDialog wallpaper controls', () => {
     });
     const { props } = renderDialog({ onSetUrlWallpaper });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
+    await user.click(
+      screen.getByText('Использовать ссылку', { selector: 'button' }),
+    );
 
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
@@ -344,7 +374,6 @@ describe('AppearanceDialog wallpaper controls', () => {
   });
 
   it('shows persisted local wallpaper status instead of a native empty filename', async () => {
-    const user = userEvent.setup();
     renderDialog({
       appearance: {
         ...appearance,
@@ -355,11 +384,6 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
       wallpaperPreviewSrc: 'blob:wallpaper',
     });
-
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(
-      screen.getByText('Локальное изображение', { selector: 'button' }),
-    );
 
     await waitFor(() =>
       expect(screen.getByText('Локальные обои установлены')).toBeVisible(),
@@ -385,7 +409,6 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'https://example.com/wallpaper.jpg',
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
     const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
     await waitFor(() => expect(toggle).toBeVisible());
     expect(toggle).toBeChecked();
@@ -395,7 +418,6 @@ describe('AppearanceDialog wallpaper controls', () => {
   });
 
   it('displays disabled badge and dimmed opacity when wallpaper is disabled', async () => {
-    const user = userEvent.setup();
     renderDialog({
       appearance: {
         ...appearance,
@@ -408,7 +430,6 @@ describe('AppearanceDialog wallpaper controls', () => {
       wallpaperPreviewSrc: 'blob:wallpaper',
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
     const toggle = screen.getByRole('switch', { name: 'Показывать обои' });
     await waitFor(() => expect(toggle).toBeVisible());
     expect(toggle).not.toBeChecked();
@@ -420,7 +441,6 @@ describe('AppearanceDialog wallpaper controls', () => {
   });
 
   it('does not display toggle switch when wallpaper is none', async () => {
-    const user = userEvent.setup();
     renderDialog({
       appearance: {
         ...appearance,
@@ -428,7 +448,6 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
     });
 
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
     expect(
       screen.queryByRole('switch', { name: 'Показывать обои' }),
     ).not.toBeInTheDocument();

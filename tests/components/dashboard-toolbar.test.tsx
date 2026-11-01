@@ -201,7 +201,7 @@ describe('dashboard toolbar integration', () => {
       });
       await user.click(appearanceButton);
       const appearanceDialog = await screen.findByRole('dialog', {
-        name: 'Оформление',
+        name: 'Настройки',
       });
       expect(appearanceDialog).toHaveAttribute('open');
       await user.keyboard('{Escape}');
@@ -230,16 +230,12 @@ describe('dashboard toolbar integration', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    const section = await screen.findByText('Панель управления', {
-      selector: 'button',
-    });
-    expect(section).toHaveAttribute('aria-expanded', 'false');
-    await user.click(section);
+    await user.click(screen.getByRole('tab', { name: 'Интерфейс' }));
     await chooseMode(user, 'Слева — скрываемая');
     await waitFor(async () =>
       expect((await stored()).toolbar.mode).toBe('left-collapsible'),
     );
-    expect(screen.getByRole('dialog', { name: 'Оформление' })).toHaveAttribute(
+    expect(screen.getByRole('dialog', { name: 'Настройки' })).toHaveAttribute(
       'open',
     );
     expect((await stored()).workspaces).toEqual(config.workspaces);
@@ -329,12 +325,12 @@ describe('dashboard toolbar integration', () => {
       'Панель управления',
     );
     await user.click(screen.getByRole('option', { name: /Панель управления/ }));
-    const section = await screen.findByText('Панель управления', {
-      selector: 'button',
-    });
-    await waitFor(() =>
-      expect(section).toHaveAttribute('aria-expanded', 'true'),
-    );
+    expect(
+      await screen.findByRole('tab', { name: 'Интерфейс' }),
+    ).toHaveAttribute('aria-selected', 'true');
+    expect(
+      screen.getByRole('heading', { name: 'Панель управления' }),
+    ).toBeVisible();
   });
 
   it('starts collapsed on remount and resets on accepted external configuration', async () => {

@@ -29,7 +29,8 @@ export type DialogProps = Omit<
   returnFocusFallback?: () => HTMLElement | null;
 };
 
-export type DialogSize = 'compact' | 'default' | 'fullscreen' | 'launcher';
+export type DialogSize =
+  'compact' | 'default' | 'fullscreen' | 'launcher' | 'drawer';
 
 export function Dialog({
   open,
@@ -53,6 +54,7 @@ export function Dialog({
   const descriptionId = useId();
   const isFullscreen = size === 'fullscreen';
   const isCompact = size === 'compact';
+  const isDrawer = size === 'drawer';
   const isLauncher = size === 'launcher';
 
   useEffect(() => {
@@ -163,13 +165,15 @@ export function Dialog({
       aria-labelledby={titleId}
       className={classNames(
         'dashboard-dialog p-0 text-theme-text-primary',
-        isFullscreen
-          ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-clip rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
-          : isLauncher
-            ? 'fixed top-[4.5rem] left-1/2 m-0 max-h-[calc(100dvh-5rem)] w-[min(30rem,calc(100vw-2rem))] max-w-none -translate-x-1/2 overflow-visible border-0 bg-transparent shadow-none backdrop:bg-black/20 min-[36rem]:top-4 min-[36rem]:max-h-[calc(100dvh-2rem)] min-[36rem]:w-[min(30rem,calc(100vw-22.25rem))]'
-            : isCompact
-              ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50'
-              : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50',
+        isDrawer
+          ? 'settings-drawer fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-[min(28rem,100vw)] max-w-none overflow-clip border-0 border-l border-theme-border bg-theme-surface shadow-xl backdrop:bg-transparent'
+          : isFullscreen
+            ? 'm-0 h-dvh max-h-dvh w-screen max-w-none overflow-clip rounded-none border-0 bg-theme-surface shadow-2xl backdrop:bg-black/50'
+            : isLauncher
+              ? 'fixed top-[4.5rem] left-1/2 m-0 max-h-[calc(100dvh-5rem)] w-[min(30rem,calc(100vw-2rem))] max-w-none -translate-x-1/2 overflow-visible border-0 bg-transparent shadow-none backdrop:bg-black/20 min-[36rem]:top-4 min-[36rem]:max-h-[calc(100dvh-2rem)] min-[36rem]:w-[min(30rem,calc(100vw-22.25rem))]'
+              : isCompact
+                ? 'm-auto max-h-[calc(100dvh-2rem)] w-[min(24rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50'
+                : 'm-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-clip rounded-xl border border-theme-border bg-theme-surface shadow-2xl backdrop:bg-black/50',
         className,
       )}
       onCancel={handleCancel}
@@ -179,7 +183,7 @@ export function Dialog({
       <div
         className={classNames(
           'flex flex-col',
-          isFullscreen
+          isFullscreen || isDrawer
             ? 'h-full max-h-dvh'
             : isLauncher
               ? 'max-h-[calc(100dvh-5rem)] min-[36rem]:max-h-[calc(100dvh-2rem)]'

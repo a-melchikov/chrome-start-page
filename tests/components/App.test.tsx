@@ -165,11 +165,10 @@ describe('App', () => {
     await user.click(
       screen.getByRole('option', { name: /Открыть настройки: Обои/ }),
     );
-    const summary = await screen.findByText('Обои', { selector: 'button' });
-    await waitFor(() =>
-      expect(summary).toHaveAttribute('aria-expanded', 'true'),
-    );
-    expect(screen.getByRole('dialog', { name: 'Оформление' })).toHaveAttribute(
+    expect(
+      await screen.findByRole('button', { name: 'Выбрать файл' }),
+    ).toBeVisible();
+    expect(screen.getByRole('dialog', { name: 'Настройки' })).toHaveAttribute(
       'open',
     );
   });
@@ -439,11 +438,12 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    const themeSection = screen.getByText('Тема', { selector: 'button' });
-    expect(themeSection).toHaveFocus();
+    const themeSection = screen.getByText('Выбрать тему', {
+      selector: 'button',
+    });
+    expect(screen.getByRole('tab', { name: 'Оформление' })).toHaveFocus();
     await user.click(themeSection);
     await user.click(screen.getByRole('button', { name: 'Тёмная' }));
-    await user.click(screen.getByText('Цвет фона', { selector: 'button' }));
     fireEvent.change(screen.getByLabelText('Цвет фона'), {
       target: { value: '#123456' },
     });
@@ -479,7 +479,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Тема', { selector: 'button' }));
+    await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
     await user.click(screen.getByRole('button', { name: 'Tokyo Night' }));
 
     expect(document.documentElement).toHaveAttribute(
@@ -520,7 +520,9 @@ describe('App', () => {
       await user.click(
         screen.getByRole('button', { name: 'Настройки оформления' }),
       );
-      await user.click(screen.getByText('Тема', { selector: 'button' }));
+      await user.click(
+        screen.getByText('Выбрать тему', { selector: 'button' }),
+      );
       await user.click(screen.getByRole('button', { name }));
 
       expect(document.documentElement).toHaveAttribute('data-theme', theme);
@@ -565,7 +567,7 @@ describe('App', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
     const radius = screen.getByRole('slider', { name: 'Скругление углов' });
     expect(
       screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
@@ -591,7 +593,7 @@ describe('App', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
     expect(
       screen.getByRole('slider', { name: 'Скругление углов' }),
     ).toHaveValue('40');
@@ -599,7 +601,7 @@ describe('App', () => {
       screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
     ).toBe('40px');
     await user.click(
-      screen.getByRole('button', { name: 'Вернуть стандартное скругление' }),
+      screen.getByRole('button', { name: 'Сбросить скругление' }),
     );
     await waitFor(async () => {
       const saved = await storage.getItem<DashboardConfig>(
@@ -631,7 +633,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Виджеты', { selector: 'button' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
@@ -649,12 +651,14 @@ describe('App', () => {
       ).toBe(70);
     });
 
-    await user.click(
-      screen.getByRole('switch', { name: 'Эффект Liquid Glass' }),
-    );
+    await user.click(screen.getByRole('switch', { name: 'Эффект стекла' }));
 
     expect(app).not.toHaveClass('liquid-glass-enabled');
-    expect(transparency).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'Настроить эффект' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('switch', { name: 'Эффект стекла' }));
+    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
     await user.click(
       screen.getByRole('button', { name: 'Вернуть стандартные параметры' }),
     );
@@ -664,7 +668,7 @@ describe('App', () => {
         DASHBOARD_STORAGE_KEY,
       );
       expect(storedConfig?.workspaces[0]?.appearance.liquidGlass).toEqual({
-        enabled: false,
+        enabled: true,
         transparency: 40,
         blur: 18,
         shadow: 50,
@@ -698,8 +702,7 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Тема', { selector: 'button' }));
-    await user.click(screen.getByText('Цвет фона', { selector: 'button' }));
+    await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
 
     expect(screen.getByRole('button', { name: 'Светлая' })).toHaveAttribute(
       'aria-pressed',
@@ -791,8 +794,9 @@ describe('App', () => {
     await user.click(
       screen.getByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(screen.getByText('Обои', { selector: 'button' }));
-    await user.click(screen.getByText('По ссылке', { selector: 'button' }));
+    await user.click(
+      screen.getByText('Использовать ссылку', { selector: 'button' }),
+    );
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
       'http://example.com/wallpaper.jpg',
@@ -944,7 +948,7 @@ describe('App', () => {
 
     // 'p' opens appearance dialog
     await user.keyboard('{p}');
-    const appearanceDialog = screen.getByRole('dialog', { name: 'Оформление' });
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Настройки' });
     expect(appearanceDialog).toHaveAttribute('open');
     await user.keyboard('{Escape}');
     await waitFor(() => {
@@ -1009,7 +1013,9 @@ describe('App', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Настройки оформления' }),
     );
-    await user.click(await screen.findByRole('button', { name: 'Тема' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Выбрать тему' }),
+    );
     const opener = screen.getByRole('button', { name: /Добавить собственную/ });
     await user.click(opener);
     const name = await screen.findByRole('textbox', {
@@ -1035,7 +1041,7 @@ describe('App', () => {
     expect(restoredName).toHaveValue('Морской бриз');
     await user.click(screen.getByRole('button', { name: 'Отмена' }));
     await user.click(screen.getByRole('button', { name: 'Не сохранять' }));
-    await screen.findByRole('dialog', { name: 'Оформление' });
+    await screen.findByRole('dialog', { name: 'Настройки' });
     await waitFor(() => expect(opener).toHaveFocus());
     expect(
       screen.queryByRole('dialog', { name: 'Создание темы' }),
