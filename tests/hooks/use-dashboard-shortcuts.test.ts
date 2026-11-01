@@ -466,4 +466,30 @@ describe('useDashboardShortcuts', () => {
       expect(onOpenAddWidget).not.toHaveBeenCalled();
     });
   });
+  it('replaces defaults, supports physical keys with modifiers and respects disabling', () => {
+    const shortcuts = {
+      edit: [
+        { code: 'KeyQ', ctrl: false, alt: true, shift: true, meta: false },
+      ],
+      palette: [],
+      help: [],
+    };
+    renderHook(() => useDashboardShortcuts({ ...defaultOptions, shortcuts }));
+    fireKey('KeyE');
+    fireKey('KeyQ', { key: 'Й' });
+    expect(onToggleEditing).not.toHaveBeenCalled();
+    fireKey('KeyQ', { key: 'Й', altKey: true, shiftKey: true });
+    expect(onToggleEditing).toHaveBeenCalledOnce();
+    fireKey('KeyK', { ctrlKey: true });
+    fireKey('Slash', { key: '/' });
+    fireKey('Slash', { key: '?', shiftKey: true });
+    fireKey('F1');
+    expect(onOpenPalette).not.toHaveBeenCalled();
+    expect(onOpenHelp).not.toHaveBeenCalled();
+  });
+  it('preserves slash when the event has no physical key code', () => {
+    renderHook(() => useDashboardShortcuts(defaultOptions));
+    fireKey('Unknown', { key: '/' });
+    expect(onOpenPalette).toHaveBeenCalledOnce();
+  });
 });

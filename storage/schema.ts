@@ -1,3 +1,6 @@
+import type { AnimationMode } from '../components/ui/animation-preferences';
+export type { AnimationMode } from '../components/ui/animation-preferences';
+import type { ShortcutOverrides } from '../keyboard/shortcuts';
 import type { AnalogClockWidgetConfig } from '../widgets/analog-clock/types';
 import type { ClockWidgetConfig } from '../widgets/clock/types';
 import type { ImageWidgetConfig } from '../widgets/image/types';
@@ -55,6 +58,8 @@ export interface AppearanceConfig {
   wallpaper: WallpaperConfig;
   liquidGlass: LiquidGlassConfig;
   widgetBorderRadius?: number;
+  gridGap?: number;
+  gridPadding?: number;
 }
 
 export interface WidgetConfigMap {
@@ -83,7 +88,12 @@ export interface ToolbarConfig {
   mode: ToolbarMode;
 }
 
-export interface DashboardConfig {
+export interface InterfacePreferences {
+  animationMode?: AnimationMode;
+  shortcuts?: ShortcutOverrides;
+}
+
+export interface DashboardConfig extends InterfacePreferences {
   toolbar: ToolbarConfig;
   version: typeof DASHBOARD_CONFIG_VERSION;
   activeWorkspaceId: string;

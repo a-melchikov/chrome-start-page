@@ -143,12 +143,12 @@ function overlapsOnAxis(
 export function getVisibleGridBottomRow(
   canvasTop: number,
   viewportHeight: number,
+  gap = DASHBOARD_GRID_GAP,
 ): number {
   return Math.max(
     0,
     Math.floor(
-      (viewportHeight - canvasTop + DASHBOARD_GRID_GAP) /
-        (DASHBOARD_GRID_ROW_HEIGHT + DASHBOARD_GRID_GAP),
+      (viewportHeight - canvasTop + gap) / (DASHBOARD_GRID_ROW_HEIGHT + gap),
     ),
   );
 }

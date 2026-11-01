@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { useReducedMotion } from 'motion/react';
+import { useAnimationPreferences } from './animation-preferences';
 import * as m from 'motion/react-m';
 
 import { ChevronDownIcon } from '../icons';
@@ -34,7 +34,7 @@ export function Disclosure({
   const contentId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = useReducedMotion();
+  const { reduced: reducedMotion, disabled } = useAnimationPreferences();
 
   if (previousResetKey !== resetKey) {
     setPreviousResetKey(resetKey);
@@ -92,7 +92,7 @@ export function Disclosure({
               duration: reducedMotion ? 0 : 0.22,
               ease: [0.2, 0.8, 0.2, 1],
             },
-            opacity: { duration: reducedMotion ? 0.08 : 0.18 },
+            opacity: { duration: disabled ? 0 : reducedMotion ? 0.08 : 0.18 },
           }}
           style={{ visibility: !open && settledClosed ? 'hidden' : undefined }}
           className="overflow-clip"

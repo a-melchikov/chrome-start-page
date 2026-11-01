@@ -12,6 +12,7 @@ import { Dashboard } from '../../components/dashboard/Dashboard';
 import { WallpaperLayer } from '../../components/dashboard/WallpaperLayer';
 import { classNames } from '../../components/ui/class-names';
 import { Button } from '../../components/ui';
+import { AnimationPreferences } from '../../components/ui/AnimationPreferences';
 import { MotionNotice } from '../../components/ui/MotionNotice';
 import { useDashboardConfig } from '../../hooks/use-dashboard-config';
 import { useSystemDarkMode } from '../../hooks/use-system-dark-mode';
@@ -84,6 +85,7 @@ export function App() {
     setWallpaperEnabled,
     updateAppearance,
     updateToolbar,
+    updateInterfacePreferences,
     updateWidget,
     updateWidgetLayouts,
     saveCustomTheme,
@@ -275,146 +277,149 @@ export function App() {
   }, [fullScreenPreviewDraft, handleReturnFromFullScreenPreview]);
 
   return (
-    <main
-      aria-busy={isLoading}
-      data-theme-motion={themeMotionReady}
-      data-wallpaper-active={wallpaperActive}
-      className={classNames(
-        'dashboard-root relative isolate min-h-screen text-theme-text-primary',
-        liquidGlass.enabled && 'liquid-glass-enabled',
-      )}
-      style={dashboardStyle}
-    >
-      <WallpaperLayer
-        src={wallpaperActive ? wallpaperImage.src : null}
-        onLoad={() => setFailedRemoteWallpaperSrc(null)}
-        onLoadError={() => {
-          if (wallpaperImage.sourceType === 'url') {
-            setFailedRemoteWallpaperSrc(wallpaperImage.src);
-          }
-        }}
-      />
-
-      <MotionNotice
-        className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
-        message={visibleError}
-        role="alert"
-      />
-
-      {/* Floating Bar for Fullscreen Theme Preview */}
-      {fullScreenPreviewDraft && (
-        <div className="dashboard-toolbar liquid-glass-surface fixed top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-theme-border bg-theme-surface/80 p-1 pl-4 text-sm text-theme-text-primary shadow-lg backdrop-blur-md">
-          <span className="text-sm font-medium text-theme-text-secondary">
-            Режим просмотра темы:{' '}
-            <strong className="font-semibold text-theme-text-primary">
-              {fullScreenPreviewDraft.name || 'Моя тема'}
-            </strong>
-          </span>
-          <Button
-            data-theme-preview-return
-            variant="primary"
-            size="small"
-            onClick={handleReturnFromFullScreenPreview}
-          >
-            Вернуться к редактированию
-          </Button>
-        </div>
-      )}
-
-      <div className="dashboard-workspace relative z-10">
-        <Dashboard
-          appearance={appearance}
-          toolbar={config?.toolbar ?? DEFAULT_TOOLBAR}
-          onToolbarChange={updateToolbar}
-          configEpoch={configEpoch}
-          backupError={backupError}
-          config={config}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          conflict={conflict}
-          historyEpoch={historyEpoch}
-          isWidgetActionProcessing={isWidgetActionProcessing}
-          isBackupProcessing={isBackupProcessing}
-          isLoading={isLoading}
-          isWallpaperUpdating={isWallpaperUpdating}
-          wallpaperError={dialogWallpaperError}
-          wallpaperPreviewSrc={wallpaperImage.src}
-          onAddWidget={addWidget}
-          onCopyWidgets={copyWidgets}
-          onDuplicateWidgets={duplicateWidgets}
-          onPasteWidgets={pasteWidgets}
-          onMoveWidgets={moveWidgets}
-          onFinishNudge={finishNudge}
-          onRemoveWidgets={removeWidgets}
-          onUndo={undo}
-          onRedo={redo}
-          onResolveConflict={resolveConflict}
-          onAppearanceChange={updateAppearance}
-          onAppearancePreview={previewAppearance}
-          onClearBackupError={clearBackupError}
-          onClearWallpaperError={() => {
-            clearWallpaperError();
-            setFailedRemoteWallpaperSrc(null);
+    <AnimationPreferences mode={config?.animationMode}>
+      <main
+        aria-busy={isLoading}
+        data-theme-motion={themeMotionReady}
+        data-wallpaper-active={wallpaperActive}
+        className={classNames(
+          'dashboard-root relative isolate min-h-screen text-theme-text-primary',
+          liquidGlass.enabled && 'liquid-glass-enabled',
+        )}
+        style={dashboardStyle}
+      >
+        <WallpaperLayer
+          src={wallpaperActive ? wallpaperImage.src : null}
+          onLoad={() => setFailedRemoteWallpaperSrc(null)}
+          onLoadError={() => {
+            if (wallpaperImage.sourceType === 'url') {
+              setFailedRemoteWallpaperSrc(wallpaperImage.src);
+            }
           }}
-          onFlushWidgetUpdates={flushWidgetUpdates}
-          onFlushAppearancePreview={flushAppearancePreview}
-          onExportDashboard={exportDashboardBackup}
-          onImportDashboard={async (file, signal) => {
-            const result = await importDashboardBackup(file, signal);
-            setFailedRemoteWallpaperSrc(null);
-            return result;
-          }}
-          onRemoveWallpaper={removeWallpaper}
-          onSetWallpaperEnabled={setWallpaperEnabled}
-          onRemoveWidget={removeWidget}
-          onSetLocalWallpaper={setLocalWallpaper}
-          onSetUrlWallpaper={setUrlWallpaper}
-          onUpdateWidget={updateWidget}
-          onUpdateWidgetLayouts={updateWidgetLayouts}
-          onOpenThemeEditor={handleOpenThemeEditor}
-          onSelectTheme={selectTheme}
-          onDuplicateCustomTheme={duplicateCustomTheme}
-          onDeleteCustomTheme={deleteCustomTheme}
-          reopenAppearanceToken={appearanceReopenToken}
-          activeWorkspace={activeWorkspace}
-          activeWorkspaceId={activeWorkspaceId}
-          workspaces={workspaces}
-          onSwitchWorkspace={switchWorkspace}
-          onAddWorkspace={addWorkspace}
-          onRenameWorkspace={renameWorkspace}
-          onDuplicateWorkspace={duplicateWorkspace}
-          onDeleteWorkspace={deleteWorkspace}
-          onReorderWorkspaces={reorderWorkspaces}
         />
-      </div>
 
-      {themeBeingEdited && (
-        <Suspense
-          fallback={
-            <p
-              className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-theme-border bg-theme-surface px-4 py-2 text-sm"
-              role="status"
+        <MotionNotice
+          className="fixed bottom-4 left-1/2 z-20 w-max max-w-[calc(100vw-2rem)] rounded-md bg-red-600 px-3 py-2 text-center text-sm text-white shadow-lg"
+          message={visibleError}
+          role="alert"
+        />
+
+        {/* Floating Bar for Fullscreen Theme Preview */}
+        {fullScreenPreviewDraft && (
+          <div className="dashboard-toolbar liquid-glass-surface fixed top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-theme-border bg-theme-surface/80 p-1 pl-4 text-sm text-theme-text-primary shadow-lg backdrop-blur-md">
+            <span className="text-sm font-medium text-theme-text-secondary">
+              Режим просмотра темы:{' '}
+              <strong className="font-semibold text-theme-text-primary">
+                {fullScreenPreviewDraft.name || 'Моя тема'}
+              </strong>
+            </span>
+            <Button
+              data-theme-preview-return
+              variant="primary"
+              size="small"
+              onClick={handleReturnFromFullScreenPreview}
             >
-              Загружаем редактор темы…
-            </p>
-          }
-        >
-          <CustomThemeEditorDialog
-            key={themeBeingEdited.id}
-            open={isThemeEditorOpen}
-            initialTheme={themeBeingEdited}
-            isNew={isNewTheme}
-            existingThemes={config?.customThemes ?? []}
-            widgets={activeWorkspace?.widgets ?? []}
-            onOpenChange={(open) => {
-              setIsThemeEditorOpen(open);
+              Вернуться к редактированию
+            </Button>
+          </div>
+        )}
+
+        <div className="dashboard-workspace relative z-10">
+          <Dashboard
+            appearance={appearance}
+            toolbar={config?.toolbar ?? DEFAULT_TOOLBAR}
+            onToolbarChange={updateToolbar}
+            onInterfacePreferencesChange={updateInterfacePreferences}
+            configEpoch={configEpoch}
+            backupError={backupError}
+            config={config}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            conflict={conflict}
+            historyEpoch={historyEpoch}
+            isWidgetActionProcessing={isWidgetActionProcessing}
+            isBackupProcessing={isBackupProcessing}
+            isLoading={isLoading}
+            isWallpaperUpdating={isWallpaperUpdating}
+            wallpaperError={dialogWallpaperError}
+            wallpaperPreviewSrc={wallpaperImage.src}
+            onAddWidget={addWidget}
+            onCopyWidgets={copyWidgets}
+            onDuplicateWidgets={duplicateWidgets}
+            onPasteWidgets={pasteWidgets}
+            onMoveWidgets={moveWidgets}
+            onFinishNudge={finishNudge}
+            onRemoveWidgets={removeWidgets}
+            onUndo={undo}
+            onRedo={redo}
+            onResolveConflict={resolveConflict}
+            onAppearanceChange={updateAppearance}
+            onAppearancePreview={previewAppearance}
+            onClearBackupError={clearBackupError}
+            onClearWallpaperError={() => {
+              clearWallpaperError();
+              setFailedRemoteWallpaperSrc(null);
             }}
-            onExited={handleThemeEditorExited}
-            onSave={handleSaveCustomTheme}
-            onPreviewFullScreen={handlePreviewFullScreen}
+            onFlushWidgetUpdates={flushWidgetUpdates}
+            onFlushAppearancePreview={flushAppearancePreview}
+            onExportDashboard={exportDashboardBackup}
+            onImportDashboard={async (file, signal) => {
+              const result = await importDashboardBackup(file, signal);
+              setFailedRemoteWallpaperSrc(null);
+              return result;
+            }}
+            onRemoveWallpaper={removeWallpaper}
+            onSetWallpaperEnabled={setWallpaperEnabled}
+            onRemoveWidget={removeWidget}
+            onSetLocalWallpaper={setLocalWallpaper}
+            onSetUrlWallpaper={setUrlWallpaper}
+            onUpdateWidget={updateWidget}
+            onUpdateWidgetLayouts={updateWidgetLayouts}
+            onOpenThemeEditor={handleOpenThemeEditor}
+            onSelectTheme={selectTheme}
+            onDuplicateCustomTheme={duplicateCustomTheme}
+            onDeleteCustomTheme={deleteCustomTheme}
+            reopenAppearanceToken={appearanceReopenToken}
+            activeWorkspace={activeWorkspace}
+            activeWorkspaceId={activeWorkspaceId}
+            workspaces={workspaces}
+            onSwitchWorkspace={switchWorkspace}
+            onAddWorkspace={addWorkspace}
+            onRenameWorkspace={renameWorkspace}
+            onDuplicateWorkspace={duplicateWorkspace}
+            onDeleteWorkspace={deleteWorkspace}
+            onReorderWorkspaces={reorderWorkspaces}
           />
-        </Suspense>
-      )}
-    </main>
+        </div>
+
+        {themeBeingEdited && (
+          <Suspense
+            fallback={
+              <p
+                className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg border border-theme-border bg-theme-surface px-4 py-2 text-sm"
+                role="status"
+              >
+                Загружаем редактор темы…
+              </p>
+            }
+          >
+            <CustomThemeEditorDialog
+              key={themeBeingEdited.id}
+              open={isThemeEditorOpen}
+              initialTheme={themeBeingEdited}
+              isNew={isNewTheme}
+              existingThemes={config?.customThemes ?? []}
+              widgets={activeWorkspace?.widgets ?? []}
+              onOpenChange={(open) => {
+                setIsThemeEditorOpen(open);
+              }}
+              onExited={handleThemeEditorExited}
+              onSave={handleSaveCustomTheme}
+              onPreviewFullScreen={handlePreviewFullScreen}
+            />
+          </Suspense>
+        )}
+      </main>
+    </AnimationPreferences>
   );
 }

@@ -1,4 +1,9 @@
-import { Suspense, type ComponentType, type ReactNode } from 'react';
+import {
+  Suspense,
+  type ComponentType,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
@@ -13,6 +18,10 @@ import {
 } from './image/defaults';
 import type { ImageWidgetConfig } from './image/types';
 import { createDefaultMarkdownWidget } from './markdown/defaults';
+import {
+  getMarkdownTitleStyle,
+  isMarkdownTypography,
+} from './markdown/typography';
 import {
   createMarkdownWidgetWithTemplate,
   isMarkdownTemplateId,
@@ -117,6 +126,7 @@ interface WidgetDefinition<TConfig extends WidgetConfig> {
   canRead?: (config: TConfig) => boolean;
   canFinishEditing?: (config: TConfig) => boolean;
   presentation: WidgetPresentation;
+  getTitleStyle?: (config: TConfig) => CSSProperties;
 }
 
 export interface RegisteredWidgetDefinition {
@@ -124,6 +134,7 @@ export interface RegisteredWidgetDefinition {
   metadata: WidgetMetadata;
   presentation: WidgetPresentation;
   create: (id: string, index: number) => WidgetConfig;
+  getTitleStyle?: (config: unknown) => CSSProperties | undefined;
   render: (
     config: unknown,
     onChange?: (config: WidgetConfig) => void,
@@ -150,6 +161,12 @@ function defineWidget<TConfig extends WidgetConfig>(
     metadata: definition.metadata,
     presentation: definition.presentation,
     create: definition.create,
+    getTitleStyle: definition.getTitleStyle
+      ? (config) =>
+          definition.isConfig(config)
+            ? definition.getTitleStyle?.(config)
+            : undefined
+      : undefined,
     render: (config, onChange, headerActionsTarget) =>
       definition.isConfig(config) ? (
         <Suspense
@@ -210,6 +227,9 @@ function isMarkdownWidgetConfig(value: unknown): value is MarkdownWidgetConfig {
     'hideCompletedTasks' in value &&
     typeof (value as { hideCompletedTasks: unknown }).hideCompletedTasks ===
       'boolean' &&
+    (!('typography' in value) ||
+      value.typography === undefined ||
+      isMarkdownTypography(value.typography)) &&
     (!('showWebsiteSetButton' in value) ||
       value.showWebsiteSetButton === undefined ||
       typeof value.showWebsiteSetButton === 'boolean')
@@ -318,6 +338,7 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     create: createDefaultMarkdownWidget,
     isConfig: isMarkdownWidgetConfig,
     Renderer: MarkdownWidget,
+    getTitleStyle: (config) => getMarkdownTitleStyle(config.typography),
     Editor: MarkdownWidgetEditor,
     Reader: MarkdownWidgetReader,
     presentation: {

@@ -1,4 +1,5 @@
 import type { BaseWidgetConfig } from '../types';
+import type { MarkdownTypography } from './typography';
 
 export type MarkdownTemplateId =
   'blank' | 'tasks' | 'daily-plan' | 'links' | 'draft';
@@ -9,4 +10,5 @@ export interface MarkdownWidgetConfig extends BaseWidgetConfig<'markdown'> {
   quickAddEnabled: boolean;
   hideCompletedTasks: boolean;
   showWebsiteSetButton?: boolean;
+  typography?: MarkdownTypography;
 }

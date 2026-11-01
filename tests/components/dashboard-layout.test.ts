@@ -120,6 +120,8 @@ describe('dashboard layout', () => {
     const selected = new Set(['first']);
     const widget = createWidget('first', { x: 0, y: 1, w: 3, h: 3 });
     expect(getVisibleGridBottomRow(80, 912)).toBe(13);
+    expect(getVisibleGridBottomRow(80, 912, 32)).toBe(10);
+    expect(getVisibleGridBottomRow(80, 912, 0)).toBe(17);
     expect(
       moveWidgetGroupToEdge([widget], selected, 0, 1, 9)[0]?.layout.y,
     ).toBe(6);

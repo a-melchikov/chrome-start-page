@@ -6,6 +6,7 @@ import { Button } from '../../components/ui';
 import { classNames } from '../../components/ui/class-names';
 import { MarkdownQuickAdd } from './MarkdownQuickAdd';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { DEFAULT_MARKDOWN_TYPOGRAPHY } from './typography';
 import { appendQuickAddEntry } from './quick-add';
 import { analyzeTaskContent } from './task-filter';
 import type { MarkdownWidgetConfig } from './types';
@@ -32,9 +33,16 @@ export function MarkdownWidgetReader({
       tabIndex={0}
       className="h-full overflow-y-auto overscroll-contain px-4 py-6 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring sm:px-8"
     >
-      <div className="mx-auto w-full max-w-[75ch]">
+      <div
+        className="mx-auto w-full"
+        style={{
+          fontSize: config.typography?.fontSize,
+          maxWidth: `${(config.typography ?? DEFAULT_MARKDOWN_TYPOGRAPHY).readerWidth}ch`,
+        }}
+      >
         <MarkdownRenderer
           content={config.content}
+          typography={config.typography}
           hideCompletedTasks={config.hideCompletedTasks}
         />
       </div>
@@ -166,6 +174,7 @@ export function MarkdownWidget({
       <div className="min-h-0 flex-1 overflow-auto overscroll-contain pr-1">
         <MarkdownRenderer
           content={config.content}
+          typography={config.typography}
           hideCompletedTasks={config.hideCompletedTasks}
           onContentChange={
             onChange

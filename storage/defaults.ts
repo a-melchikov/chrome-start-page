@@ -17,6 +17,11 @@ export const DEFAULT_LIQUID_GLASS: Readonly<LiquidGlassConfig> = {
   shadow: 50,
 };
 
+export const DEFAULT_GRID_GAP = 16;
+export const DEFAULT_GRID_PADDING = 24;
+export const MAX_GRID_GAP = 48;
+export const MAX_GRID_PADDING = 64;
+
 export const DEFAULT_WIDGET_BORDER_RADIUS = 12;
 export const MAX_WIDGET_BORDER_RADIUS = 40;
 

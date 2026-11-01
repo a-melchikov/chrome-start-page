@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
+import {
+  bindingFromEvent,
+  getCommandBindings,
+  sameBinding,
+  SHORTCUT_COMMANDS,
+  type ShortcutOverrides,
+} from '../keyboard/shortcuts';
 
 export interface DashboardShortcutsOptions {
+  shortcuts?: ShortcutOverrides;
   canManageWidgets: boolean;
   isEditing: boolean;
   isHelpOpen: boolean;
@@ -46,6 +54,7 @@ function isEditableElement(target: EventTarget | null): boolean {
 }
 
 export function useDashboardShortcuts({
+  shortcuts,
   canManageWidgets,
   isEditing,
   isHelpOpen,
@@ -95,14 +104,27 @@ export function useDashboardShortcuts({
         return;
       }
 
+      if (event.isComposing) return;
       const hasOpenDialog = Boolean(document.querySelector('dialog[open]'));
-      if (
-        event.code === 'KeyK' &&
-        event.ctrlKey &&
-        !event.altKey &&
-        !event.metaKey &&
-        !event.shiftKey
-      ) {
+      const pressed = bindingFromEvent(event);
+      let command = SHORTCUT_COMMANDS.find((item) =>
+        getCommandBindings(item.id, shortcuts).some((candidate) =>
+          sameBinding(candidate, pressed),
+        ),
+      )?.id;
+      // Preserve character shortcuts when a keyboard sends no physical code.
+      if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+        if (event.key === '?' && shortcuts?.help === undefined)
+          command = 'help';
+        else if (
+          !command &&
+          event.key === '/' &&
+          !event.shiftKey &&
+          shortcuts?.palette === undefined
+        )
+          command = 'palette';
+      }
+      if (command === 'palette' && (event.ctrlKey || event.metaKey)) {
         if (!hasOpenDialog && canManageWidgets) {
           event.preventDefault();
           onOpenPalette();
@@ -139,113 +161,42 @@ export function useDashboardShortcuts({
           onCopySelection?.();
           return;
         }
-        if (!event.shiftKey && event.code === 'KeyD' && selectedCount > 0) {
-          event.preventDefault();
-          onDuplicateSelection?.();
+      }
+
+      if (command === 'help' && isHelpOpen) {
+        event.preventDefault();
+        onCloseHelp();
+        return;
+      }
+      if (hasOpenDialog || !canManageWidgets) return;
+      if (command) {
+        if (event.repeat && ['edit', 'toolbar', 'workspace'].includes(command))
           return;
-        }
-      }
-
-      // Modifiers check: standard single-key shortcuts shouldn't fire with Ctrl, Alt, Meta
-      const hasModifiers = event.ctrlKey || event.metaKey || event.altKey;
-
-      // Handle Help toggle: '?' (with Shift) or 'F1'
-      const isHelpKey =
-        !hasModifiers &&
-        (event.key === '?' ||
-          event.code === 'F1' ||
-          (event.code === 'Slash' && event.shiftKey));
-
-      if (isHelpKey) {
-        if (isHelpOpen) {
+        const actions = {
+          edit: onToggleEditing,
+          palette: onOpenPalette,
+          help: onOpenHelp,
+          toolbar: onToggleToolbar,
+          workspace: !isEditing ? onOpenWorkspaceMenu : undefined,
+          settings: onOpenAppearance,
+          backup: onOpenBackup,
+          add: isEditing ? onOpenAddWidget : undefined,
+          duplicate:
+            isEditing && selectedCount > 0 ? onDuplicateSelection : undefined,
+          delete:
+            isEditing && selectedCount > 0
+              ? onRequestDeleteSelection
+              : undefined,
+        };
+        const action = actions[command];
+        if (action) {
           event.preventDefault();
-          onCloseHelp();
-          return;
-        }
-
-        if (!hasOpenDialog && canManageWidgets) {
-          event.preventDefault();
-          onOpenHelp();
-          return;
-        }
-      }
-
-      // For all other shortcuts, block if any dialog is currently open
-      if (hasOpenDialog) {
-        return;
-      }
-
-      if (hasModifiers) {
-        return;
-      }
-
-      // Open command palette: '/' (without Shift/Ctrl/Alt/Meta)
-      if ((event.code === 'Slash' || event.key === '/') && !event.shiftKey) {
-        if (canManageWidgets) {
-          event.preventDefault();
-          onOpenPalette();
+          action();
         }
         return;
       }
-
-      if (!canManageWidgets) {
-        return;
-      }
-
-      if (
-        event.code === 'KeyM' &&
-        !event.shiftKey &&
-        !event.repeat &&
-        onToggleToolbar
-      ) {
-        event.preventDefault();
-        onToggleToolbar();
-        return;
-      }
-
-      // Toggle edit mode: 'E'
-      if (event.code === 'KeyE') {
-        event.preventDefault();
-        onToggleEditing();
-        return;
-      }
-
-      // Open workspace menu in view mode: 'W'
-      if (!isEditing && event.code === 'KeyW') {
-        event.preventDefault();
-        onOpenWorkspaceMenu?.();
-        return;
-      }
-
-      if (event.code === 'KeyP' || event.code === 'KeyO') {
-        event.preventDefault();
-        onOpenAppearance();
-        return;
-      }
-
-      if (event.code === 'KeyB') {
-        event.preventDefault();
-        onOpenBackup();
-        return;
-      }
-
-      // Edit-mode only shortcuts
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (isEditing) {
-        if (selectedCount > 0 && event.code === 'KeyD' && !event.shiftKey) {
-          event.preventDefault();
-          onDuplicateSelection?.();
-          return;
-        }
-
-        if (
-          selectedCount > 0 &&
-          (event.code === 'Delete' || event.code === 'Backspace')
-        ) {
-          event.preventDefault();
-          onRequestDeleteSelection?.();
-          return;
-        }
-
         const directions: Record<string, readonly [number, number]> = {
           ArrowLeft: [-1, 0],
           ArrowRight: [1, 0],
@@ -273,12 +224,6 @@ export function useDashboardShortcuts({
               return;
             }
           }
-        }
-
-        if (event.code === 'KeyA') {
-          event.preventDefault();
-          onOpenAddWidget();
-          return;
         }
       }
     };
@@ -312,6 +257,7 @@ export function useDashboardShortcuts({
       if (onFinishNudge) window.removeEventListener('blur', onFinishNudge);
     };
   }, [
+    shortcuts,
     canManageWidgets,
     isEditing,
     isHelpOpen,

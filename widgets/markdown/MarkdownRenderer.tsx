@@ -1,3 +1,4 @@
+import { getMarkdownTextStyle, type MarkdownTypography } from './typography';
 import {
   Children,
   createContext,
@@ -68,6 +69,7 @@ function MarkdownTaskCheckbox({
 }
 
 interface MarkdownRendererProps {
+  typography?: MarkdownTypography;
   content: string;
   emptyMessage?: string;
   onContentChange?: (content: string) => void;
@@ -536,6 +538,7 @@ export function MarkdownRenderer({
   onContentChange,
   compact = false,
   hideCompletedTasks = false,
+  typography,
 }: MarkdownRendererProps) {
   const [fileNotice, setFileNotice] = useState<string | null>(null);
 
@@ -597,8 +600,12 @@ export function MarkdownRenderer({
     <div
       className={classNames(
         'min-w-0 text-theme-text-secondary',
+        !compact && 'markdown-text',
         compact ? 'text-[10px] leading-snug' : 'text-sm',
       )}
+      style={
+        !compact && typography ? getMarkdownTextStyle(typography) : undefined
+      }
     >
       <ReactMarkdown
         components={components}

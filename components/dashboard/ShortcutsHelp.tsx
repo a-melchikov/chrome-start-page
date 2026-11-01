@@ -1,6 +1,12 @@
+import type {
+  ShortcutCommand,
+  ShortcutOverrides,
+} from '../../keyboard/shortcuts';
+import { ShortcutSettings } from './ShortcutSettings';
 import { classNames } from '../ui/class-names';
 
 interface ShortcutItem {
+  command?: ShortcutCommand;
   keys: readonly string[];
   separator?: string;
   description: string;
@@ -18,33 +24,40 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       {
         keys: ['E'],
         description: 'Режим редактирования',
+        command: 'edit',
       },
       {
         keys: ['Ctrl+K', '/'],
         separator: 'или',
         description: 'Поиск команд',
+        command: 'palette',
       },
       {
         keys: ['?', 'F1'],
         separator: 'или',
         description: 'Справка',
+        command: 'help',
       },
       {
         keys: ['M'],
         description: 'Показать или скрыть панель',
+        command: 'toolbar',
       },
       {
         keys: ['W'],
         description: 'Сменить пространство',
+        command: 'workspace',
       },
       {
         keys: ['P', 'O'],
         separator: 'или',
         description: 'Настройки',
+        command: 'settings',
       },
       {
         keys: ['B'],
         description: 'Резервные копии',
+        command: 'backup',
       },
       {
         keys: ['Esc'],
@@ -58,6 +71,7 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       {
         keys: ['A'],
         description: 'Добавить виджет',
+        command: 'add',
       },
       {
         keys: ['Ctrl+Z', 'Ctrl+Shift+Z'],
@@ -82,10 +96,12 @@ const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
         keys: ['Ctrl+D', 'D'],
         separator: 'или',
         description: 'Дублировать выделение',
+        command: 'duplicate',
       },
       {
         keys: ['Delete'],
         description: 'Удалить выделение',
+        command: 'delete',
       },
       {
         keys: ['← ↑ → ↓', 'Shift+стрелка'],
@@ -104,9 +120,16 @@ function ShortcutKey({ children }: { children: string }) {
   );
 }
 
-export function ShortcutsHelp() {
+export function ShortcutsHelp({
+  shortcuts,
+  onChange,
+}: {
+  shortcuts?: ShortcutOverrides;
+  onChange?: (value: ShortcutOverrides) => void;
+} = {}) {
   return (
     <div className="pb-3">
+      {onChange && <ShortcutSettings value={shortcuts} onChange={onChange} />}
       {SHORTCUT_GROUPS.map((group, groupIndex) => (
         <section
           key={group.title}
@@ -116,28 +139,30 @@ export function ShortcutsHelp() {
             {group.title}
           </h3>
           <ul className="space-y-1">
-            {group.items.map((item) => (
-              <li
-                key={item.description}
-                className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-1.5"
-              >
-                <span className="text-sm text-theme-text-secondary">
-                  {item.description}
-                </span>
-                <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                  {item.keys.map((key, index) => (
-                    <span key={key} className="flex items-center gap-1.5">
-                      {index > 0 && item.separator ? (
-                        <span className="text-xs text-theme-text-secondary">
-                          {item.separator}
-                        </span>
-                      ) : null}
-                      <ShortcutKey>{key}</ShortcutKey>
-                    </span>
-                  ))}
-                </div>
-              </li>
-            ))}
+            {group.items
+              .filter((item) => !onChange || !item.command)
+              .map((item) => (
+                <li
+                  key={item.description}
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-1.5"
+                >
+                  <span className="text-sm text-theme-text-secondary">
+                    {item.description}
+                  </span>
+                  <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                    {item.keys.map((key, index) => (
+                      <span key={key} className="flex items-center gap-1.5">
+                        {index > 0 && item.separator ? (
+                          <span className="text-xs text-theme-text-secondary">
+                            {item.separator}
+                          </span>
+                        ) : null}
+                        <ShortcutKey>{key}</ShortcutKey>
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              ))}
           </ul>
         </section>
       ))}

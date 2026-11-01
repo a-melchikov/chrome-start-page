@@ -20,11 +20,15 @@ import {
 } from '../widgets/image/types';
 import { isSearchEngine } from '../widgets/search/engines';
 import { isMarkdownTemplateId } from '../widgets/markdown/templates';
+import { isShortcutOverrides } from '../keyboard/shortcuts';
+import { isMarkdownTypography } from '../widgets/markdown/typography';
 import type { WeatherLocation } from '../widgets/weather/types';
 import {
   DEFAULT_LIQUID_GLASS,
   DEFAULT_TOOLBAR,
   MAX_WIDGET_BORDER_RADIUS,
+  MAX_GRID_GAP,
+  MAX_GRID_PADDING,
   createDefaultWorkWorkspace,
 } from './defaults';
 import {
@@ -312,6 +316,8 @@ function isWidgetConfig(value: unknown): value is WidgetConfig {
       isMarkdownTemplateId(candidate.template) &&
       typeof candidate.quickAddEnabled === 'boolean' &&
       typeof candidate.hideCompletedTasks === 'boolean' &&
+      (candidate.typography === undefined ||
+        isMarkdownTypography(candidate.typography)) &&
       (candidate.showWebsiteSetButton === undefined ||
         typeof candidate.showWebsiteSetButton === 'boolean')
     );
@@ -625,6 +631,14 @@ export function isWorkspaceConfig(
   if (!isBackgroundColorConfig(value.appearance.backgroundColor)) return false;
   if (!isWallpaperConfig(value.appearance.wallpaper)) return false;
   if (!isLiquidGlassConfig(value.appearance.liquidGlass)) return false;
+  for (const [key, max] of [
+    ['gridGap', MAX_GRID_GAP],
+    ['gridPadding', MAX_GRID_PADDING],
+  ] as const) {
+    const setting = value.appearance[key];
+    if (setting !== undefined && !isIntegerInRange(setting, 0, max))
+      return false;
+  }
   const radius = value.appearance.widgetBorderRadius;
   if (
     radius !== undefined &&
@@ -685,7 +699,12 @@ export function isDashboardConfigV9(value: unknown): value is DashboardConfig {
     isRecord(value) &&
     value.version === DASHBOARD_CONFIG_VERSION &&
     isWorkspaceDashboard(value) &&
-    isToolbarConfig(value.toolbar)
+    isToolbarConfig(value.toolbar) &&
+    (value.animationMode === undefined ||
+      value.animationMode === 'system' ||
+      value.animationMode === 'reduced' ||
+      value.animationMode === 'off') &&
+    (value.shortcuts === undefined || isShortcutOverrides(value.shortcuts))
   );
 }
 

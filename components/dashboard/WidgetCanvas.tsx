@@ -15,6 +15,7 @@ import {
 } from 'react-grid-layout';
 
 import type { WidgetConfig } from '../../storage/schema';
+import { DEFAULT_GRID_GAP, DEFAULT_GRID_PADDING } from '../../storage/defaults';
 import {
   DEFAULT_WIDGET_RESIZE_HANDLES,
   getWidgetDefinition,
@@ -26,7 +27,6 @@ import {
   createGridLayout,
   DASHBOARD_CANVAS_MIN_WIDTH,
   DASHBOARD_GRID_COLUMNS,
-  DASHBOARD_GRID_GAP,
   DASHBOARD_GRID_ROW_HEIGHT,
   getDashboardGridWidth,
   moveWidgetGroup,
@@ -39,6 +39,8 @@ import {
 
 interface WidgetCanvasProps {
   topPadding?: 24 | 80;
+  gridGap?: number;
+  gridPadding?: number;
   onInteractionChange?: (interacting: boolean) => void;
   editingWidgetId: string | null;
   isEditing: boolean;
@@ -75,6 +77,8 @@ const INTERACTIVE_SELECTOR =
 
 export function WidgetCanvas({
   topPadding = 80,
+  gridGap = DEFAULT_GRID_GAP,
+  gridPadding = DEFAULT_GRID_PADDING,
   onInteractionChange,
   editingWidgetId,
   isEditing,
@@ -183,11 +187,10 @@ export function WidgetCanvas({
     const drag = groupDragRef.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     const stepX =
-      (getDashboardGridWidth(width) -
-        (DASHBOARD_GRID_COLUMNS - 1) * DASHBOARD_GRID_GAP) /
+      (getDashboardGridWidth(width) - (DASHBOARD_GRID_COLUMNS - 1) * gridGap) /
         DASHBOARD_GRID_COLUMNS +
-      DASHBOARD_GRID_GAP;
-    const stepY = DASHBOARD_GRID_ROW_HEIGHT + DASHBOARD_GRID_GAP;
+      gridGap;
+    const stepY = DASHBOARD_GRID_ROW_HEIGHT + gridGap;
     const deltaX = Math.round((event.clientX - drag.startX) / stepX);
     const deltaY = Math.round((event.clientY - drag.startY) / stepY);
     if (
@@ -234,8 +237,16 @@ export function WidgetCanvas({
     <>
       <section
         aria-label="Виджеты"
-        className="dashboard-canvas overflow-x-auto px-6 pb-6"
-        style={{ paddingTop: topPadding }}
+        className="dashboard-canvas overflow-x-auto"
+        style={{
+          // Keep the fixed top toolbar clear even with zero outer padding.
+          paddingTop: Math.max(
+            topPadding - DEFAULT_GRID_PADDING + gridPadding,
+            topPadding === 80 ? 64 : 0,
+          ),
+          paddingInline: gridPadding,
+          paddingBottom: gridPadding,
+        }}
         onPointerDown={(event) => {
           if (
             isEditing &&
@@ -265,7 +276,7 @@ export function WidgetCanvas({
                 gridConfig={{
                   cols: DASHBOARD_GRID_COLUMNS,
                   rowHeight: DASHBOARD_GRID_ROW_HEIGHT,
-                  margin: [DASHBOARD_GRID_GAP, DASHBOARD_GRID_GAP],
+                  margin: [gridGap, gridGap],
                   containerPadding: [0, 0],
                 }}
                 layout={gridLayout}

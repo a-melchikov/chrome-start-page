@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 
+import { DEFAULT_GRID_GAP } from '../../storage/defaults';
+
 import type {
   DashboardBackupDownload,
   DashboardImportResult,
 } from '../../storage/dashboard-backup';
 import type {
   AppearanceConfig,
+  InterfacePreferences,
   ToolbarConfig,
   DashboardConfig,
   WidgetConfig,
@@ -33,6 +36,9 @@ interface DashboardProps {
   appearance: AppearanceConfig;
   toolbar: ToolbarConfig;
   onToolbarChange: (toolbar: ToolbarConfig) => void;
+  onInterfacePreferencesChange: (
+    changes: Partial<InterfacePreferences>,
+  ) => void;
   backupError: string | null;
   config: DashboardConfig | null;
   canUndo: boolean;
@@ -103,6 +109,7 @@ export function Dashboard({
   appearance,
   toolbar,
   onToolbarChange,
+  onInterfacePreferencesChange,
   backupError,
   config,
   canUndo,
@@ -368,6 +375,8 @@ export function Dashboard({
           }
         >
           <WidgetCanvas
+            gridGap={appearance.gridGap}
+            gridPadding={appearance.gridPadding}
             key={activeWorkspaceId ?? 'default'}
             topPadding={toolbar.mode === 'top-right' ? 80 : 24}
             onInteractionChange={setIsLayoutInteracting}
@@ -398,6 +407,7 @@ export function Dashboard({
         appearance={appearance}
         toolbar={toolbar}
         onToolbarChange={onToolbarChange}
+        onInterfacePreferencesChange={onInterfacePreferencesChange}
         configEpoch={configEpoch}
         isLayoutInteracting={isLayoutInteracting}
         backupError={backupError}
@@ -439,6 +449,7 @@ export function Dashboard({
               ? getVisibleGridBottomRow(
                   canvas.getBoundingClientRect().top,
                   window.innerHeight,
+                  appearance.gridGap ?? DEFAULT_GRID_GAP,
                 )
               : undefined;
           onMoveWidgets(selectedIds, dx, dy, toEdge, visibleBottomRow);

@@ -12,6 +12,7 @@ import type {
 import {
   isWallpaperEnabled,
   type AppearanceConfig,
+  type InterfacePreferences,
   type ToolbarConfig,
   type DashboardConfig,
   type WidgetType,
@@ -37,6 +38,10 @@ import { MotionNotice } from '../ui/MotionNotice';
 import { AddWidgetDialog } from './AddWidgetDialog';
 import { SelectTemplateDialog } from '../../widgets/markdown/SelectTemplateDialog';
 import type { MarkdownTemplateId } from '../../widgets/markdown/types';
+import {
+  getShortcutLabel,
+  type ShortcutCommand,
+} from '../../keyboard/shortcuts';
 import { ShortcutsHelp } from './ShortcutsHelp';
 import { InterfaceSettings } from './InterfaceSettings';
 import { SettingsPanel, type SettingsSection } from './SettingsPanel';
@@ -66,6 +71,9 @@ interface DashboardControlsProps {
   appearance: AppearanceConfig;
   toolbar: ToolbarConfig;
   onToolbarChange: (toolbar: ToolbarConfig) => void;
+  onInterfacePreferencesChange: (
+    changes: Partial<InterfacePreferences>,
+  ) => void;
   config: DashboardConfig | null;
   configEpoch: number;
   isLayoutInteracting: boolean;
@@ -128,6 +136,7 @@ export function DashboardControls({
   appearance,
   toolbar,
   onToolbarChange,
+  onInterfacePreferencesChange,
   config,
   configEpoch,
   isLayoutInteracting,
@@ -277,7 +286,13 @@ export function DashboardControls({
     }
   };
 
+  const shortcutTitle = (label: string, command: ShortcutCommand) => {
+    const keys = getShortcutLabel(command, config?.shortcuts);
+    return keys ? `${label} (${keys})` : label;
+  };
+
   useDashboardShortcuts({
+    shortcuts: config?.shortcuts,
     canManageWidgets,
     isEditing,
     isHelpOpen: settingsSection === 'shortcuts',
@@ -412,6 +427,7 @@ export function DashboardControls({
         role="status"
       />
       <DashboardToolbar
+        toggleShortcut={getShortcutLabel('toolbar', config?.shortcuts)}
         mode={toolbar.mode}
         isOpen={toolbarState.isOpen}
         toolbarId={toolbarState.toolbarId}
@@ -424,6 +440,7 @@ export function DashboardControls({
       >
         {workspaces && workspaces.length > 0 && onSwitchWorkspace ? (
           <WorkspaceSelector
+            toggleShortcut={getShortcutLabel('workspace', config?.shortcuts)}
             compact={isLeft}
             placement={isLeft ? 'right' : 'below-end'}
             toolbarOwner={toolbarState.toolbarId}
@@ -499,7 +516,7 @@ export function DashboardControls({
                 aria-label="Дублировать выбранные виджеты"
                 disabled={!canManageWidgets}
                 size={isLeft ? 'small' : 'xs'}
-                title="Дублировать (Ctrl+D или D)"
+                title={shortcutTitle('Дублировать', 'duplicate')}
                 variant="ghost"
                 onClick={onDuplicateSelection}
               >
@@ -510,7 +527,7 @@ export function DashboardControls({
                 aria-label="Удалить выбранные виджеты"
                 disabled={!canManageWidgets}
                 size={isLeft ? 'small' : 'xs'}
-                title="Удалить (Delete)"
+                title={shortcutTitle('Удалить', 'delete')}
                 variant="danger-ghost"
                 onClick={onRequestDeleteSelection}
               >
@@ -523,7 +540,7 @@ export function DashboardControls({
             className={isLeft ? 'size-10 shrink-0 !p-0' : undefined}
             disabled={!canManageWidgets}
             size="small"
-            title="Добавить виджет (A)"
+            title={shortcutTitle('Добавить виджет', 'add')}
             variant={isLeft ? 'ghost' : 'secondary'}
             onClick={() => setIsAddWidgetOpen(true)}
           >
@@ -537,7 +554,7 @@ export function DashboardControls({
           aria-label="Настройки"
           disabled={!canManageWidgets || isBackupProcessing}
           size="small"
-          title="Настройки (P, O)"
+          title={shortcutTitle('Настройки', 'settings')}
           variant="ghost"
           onClick={() => {
             openSettings('appearance');
@@ -550,7 +567,7 @@ export function DashboardControls({
           aria-label="Импорт и экспорт"
           disabled={!canManageWidgets || isWallpaperUpdating}
           size="small"
-          title="Импорт и экспорт (B)"
+          title={shortcutTitle('Импорт и экспорт', 'backup')}
           variant="ghost"
           onClick={() => {
             openSettings('backup');
@@ -563,7 +580,7 @@ export function DashboardControls({
           aria-label="Поиск команд"
           disabled={!canManageWidgets}
           size="small"
-          title="Поиск команд (Ctrl+K или /)"
+          title={shortcutTitle('Поиск команд', 'palette')}
           variant="ghost"
           onClick={openPalette}
         >
@@ -574,7 +591,7 @@ export function DashboardControls({
           className="!p-0"
           aria-label="Горячие клавиши"
           size="small"
-          title="Горячие клавиши (?)"
+          title={shortcutTitle('Горячие клавиши', 'help')}
           variant="ghost"
           onClick={() => openSettings('shortcuts')}
         >
@@ -593,8 +610,8 @@ export function DashboardControls({
           size="small"
           title={
             isEditing
-              ? 'Завершить редактирование (Esc или E)'
-              : 'Включить режим редактирования (E)'
+              ? `Завершить редактирование (Esc${getShortcutLabel('edit', config?.shortcuts) ? ` или ${getShortcutLabel('edit', config?.shortcuts)}` : ''})`
+              : shortcutTitle('Включить режим редактирования', 'edit')
           }
           variant="ghost"
           onClick={toggleEditing}
@@ -659,6 +676,10 @@ export function DashboardControls({
           {settingsSection === 'interface' && (
             <InterfaceSettings
               toolbar={toolbar}
+              animationMode={config?.animationMode}
+              onAnimationModeChange={(animationMode) =>
+                onInterfacePreferencesChange({ animationMode })
+              }
               onToolbarChange={onToolbarChange}
             />
           )}
@@ -671,7 +692,14 @@ export function DashboardControls({
               onImport={onImportDashboard}
             />
           )}
-          {settingsSection === 'shortcuts' && <ShortcutsHelp />}
+          {settingsSection === 'shortcuts' && (
+            <ShortcutsHelp
+              shortcuts={config?.shortcuts}
+              onChange={(shortcuts) =>
+                onInterfacePreferencesChange({ shortcuts })
+              }
+            />
+          )}
           {settingsSection === 'workspaces' &&
             workspaces &&
             onReorderWorkspaces && (

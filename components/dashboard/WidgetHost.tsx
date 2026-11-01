@@ -345,6 +345,7 @@ export function WidgetHost({
                     ? 'text-xl'
                     : 'text-sm',
                 )}
+                style={definition?.getTitleStyle?.(widget)}
                 id={titleId}
                 title={visibleTitle || undefined}
               >

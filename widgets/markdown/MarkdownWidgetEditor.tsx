@@ -16,6 +16,8 @@ import { Button, Input, Select, Textarea } from '../../components/ui';
 import { Popover } from '../../components/ui/Popover';
 import { classNames } from '../../components/ui/class-names';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { MarkdownTypographySettings } from './MarkdownTypographySettings';
+import { getMarkdownTitleStyle } from './typography';
 import { MARKDOWN_TEMPLATES, isMarkdownTemplateId } from './templates';
 import {
   applyTextSize,
@@ -403,6 +405,10 @@ export function MarkdownWidgetEditor({
                   </Select>
                 </div>
 
+                <MarkdownTypographySettings
+                  value={config.typography}
+                  onChange={(typography) => onChange({ ...config, typography })}
+                />
                 <div className="border-t border-theme-border-subtle pt-1">
                   <SettingToggle
                     label="Кнопка «Начать работу»"
@@ -463,7 +469,11 @@ export function MarkdownWidgetEditor({
             <Input
               data-dialog-initial-focus
               id={titleId}
-              className="mb-4 !h-7 min-w-0 !rounded-none !border-0 !bg-transparent !p-0 !text-xl !leading-7 font-semibold focus-visible:ring-inset"
+              style={{
+                ...getMarkdownTitleStyle(config.typography),
+                lineHeight: 1.4,
+              }}
+              className="mb-4 !h-auto !min-h-7 min-w-0 !rounded-none !border-0 !bg-transparent !p-0 font-semibold focus-visible:ring-inset"
               placeholder="Заголовок заметки"
               value={config.title ?? ''}
               onChange={(event) =>
@@ -510,11 +520,13 @@ export function MarkdownWidgetEditor({
             <h2
               aria-hidden={!config.title?.trim() || undefined}
               className="mb-4 min-h-7 text-xl font-semibold"
+              style={getMarkdownTitleStyle(config.typography)}
             >
               {config.title?.trim()}
             </h2>
             <MarkdownRenderer
               content={config.content}
+              typography={config.typography}
               hideCompletedTasks={config.hideCompletedTasks}
               onContentChange={updateContent}
             />

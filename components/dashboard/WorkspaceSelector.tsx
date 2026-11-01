@@ -23,6 +23,7 @@ import { Popover } from '../ui/Popover';
 
 interface WorkspaceSelectorProps {
   compact?: boolean;
+  toggleShortcut?: string;
   placement?: 'below-end' | 'right';
   toolbarOwner?: string;
   workspaces: readonly WorkspaceConfig[];
@@ -40,6 +41,7 @@ interface WorkspaceSelectorProps {
 
 export function WorkspaceSelector({
   compact = false,
+  toggleShortcut = 'W',
   placement = 'below-end',
   toolbarOwner,
   workspaces,
@@ -370,11 +372,7 @@ export function WorkspaceSelector({
         aria-expanded={isOpen}
         aria-label={`Пространство: ${activeWorkspace?.name ?? 'Пространство'}`}
         disabled={!canManage}
-        title={
-          compact
-            ? `Пространство: ${activeWorkspace?.name ?? 'Пространство'} (W)`
-            : 'Рабочие пространства (W)'
-        }
+        title={`${compact ? `Пространство: ${activeWorkspace?.name ?? 'Пространство'}` : 'Рабочие пространства'}${toggleShortcut ? ` (${toggleShortcut})` : ''}`}
         onClick={() => {
           if (isOpen) {
             closeMenu();

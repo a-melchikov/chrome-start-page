@@ -14,6 +14,13 @@ import {
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
 import { Disclosure } from '../ui/Disclosure';
+import { RangeField } from '../ui/RangeField';
+import {
+  DEFAULT_GRID_GAP,
+  DEFAULT_GRID_PADDING,
+  MAX_GRID_GAP,
+  MAX_GRID_PADDING,
+} from '../../storage/defaults';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
 import type { AppearanceSection } from './command-catalog';
 
@@ -587,6 +594,39 @@ export function AppearanceSettings({
                 </Button>
               )}
             </div>
+          </div>
+        </section>
+        <section className="space-y-4" data-appearance-section="grid">
+          <h3 className="text-sm font-semibold">Сетка</h3>
+          <div className="space-y-4">
+            <RangeField
+              label="Расстояние между виджетами"
+              value={appearance.gridGap ?? DEFAULT_GRID_GAP}
+              min={0}
+              max={MAX_GRID_GAP}
+              onChange={(gridGap) => onAppearancePreview({ gridGap })}
+              onCommit={onFlushAppearancePreview}
+            />
+            <RangeField
+              label="Отступ от краёв страницы"
+              value={appearance.gridPadding ?? DEFAULT_GRID_PADDING}
+              min={0}
+              max={MAX_GRID_PADDING}
+              onChange={(gridPadding) => onAppearancePreview({ gridPadding })}
+              onCommit={onFlushAppearancePreview}
+            />
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() =>
+                onAppearanceChange({
+                  gridGap: DEFAULT_GRID_GAP,
+                  gridPadding: DEFAULT_GRID_PADDING,
+                })
+              }
+            >
+              Вернуть стандартные отступы
+            </Button>
           </div>
         </section>
         <section className="space-y-4" data-appearance-section="widgets">

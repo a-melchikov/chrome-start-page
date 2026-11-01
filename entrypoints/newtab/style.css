@@ -845,7 +845,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root:is([data-motion='reduced'], [data-motion='off']) {
   *,
   *::before,
   *::after {
@@ -856,7 +856,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root[data-motion='reduced'] {
   .dashboard-dialog,
   .dashboard-dialog[open] {
     transform: none;
@@ -923,4 +923,40 @@
   input::placeholder {
   color: var(--theme-text-primary);
   opacity: 0.8;
+}
+
+/* Typography is applied after sanitization, outside user Markdown. */
+.markdown-text :is(p, li, a, blockquote, ul, ol) {
+  line-height: inherit;
+}
+.markdown-text h1 {
+  font-size: 1.286em;
+}
+.markdown-text h2 {
+  font-size: 1.143em;
+}
+.markdown-text :is(h3, h4) {
+  font-size: 1em;
+}
+.markdown-text :is(h5, h6, table, kbd) {
+  font-size: 0.857em;
+}
+
+:root[data-motion='off'] {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation: none !important;
+  }
+  .dashboard-dialog {
+    transform: none;
+  }
+  @starting-style {
+    .dashboard-dialog[open] {
+      transform: none;
+    }
+  }
 }

@@ -340,7 +340,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+:root:is([data-motion='reduced'], [data-motion='off']) {
   .weather-scene *,
   .weather-scene *::before,
   .weather-scene *::after {

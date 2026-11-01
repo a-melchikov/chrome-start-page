@@ -39,6 +39,7 @@ import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
 import { DEFAULT_APPEARANCE, DEFAULT_LIQUID_GLASS } from '../storage/defaults';
 import type {
   AppearanceConfig,
+  InterfacePreferences,
   DashboardConfig,
   ToolbarConfig,
   WidgetConfig,
@@ -117,6 +118,7 @@ export interface UseDashboardConfigResult {
   setLocalWallpaper: (file: File, signal?: AbortSignal) => Promise<void>;
   setUrlWallpaper: (url: string, signal?: AbortSignal) => Promise<void>;
   setWallpaperEnabled: (enabled: boolean) => Promise<void>;
+  updateInterfacePreferences: (changes: Partial<InterfacePreferences>) => void;
   updateToolbar: (toolbar: ToolbarConfig) => void;
   updateAppearance: (changes: Partial<AppearanceConfig>) => void;
   updateWidget: (widget: WidgetConfig) => void;
@@ -900,6 +902,13 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     [enqueueConfigSave, syncHistoryImageLease],
   );
 
+  const updateInterfacePreferences = useCallback(
+    (changes: Partial<InterfacePreferences>) => {
+      commitConfig((current) => ({ ...current, ...changes }));
+    },
+    [commitConfig],
+  );
+
   const updateToolbar = useCallback(
     (toolbar: ToolbarConfig) => {
       if (configRef.current?.toolbar.mode === toolbar.mode) return;
@@ -1640,6 +1649,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     setWallpaperEnabled,
     updateAppearance,
     updateToolbar,
+    updateInterfacePreferences,
     updateWidget,
     updateWidgetLayouts,
     saveCustomTheme,

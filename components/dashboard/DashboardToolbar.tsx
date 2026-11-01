@@ -6,6 +6,7 @@ import { classNames } from '../ui/class-names';
 
 interface DashboardToolbarProps {
   mode: ToolbarMode;
+  toggleShortcut?: string;
   isOpen: boolean;
   isInteracting: boolean;
   canManage: boolean;
@@ -19,6 +20,7 @@ interface DashboardToolbarProps {
 
 export function DashboardToolbar({
   mode,
+  toggleShortcut = 'M',
   isOpen,
   isInteracting,
   canManage,
@@ -45,7 +47,11 @@ export function DashboardToolbar({
             aria-label="Раскрыть панель управления"
             aria-expanded={isOpen}
             aria-controls={toolbarId}
-            title="Раскрыть панель управления (M)"
+            title={
+              toggleShortcut
+                ? `Раскрыть панель управления (${toggleShortcut})`
+                : 'Раскрыть панель управления'
+            }
             className="dashboard-toolbar-reveal-button dashboard-popover-surface liquid-glass-surface h-16 w-6 rounded-l-none rounded-r-lg !p-0"
             size="small"
             variant="ghost"
@@ -76,7 +82,11 @@ export function DashboardToolbar({
         {isCollapsible && (
           <IconButton
             aria-label="Свернуть панель управления"
-            title="Свернуть панель управления (M)"
+            title={
+              toggleShortcut
+                ? `Свернуть панель управления (${toggleShortcut})`
+                : 'Свернуть панель управления'
+            }
             size="small"
             variant="ghost"
             className="mx-auto mb-2 !p-0"
