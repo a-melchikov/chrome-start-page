@@ -1005,6 +1005,7 @@ describe('toolbar configuration migration', () => {
       ...legacy,
       version: DASHBOARD_CONFIG_VERSION,
       toolbar: { mode: 'top-right' },
+      trashedWorkspaces: [],
     });
     expect(migrated.workspaces).toBe(legacy.workspaces);
   });

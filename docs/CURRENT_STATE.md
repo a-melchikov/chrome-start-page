@@ -38,10 +38,13 @@ Last updated: 2026-10-28
   при скрытой панели. Состояние раскрытия не сохраняется; настройки мигрируют в v9.
 
 - WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.1.
-- Version 9 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
+- Version 10 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
   isolated `widgets`, `layout`, `appearance` (`theme`, `backgroundColor`, `wallpaper`, `liquidGlass`) per workspace, global shared `customThemes`,
   full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.
-- Auto-migration pipeline v1–v8 -> v9 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
+- Auto-migration pipeline v1–v9 -> v10 with default «Основной» and preset «Работа» workspaces, scoped wallpaper/image transactions, and backup format version 3.
+- Корзина пространств без автоматической очистки: единое подтверждение из меню
+  и настроек, восстановление после перезапуска, сохранение ресурсов и перенос
+  корзины в JSON-копии. Окончательное удаление подтверждается отдельно.
 - Global extensible theme system and design tokens (`themes/`, `themes.css`,
   Tailwind CSS 4 `@theme`) with 14 curated presets: System, Light, Dark,
   «Графит и мята» (графитовый фон и мятный акцент по референсу),

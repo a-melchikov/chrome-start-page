@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { WorkspaceConfig } from '../../storage/schema';
+import type { TrashedWorkspace, WorkspaceConfig } from '../../storage/schema';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -10,7 +10,6 @@ import {
   TrashIcon,
 } from '../icons';
 import { Button, IconButton } from '../ui';
-import { ConfirmWidgetDeleteDialog } from './ConfirmWidgetDeleteDialog';
 import { classNames } from '../ui/class-names';
 
 function formatWidgetCountRu(count: number): string {
@@ -32,6 +31,12 @@ interface WorkspaceSettingsProps {
   onDuplicateWorkspace: (id: string) => void;
   onDeleteWorkspace: (id: string) => void;
   onReorderWorkspaces: (orderedIds: readonly string[]) => void;
+  trashedWorkspaces?: readonly TrashedWorkspace[];
+  onRestoreWorkspace: (id: string) => void;
+  onPurgeWorkspace: (id: string) => void;
+  isProcessing: boolean;
+  notice: string | null;
+  error: string | null;
 }
 
 export function WorkspaceSettings({
@@ -43,10 +48,14 @@ export function WorkspaceSettings({
   onDuplicateWorkspace,
   onDeleteWorkspace,
   onReorderWorkspaces,
+  trashedWorkspaces = [],
+  onRestoreWorkspace,
+  onPurgeWorkspace,
+  isProcessing,
+  notice,
+  error,
 }: WorkspaceSettingsProps) {
   const listRef = useRef<HTMLDivElement>(null);
-  const [workspaceToDelete, setWorkspaceToDelete] =
-    useState<WorkspaceConfig | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
@@ -91,26 +100,11 @@ export function WorkspaceSettings({
     setEditingId(null);
   };
 
-  const handleDeleteClick = (workspace: WorkspaceConfig) => {
-    if (workspaces.length <= 1) return;
-    if (workspace.widgets.length > 0) {
-      setWorkspaceToDelete(workspace);
-    } else {
-      onDeleteWorkspace(workspace.id);
-    }
-  };
-
-  const confirmDelete = () => {
-    if (workspaceToDelete) {
-      onDeleteWorkspace(workspaceToDelete.id);
-      setWorkspaceToDelete(null);
-    }
-  };
-
   return (
     <>
-      <div className="space-y-4">
+      <fieldset disabled={isProcessing} className="min-w-0 space-y-4">
         <Button
+          data-workspace-manager-focus
           variant="secondary"
           size="small"
           onClick={() => onAddWorkspace()}
@@ -243,7 +237,7 @@ export function WorkspaceSettings({
                         : 'Удалить'
                     }
                     variant="danger-ghost"
-                    onClick={() => handleDeleteClick(workspace)}
+                    onClick={() => onDeleteWorkspace(workspace.id)}
                   >
                     <TrashIcon className="size-4" />
                   </IconButton>
@@ -252,17 +246,72 @@ export function WorkspaceSettings({
             );
           })}
         </div>
-      </div>
+      </fieldset>
 
-      {workspaceToDelete && (
-        <ConfirmWidgetDeleteDialog
-          open={Boolean(workspaceToDelete)}
-          widgetName={workspaceToDelete.name}
-          widgetCount={workspaceToDelete.widgets.length}
-          onCancel={() => setWorkspaceToDelete(null)}
-          onConfirm={confirmDelete}
-        />
-      )}
+      {notice ? (
+        <p role="status" className="mt-3 text-sm text-theme-text-secondary">
+          {notice}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="mt-3 text-sm text-theme-danger">
+          {error}
+        </p>
+      ) : null}
+      <section
+        aria-labelledby="workspace-trash-title"
+        className="mt-6 space-y-3 border-t border-theme-border pt-5"
+      >
+        <h3 id="workspace-trash-title" className="text-sm font-semibold">
+          Корзина ({trashedWorkspaces.length})
+        </h3>
+        <p className="text-xs text-theme-text-secondary">
+          Пространства хранятся до явного удаления из корзины. Виджеты,
+          изображения и оформление можно восстановить.
+        </p>
+        {trashedWorkspaces.length === 0 ? (
+          <p className="text-sm text-theme-text-secondary">Корзина пуста</p>
+        ) : (
+          <ul className="space-y-3">
+            {trashedWorkspaces.map(({ workspace, deletedAt }) => (
+              <li
+                key={workspace.id}
+                className="space-y-2 rounded-lg border border-theme-border p-3"
+              >
+                <p className="break-words text-sm font-medium">
+                  {workspace.name}
+                </p>
+                <p className="text-xs text-theme-text-secondary">
+                  {formatWidgetCountRu(workspace.widgets.length)} · Удалено{' '}
+                  {new Intl.DateTimeFormat('ru-RU', {
+                    dateStyle: 'medium',
+                  }).format(deletedAt)}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="small"
+                    variant="secondary"
+                    disabled={isProcessing}
+                    aria-label={`Восстановить пространство «${workspace.name}»`}
+                    onClick={() => onRestoreWorkspace(workspace.id)}
+                  >
+                    Восстановить
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="danger-ghost"
+                    disabled={isProcessing}
+                    aria-label={`Удалить навсегда пространство «${workspace.name}»`}
+                    onClick={() => onPurgeWorkspace(workspace.id)}
+                  >
+                    Удалить навсегда
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }

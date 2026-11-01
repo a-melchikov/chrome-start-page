@@ -6,6 +6,7 @@ import {
   saveWallpaperAsset,
 } from './wallpaper-assets';
 import type { LocalWallpaperAssetV1 } from './wallpaper-codec';
+import { getStoredWorkspaces } from './workspace-trash';
 
 export interface WallpaperTransactionResult {
   config: DashboardConfig;
@@ -43,7 +44,7 @@ function withWallpaper(
 
 function collectAllWallpaperAssetIds(config: DashboardConfig): string[] {
   const ids: string[] = [];
-  for (const w of config.workspaces) {
+  for (const w of getStoredWorkspaces(config)) {
     if (w.appearance.wallpaper.type === 'local') {
       ids.push(w.appearance.wallpaper.assetId);
     }
@@ -64,7 +65,7 @@ async function removePreviousLocalAsset(
     return null;
   }
 
-  const isUsedElsewhere = current.workspaces.some(
+  const isUsedElsewhere = getStoredWorkspaces(current).some(
     (w) =>
       w.id !== target.id &&
       w.appearance.wallpaper.type === 'local' &&

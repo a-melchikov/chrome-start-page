@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
@@ -565,7 +566,7 @@ describe('useDashboardConfig layout persistence', () => {
     const current = createDefaultDashboardConfig();
     const importedId = '11111111-1111-4111-8111-111111111111';
     const imported: DashboardConfig = {
-      version: 9,
+      version: DASHBOARD_CONFIG_VERSION,
       toolbar: { mode: 'top-right' },
       activeWorkspaceId: importedId,
       workspaces: [
@@ -760,8 +761,8 @@ describe('useDashboardConfig layout persistence', () => {
     expect(duplicated).toBeDefined();
 
     // Delete workspace
-    act(() => {
-      dashboard.result.current.deleteWorkspace(uchebaId);
+    await act(async () => {
+      await dashboard.result.current.deleteWorkspace(uchebaId);
     });
     expect(dashboard.result.current.workspaces).toHaveLength(3);
     expect(
@@ -776,14 +777,14 @@ describe('useDashboardConfig layout persistence', () => {
     const firstId = dashboard.result.current.workspaces[0]!.id;
     const secondId = dashboard.result.current.workspaces[1]!.id;
 
-    act(() => {
-      dashboard.result.current.deleteWorkspace(secondId);
+    await act(async () => {
+      await dashboard.result.current.deleteWorkspace(secondId);
     });
     expect(dashboard.result.current.workspaces).toHaveLength(1);
 
     // Attempt to delete the last one
-    act(() => {
-      dashboard.result.current.deleteWorkspace(firstId);
+    await act(async () => {
+      await dashboard.result.current.deleteWorkspace(firstId);
     });
     expect(dashboard.result.current.workspaces).toHaveLength(1);
     expect(dashboard.result.current.workspaces[0]!.id).toBe(firstId);

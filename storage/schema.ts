@@ -11,7 +11,7 @@ import type { WeatherWidgetConfig } from '../widgets/weather/types';
 
 import type { CustomTheme, ThemeRef } from '../themes/types';
 
-export const DASHBOARD_CONFIG_VERSION = 9 as const;
+export const DASHBOARD_CONFIG_VERSION = 10 as const;
 
 export type Theme = ThemeRef;
 
@@ -82,6 +82,12 @@ export interface WorkspaceConfig {
   appearance: AppearanceConfig;
 }
 
+export interface TrashedWorkspace {
+  workspace: WorkspaceConfig;
+  deletedAt: number;
+  originalIndex: number;
+}
+
 export type ToolbarMode = 'top-right' | 'left-fixed' | 'left-collapsible';
 
 export interface ToolbarConfig {
@@ -98,5 +104,6 @@ export interface DashboardConfig extends InterfacePreferences {
   version: typeof DASHBOARD_CONFIG_VERSION;
   activeWorkspaceId: string;
   workspaces: WorkspaceConfig[];
+  trashedWorkspaces?: TrashedWorkspace[];
   customThemes: CustomTheme[];
 }

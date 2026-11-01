@@ -17,6 +17,7 @@ import {
 } from '../../storage/image-assets';
 import { saveDashboardConfig } from '../../storage/dashboard-storage';
 import { createDefaultDashboardConfig } from '../../storage/defaults';
+import { trashWorkspace } from '../../storage/workspace-trash';
 
 const ACTIVE_ID_1 = '8dc04e26-6465-4e84-bc05-633c0e28415b';
 const ACTIVE_ID_2 = '3e5f29d1-817e-4f24-9b55-d3c2a6bf9971';
@@ -37,6 +38,25 @@ function createAsset(assetId: string): LocalImageAssetV1 {
 describe('image asset storage', () => {
   beforeEach(() => {
     fakeBrowser.reset();
+  });
+
+  it('retains trash images when a tab lease is released', async () => {
+    const config = createDefaultDashboardConfig();
+    const workspace = config.workspaces[0]!;
+    workspace.widgets = [
+      {
+        id: 'trashed-image',
+        type: 'image',
+        source: { type: 'local', assetId: ACTIVE_ID_1 },
+        objectPosition: 'center',
+        layout: { x: 0, y: 0, w: 4, h: 4 },
+      },
+    ];
+    await saveImageAsset(createAsset(ACTIVE_ID_1));
+    await saveDashboardConfig(trashWorkspace(config, workspace.id));
+    await saveHistoryImageLease('42', [ACTIVE_ID_1]);
+    await releaseClosedTabImageLease(42);
+    expect(await loadImageAsset(ACTIVE_ID_1)).not.toBeNull();
   });
 
   it('stores and loads an asset under its own key', async () => {

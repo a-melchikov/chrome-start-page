@@ -100,6 +100,8 @@ export function App() {
     renameWorkspace,
     duplicateWorkspace,
     deleteWorkspace,
+    restoreWorkspace,
+    purgeWorkspace,
     reorderWorkspaces,
   } = useDashboardConfig();
 
@@ -388,6 +390,8 @@ export function App() {
             onRenameWorkspace={renameWorkspace}
             onDuplicateWorkspace={duplicateWorkspace}
             onDeleteWorkspace={deleteWorkspace}
+            onRestoreWorkspace={restoreWorkspace}
+            onPurgeWorkspace={purgeWorkspace}
             onReorderWorkspaces={reorderWorkspaces}
           />
         </div>

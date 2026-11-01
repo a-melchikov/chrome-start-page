@@ -47,6 +47,7 @@ import { InterfaceSettings } from './InterfaceSettings';
 import { SettingsPanel, type SettingsSection } from './SettingsPanel';
 import { WorkspaceSelector } from './WorkspaceSelector';
 import { WorkspaceSettings } from './WorkspaceSettings';
+import { ConfirmWorkspaceDeleteDialog } from './ConfirmWorkspaceDeleteDialog';
 import { downloadBackup } from './download-backup';
 import type { AppearanceSection, PaletteCommand } from './command-catalog';
 import { openLocalFileLink } from '../../widgets/markdown/open-file-link';
@@ -83,6 +84,7 @@ interface DashboardControlsProps {
   canRedo: boolean;
   isBackupProcessing: boolean;
   isEditing: boolean;
+  isWidgetActionProcessing: boolean;
   isWallpaperUpdating: boolean;
   selectedCount: number;
   wallpaperError: string | null;
@@ -128,7 +130,9 @@ interface DashboardControlsProps {
   ) => void;
   onRenameWorkspace?: (id: string, name: string) => void;
   onDuplicateWorkspace?: (id: string) => void;
-  onDeleteWorkspace?: (id: string) => void;
+  onDeleteWorkspace?: (id: string) => Promise<void>;
+  onRestoreWorkspace?: (id: string) => Promise<void>;
+  onPurgeWorkspace?: (id: string) => Promise<void>;
   onReorderWorkspaces?: (orderedIds: readonly string[]) => void;
 }
 
@@ -146,6 +150,7 @@ export function DashboardControls({
   canRedo,
   isBackupProcessing,
   isEditing,
+  isWidgetActionProcessing,
   isWallpaperUpdating,
   selectedCount,
   wallpaperError,
@@ -186,6 +191,8 @@ export function DashboardControls({
   onRenameWorkspace,
   onDuplicateWorkspace,
   onDeleteWorkspace,
+  onRestoreWorkspace,
+  onPurgeWorkspace,
   onReorderWorkspaces,
 }: DashboardControlsProps) {
   const [settingsSection, setSettingsSection] =
@@ -195,6 +202,24 @@ export function DashboardControls({
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [hasOpenedPalette, setHasOpenedPalette] = useState(false);
+  const [workspaceAction, setWorkspaceAction] = useState<{
+    kind: 'trash' | 'purge';
+    workspace: WorkspaceConfig;
+  } | null>(null);
+  const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [workspaceEpoch, setWorkspaceEpoch] = useState(configEpoch);
+  if (workspaceEpoch !== configEpoch) {
+    setWorkspaceEpoch(configEpoch);
+    setWorkspaceAction(null);
+    setWorkspaceNotice(null);
+    setWorkspaceError(null);
+  }
+  useEffect(() => {
+    if (!workspaceNotice || settingsSection !== null) return;
+    const timer = window.setTimeout(() => setWorkspaceNotice(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [workspaceNotice, settingsSection]);
   const isLeft = toolbar.mode !== 'top-right';
   const toolbarState = useDashboardToolbar({
     mode: toolbar.mode,
@@ -202,6 +227,75 @@ export function DashboardControls({
     resetEpoch: configEpoch,
     onCollapse: () => setIsWorkspaceMenuOpen(false),
   });
+
+  const workspaceReturnFocus = () =>
+    document.querySelector<HTMLElement>(
+      'dialog[open] [data-workspace-manager-focus]',
+    ) ??
+    document.getElementById('workspace-selector-trigger') ??
+    toolbarState.getReturnFocus();
+  const requestWorkspaceDelete = (id: string) => {
+    const workspace = workspaces?.find((w) => w.id === id);
+    if (!canManageWidgets || !workspace || (workspaces?.length ?? 0) <= 1)
+      return;
+    setWorkspaceError(null);
+    setWorkspaceNotice(null);
+    setWorkspaceAction({ kind: 'trash', workspace });
+  };
+  const requestWorkspacePurge = (id: string) => {
+    const workspace = config?.trashedWorkspaces?.find(
+      (entry) => entry.workspace.id === id,
+    )?.workspace;
+    if (!canManageWidgets || !workspace) return;
+    setWorkspaceError(null);
+    setWorkspaceNotice(null);
+    setWorkspaceAction({ kind: 'purge', workspace });
+  };
+  const confirmWorkspaceAction = async () => {
+    if (!workspaceAction || !canManageWidgets) return;
+    const action =
+      workspaceAction.kind === 'trash' ? onDeleteWorkspace : onPurgeWorkspace;
+    if (!action) return;
+    try {
+      await action(workspaceAction.workspace.id);
+      setWorkspaceAction(null);
+      setIsWorkspaceMenuOpen(false);
+      setWorkspaceNotice(
+        workspaceAction.kind === 'trash'
+          ? `Пространство «${workspaceAction.workspace.name}» перемещено в корзину`
+          : `Пространство «${workspaceAction.workspace.name}» удалено навсегда`,
+      );
+    } catch (error) {
+      setWorkspaceError(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось сохранить изменения. Повторите попытку.',
+      );
+    }
+  };
+  const restoreWorkspace = async (id: string) => {
+    if (!canManageWidgets || !onRestoreWorkspace) return;
+    setWorkspaceError(null);
+    setWorkspaceNotice(null);
+    try {
+      await onRestoreWorkspace(id);
+      setWorkspaceNotice('Пространство восстановлено и открыто');
+      requestAnimationFrame(() => {
+        const button = [
+          ...document.querySelectorAll<HTMLButtonElement>(
+            '[data-rename-workspace]',
+          ),
+        ].find((item) => item.dataset.renameWorkspace === id);
+        (button ?? workspaceReturnFocus())?.focus({ preventScroll: true });
+      });
+    } catch (error) {
+      setWorkspaceError(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось восстановить пространство. Повторите попытку.',
+      );
+    }
+  };
 
   const [requestedSection, setRequestedSection] = useState<{
     section: AppearanceSection;
@@ -423,7 +517,9 @@ export function DashboardControls({
     <>
       <MotionNotice
         className="fixed bottom-4 left-1/2 z-30 max-w-[calc(100vw-2rem)] rounded-md border border-theme-border bg-theme-surface px-3 py-2 text-sm shadow-lg"
-        message={paletteFeedback}
+        message={
+          paletteFeedback ?? (settingsSection === null ? workspaceNotice : null)
+        }
         role="status"
       />
       <DashboardToolbar
@@ -453,7 +549,7 @@ export function DashboardControls({
             onAddWorkspace={onAddWorkspace ?? (() => {})}
             onRenameWorkspace={onRenameWorkspace ?? (() => {})}
             onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
-            onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
+            onDeleteWorkspace={requestWorkspaceDelete}
             onOpenManager={() => openSettings('workspaces')}
           />
         ) : null}
@@ -710,12 +806,31 @@ export function DashboardControls({
                 onAddWorkspace={onAddWorkspace ?? (() => {})}
                 onRenameWorkspace={onRenameWorkspace ?? (() => {})}
                 onDuplicateWorkspace={onDuplicateWorkspace ?? (() => {})}
-                onDeleteWorkspace={onDeleteWorkspace ?? (() => {})}
+                onDeleteWorkspace={requestWorkspaceDelete}
                 onReorderWorkspaces={onReorderWorkspaces}
+                trashedWorkspaces={config?.trashedWorkspaces}
+                onRestoreWorkspace={(id) => void restoreWorkspace(id)}
+                onPurgeWorkspace={requestWorkspacePurge}
+                isProcessing={isWidgetActionProcessing}
+                notice={workspaceNotice}
+                error={workspaceAction ? null : workspaceError}
               />
             )}
         </Suspense>
       </SettingsPanel>
+      {workspaceAction ? (
+        <ConfirmWorkspaceDeleteDialog
+          workspace={workspaceAction.workspace}
+          kind={workspaceAction.kind}
+          isProcessing={isWidgetActionProcessing}
+          error={workspaceError}
+          onCancel={() => {
+            if (!isWidgetActionProcessing) setWorkspaceAction(null);
+          }}
+          onConfirm={() => void confirmWorkspaceAction()}
+          returnFocusFallback={workspaceReturnFocus}
+        />
+      ) : null}
       <AddWidgetDialog
         open={isAddWidgetOpen}
         onSelectWidgetType={(type) => {

@@ -141,6 +141,7 @@ export function WorkspaceSelector({
   useEffect(() => {
     if (!isOpen) return;
     const frame = requestAnimationFrame(() => {
+      if (document.querySelector('dialog[open]')) return;
       const menu = menuRef.current;
       (
         menu?.querySelector<HTMLElement>('[data-active-workspace]') ??

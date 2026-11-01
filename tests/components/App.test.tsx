@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import {
   act,
   fireEvent,
@@ -334,7 +335,7 @@ describe('App', () => {
     const user = userEvent.setup();
     const currentId = '11111111-1111-4111-8111-111111111111';
     const current: DashboardConfig = {
-      version: 9,
+      version: DASHBOARD_CONFIG_VERSION,
       toolbar: { mode: 'top-right' },
       activeWorkspaceId: currentId,
       customThemes: [],
@@ -370,7 +371,7 @@ describe('App', () => {
     };
     const importedId = '22222222-2222-4222-8222-222222222222';
     const imported: DashboardConfig = {
-      version: 9,
+      version: DASHBOARD_CONFIG_VERSION,
       toolbar: { mode: 'top-right' },
       activeWorkspaceId: importedId,
       customThemes: [],

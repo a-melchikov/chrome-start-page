@@ -1,3 +1,4 @@
+import { DASHBOARD_CONFIG_VERSION } from '../../storage/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { storage } from 'wxt/utils/storage';
@@ -37,7 +38,7 @@ function createAsset(assetId: string): LocalWallpaperAssetV1 {
 
 function createConfig(wallpaper: WallpaperConfig): DashboardConfig {
   return {
-    version: 9,
+    version: DASHBOARD_CONFIG_VERSION,
     toolbar: { mode: 'top-right' },
     activeWorkspaceId: WORKSPACE_ID,
     workspaces: [

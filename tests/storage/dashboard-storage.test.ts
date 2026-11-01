@@ -31,7 +31,7 @@ describe('dashboard storage', () => {
   it('saves and loads a config without losing widget data', async () => {
     const workspaceId = '12c8b540-4847-45b3-98b7-d13b00833041';
     const config: DashboardConfig = {
-      version: 9,
+      version: DASHBOARD_CONFIG_VERSION,
       toolbar: { mode: 'top-right' },
       activeWorkspaceId: workspaceId,
       workspaces: [

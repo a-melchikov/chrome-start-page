@@ -52,12 +52,17 @@ export function Dialog({
 }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const returnFocusFallbackRef = useRef(returnFocusFallback);
   const titleId = useId();
   const descriptionId = useId();
   const isFullscreen = size === 'fullscreen';
   const isCompact = size === 'compact';
   const isDrawer = size === 'drawer';
   const isLauncher = size === 'launcher';
+
+  useEffect(() => {
+    returnFocusFallbackRef.current = returnFocusFallback;
+  }, [returnFocusFallback]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -124,13 +129,13 @@ export function Dialog({
       if (dialog?.open) {
         dialog.close();
         const previous = returnFocusRef.current;
-        if (
+        const returnTarget =
           previous?.isConnected &&
           !previous.closest('[inert]') &&
           (!previous.closest('dialog') || previous.closest('dialog')?.open)
-        ) {
-          previous.focus({ preventScroll: true });
-        }
+            ? previous
+            : returnFocusFallbackRef.current?.();
+        returnTarget?.focus({ preventScroll: true });
       }
     };
   }, []);

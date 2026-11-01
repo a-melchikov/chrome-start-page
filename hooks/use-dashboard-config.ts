@@ -36,6 +36,12 @@ import {
   type WallpaperTransactionResult,
 } from '../storage/wallpaper-transactions';
 import { cleanupOrphanedWallpaperAssets } from '../storage/wallpaper-assets';
+import {
+  getStoredWorkspaces,
+  trashWorkspace,
+  restoreWorkspace as restoreTrashedWorkspace,
+  purgeWorkspace as purgeTrashedWorkspace,
+} from '../storage/workspace-trash';
 import { DEFAULT_APPEARANCE, DEFAULT_LIQUID_GLASS } from '../storage/defaults';
 import type {
   AppearanceConfig,
@@ -134,7 +140,9 @@ export interface UseDashboardConfigResult {
   addWorkspace: (name?: string) => void;
   renameWorkspace: (workspaceId: string, name: string) => void;
   duplicateWorkspace: (workspaceId: string) => void;
-  deleteWorkspace: (workspaceId: string) => void;
+  deleteWorkspace: (workspaceId: string) => Promise<void>;
+  restoreWorkspace: (workspaceId: string) => Promise<void>;
+  purgeWorkspace: (workspaceId: string) => Promise<void>;
   reorderWorkspaces: (orderedIds: readonly string[]) => void;
 }
 
@@ -304,21 +312,27 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     });
   }, []);
 
-  const syncHistoryImageLease = useCallback(() => {
-    const historyWidgets = [
-      ...(configRef.current?.workspaces.flatMap((w) => w.widgets) ?? []),
-      ...collectHistoryWidgets(undoStackRef.current),
-      ...collectHistoryWidgets(redoStackRef.current),
-    ];
-    return saveHistoryImageLease(leaseTabIdRef.current, [
-      ...collectLocalImageAssetIds(historyWidgets),
-    ]);
-  }, []);
+  const syncHistoryImageLease = useCallback(
+    (snapshot: DashboardConfig | null = configRef.current) => {
+      const historyWidgets = [
+        ...(snapshot
+          ? getStoredWorkspaces(snapshot).flatMap((w) => w.widgets)
+          : []),
+        ...collectHistoryWidgets(undoStackRef.current),
+        ...collectHistoryWidgets(redoStackRef.current),
+      ];
+      return saveHistoryImageLease(leaseTabIdRef.current, [
+        ...collectLocalImageAssetIds(historyWidgets),
+      ]);
+    },
+    [],
+  );
 
   const cleanupHistoryAssets = useCallback(
     (previous: readonly WidgetConfig[]) => {
-      const current =
-        configRef.current?.workspaces.flatMap((w) => w.widgets) ?? [];
+      const current = configRef.current
+        ? getStoredWorkspaces(configRef.current).flatMap((w) => w.widgets)
+        : [];
       const retained = [
         ...current,
         ...collectHistoryWidgets(undoStackRef.current),
@@ -421,7 +435,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
           acceptedConfigRef.current = result.config;
           rememberOwned(result.config);
           if (previous) {
-            const currentWidgets = result.config.workspaces.flatMap(
+            const currentWidgets = getStoredWorkspaces(result.config).flatMap(
               (w) => w.widgets,
             );
             const retained = [
@@ -429,7 +443,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
               ...collectHistoryWidgets(undoStackRef.current),
               ...collectHistoryWidgets(redoStackRef.current),
             ];
-            const previousWidgets = previous.workspaces.flatMap(
+            const previousWidgets = getStoredWorkspaces(previous).flatMap(
               (w) => w.widgets,
             );
             await cleanupUnusedImageAssets(previousWidgets, retained).catch(
@@ -439,6 +453,15 @@ export function useDashboardConfig(): UseDashboardConfigResult {
               previousWidgets,
               currentWidgets,
             ).catch(() => undefined);
+            const wallpaperIds = getStoredWorkspaces(result.config).flatMap(
+              (w) =>
+                w.appearance.wallpaper.type === 'local'
+                  ? [w.appearance.wallpaper.assetId]
+                  : [],
+            );
+            await cleanupOrphanedWallpaperAssets(wallpaperIds).catch(
+              () => undefined,
+            );
           }
           return result;
         } finally {
@@ -573,7 +596,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
           const latest = await readStoredDashboardConfig();
           if (latest) {
             await cleanupOrphanedImageAssets(
-              collectAllWorkspaceImageAssetIds(latest.workspaces),
+              collectAllWorkspaceImageAssetIds(getStoredWorkspaces(latest)),
             );
           }
         }).catch(() => undefined);
@@ -602,7 +625,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
             const latest = await readStoredDashboardConfig();
             if (latest)
               await cleanupOrphanedImageAssets(
-                collectAllWorkspaceImageAssetIds(latest.workspaces),
+                collectAllWorkspaceImageAssetIds(getStoredWorkspaces(latest)),
               );
           }),
         )
@@ -1021,22 +1044,26 @@ export function useDashboardConfig(): UseDashboardConfigResult {
 
   const deleteCustomTheme = useCallback(
     (id: string) => {
+      const resetTheme = (workspace: WorkspaceConfig): WorkspaceConfig =>
+        workspace.appearance.theme.type === 'custom' &&
+        workspace.appearance.theme.id === id
+          ? {
+              ...workspace,
+              appearance: {
+                ...workspace.appearance,
+                theme: { type: 'builtin', id: 'system' },
+                backgroundColor: { type: 'theme' },
+              },
+            }
+          : workspace;
       commitConfig((currentConfig) => ({
         ...currentConfig,
         customThemes: currentConfig.customThemes.filter((t) => t.id !== id),
-        workspaces: currentConfig.workspaces.map((workspace) =>
-          workspace.appearance.theme.type === 'custom' &&
-          workspace.appearance.theme.id === id
-            ? {
-                ...workspace,
-                appearance: {
-                  ...workspace.appearance,
-                  theme: { type: 'builtin', id: 'system' },
-                  backgroundColor: { type: 'theme' },
-                },
-              }
-            : workspace,
-        ),
+        workspaces: currentConfig.workspaces.map(resetTheme),
+        trashedWorkspaces: currentConfig.trashedWorkspaces?.map((entry) => ({
+          ...entry,
+          workspace: resetTheme(entry.workspace),
+        })),
       }));
     },
     [commitConfig],
@@ -1474,57 +1501,83 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     [clearHistory, commitConfig, flushPendingUpdates],
   );
 
-  const deleteWorkspace = useCallback(
-    (workspaceId: string) => {
-      const currentConfig = configRef.current;
+  const runWorkspaceTrashAction = useCallback(
+    async (update: (current: DashboardConfig) => DashboardConfig) => {
       if (
-        !currentConfig ||
-        currentConfig.workspaces.length <= 1 ||
+        widgetActionRef.current ||
         conflictRef.current ||
-        widgetActionRef.current
+        backupOperationRef.current ||
+        wallpaperOperationRef.current
       ) {
-        return;
+        throw new Error('Дождитесь завершения текущей операции');
       }
-
-      const index = currentConfig.workspaces.findIndex(
-        (w) => w.id === workspaceId,
-      );
-      if (index === -1) return;
-
       flushPendingUpdates();
-
-      let nextActiveId = currentConfig.activeWorkspaceId;
-      if (currentConfig.activeWorkspaceId === workspaceId) {
-        clearHistory();
-        const remainingWorkspaces = currentConfig.workspaces.filter(
-          (w) => w.id !== workspaceId,
+      widgetActionRef.current = true;
+      setIsWidgetActionProcessing(true);
+      try {
+        const result = await enqueueStorageOperation(() =>
+          runCheckedWrite(async () => {
+            const current = configRef.current;
+            if (!current)
+              throw new Error('Настройки дашборда ещё не загружены');
+            const next = update(current);
+            if (next !== current) {
+              await saveDashboardConfig(next);
+              await syncHistoryImageLease(next).catch(() => undefined);
+            }
+            return { config: next };
+          }),
         );
-        const nextIndex = Math.min(index, remainingWorkspaces.length - 1);
-        nextActiveId = remainingWorkspaces[nextIndex]!.id;
-      }
-
-      const deletedWorkspace = currentConfig.workspaces[index]!;
-      commitConfig((config) => ({
-        ...config,
-        activeWorkspaceId: nextActiveId,
-        workspaces: config.workspaces.filter((w) => w.id !== workspaceId),
-      }));
-
-      cleanupHistoryAssets(deletedWorkspace.widgets);
-      if (deletedWorkspace.appearance.wallpaper.type === 'local') {
-        const remainingWallpaperIds = currentConfig.workspaces
-          .filter((w) => w.id !== workspaceId)
-          .map((w) => w.appearance.wallpaper)
-          .filter(
-            (w): w is { type: 'local'; assetId: string } => w.type === 'local',
-          )
-          .map((w) => w.assetId);
-        void cleanupOrphanedWallpaperAssets(remainingWallpaperIds).catch(
-          () => undefined,
-        );
+        const switched =
+          configRef.current?.activeWorkspaceId !==
+          result.config.activeWorkspaceId;
+        configRef.current = result.config;
+        if (isMountedRef.current) {
+          setConfig(result.config);
+          setError(null);
+          if (switched) clearHistory();
+        }
+      } catch (actionError) {
+        if (
+          isMountedRef.current &&
+          !(actionError instanceof DashboardConflictError)
+        )
+          setError(getErrorMessage(actionError));
+        throw actionError;
+      } finally {
+        widgetActionRef.current = false;
+        if (isMountedRef.current) setIsWidgetActionProcessing(false);
       }
     },
-    [cleanupHistoryAssets, clearHistory, commitConfig, flushPendingUpdates],
+    [
+      clearHistory,
+      enqueueStorageOperation,
+      flushPendingUpdates,
+      runCheckedWrite,
+      syncHistoryImageLease,
+    ],
+  );
+
+  const deleteWorkspace = useCallback(
+    (workspaceId: string) =>
+      runWorkspaceTrashAction((current) =>
+        trashWorkspace(current, workspaceId),
+      ),
+    [runWorkspaceTrashAction],
+  );
+  const restoreWorkspace = useCallback(
+    (workspaceId: string) =>
+      runWorkspaceTrashAction((current) =>
+        restoreTrashedWorkspace(current, workspaceId),
+      ),
+    [runWorkspaceTrashAction],
+  );
+  const purgeWorkspace = useCallback(
+    (workspaceId: string) =>
+      runWorkspaceTrashAction((current) =>
+        purgeTrashedWorkspace(current, workspaceId),
+      ),
+    [runWorkspaceTrashAction],
   );
 
   const reorderWorkspaces = useCallback(
@@ -1597,7 +1650,7 @@ export function useDashboardConfig(): UseDashboardConfigResult {
         clearHistory();
         void withDashboardWriteLock(() =>
           cleanupOrphanedImageAssets(
-            collectAllWorkspaceImageAssetIds(resolved.workspaces),
+            collectAllWorkspaceImageAssetIds(getStoredWorkspaces(resolved)),
           ),
         ).catch(() => undefined);
       } catch (resolutionError) {
@@ -1661,6 +1714,8 @@ export function useDashboardConfig(): UseDashboardConfigResult {
     renameWorkspace,
     duplicateWorkspace,
     deleteWorkspace,
+    restoreWorkspace,
+    purgeWorkspace,
     reorderWorkspaces,
   };
 }

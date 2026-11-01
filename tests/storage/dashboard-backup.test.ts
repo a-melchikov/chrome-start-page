@@ -29,6 +29,10 @@ import { loadImageAsset, saveImageAsset } from '../../storage/image-assets';
 import type { LocalWallpaperAssetV1 } from '../../storage/wallpaper-codec';
 import type { DashboardConfig, WallpaperConfig } from '../../storage/schema';
 import type { ImageWidgetConfig } from '../../widgets/image/types';
+import {
+  restoreWorkspace,
+  trashWorkspace,
+} from '../../storage/workspace-trash';
 
 const OLD_ASSET_ID = '8dc04e26-6465-4e84-bc05-633c0e28415b';
 const EXPORTED_ASSET_ID = '7af1599d-ae5f-4590-9791-bc299eb3b4db';
@@ -654,5 +658,72 @@ describe('toolbar backup compatibility', () => {
     );
     expect(parsed.dashboard.toolbar).toEqual({ mode: 'top-right' });
     expect(parsed.dashboard.workspaces).toEqual(config.workspaces);
+  });
+});
+
+describe('workspace trash backup', () => {
+  beforeEach(() => {
+    fakeBrowser.reset();
+    imageShouldDecode = true;
+    vi.stubGlobal('Image', FakeImage);
+  });
+
+  it('exports, imports and restores trash with remapped local image and wallpaper assets', async () => {
+    const config = createConfig({ type: 'local', assetId: EXPORTED_ASSET_ID });
+    const original = config.workspaces[0]!;
+    original.widgets = [
+      {
+        id: 'trashed-image',
+        type: 'image',
+        source: { type: 'local', assetId: OLD_ASSET_ID },
+        objectPosition: 'center',
+        layout: { x: 0, y: 1, w: 4, h: 4 },
+      },
+    ];
+    await saveWallpaperAsset(createAsset(EXPORTED_ASSET_ID));
+    await saveImageAsset(createAsset(OLD_ASSET_ID));
+    const trashed = trashWorkspace(config, original.id);
+    const backup = await createDashboardBackup(trashed);
+    expect(backup.localWallpapers).toHaveLength(1);
+    expect(backup.localImages).toHaveLength(1);
+    const parsed = parseDashboardBackupJson(serializeDashboardBackup(backup));
+    const prepared = await prepareDashboardImport(
+      serializeDashboardBackup(parsed),
+    );
+    const restoredEntry = prepared.dashboard.trashedWorkspaces![0]!.workspace;
+    const wallpaper = restoredEntry.appearance.wallpaper;
+    const image = restoredEntry.widgets[0]!;
+    expect(wallpaper.type).toBe('local');
+    expect(image.type).toBe('image');
+    if (
+      wallpaper.type !== 'local' ||
+      image.type !== 'image' ||
+      image.source.type !== 'local'
+    )
+      throw new Error('Missing imported resources');
+    expect(wallpaper.assetId).not.toBe(EXPORTED_ASSET_ID);
+    expect(image.source.assetId).not.toBe(OLD_ASSET_ID);
+    await saveDashboardConfig(trashed);
+    const imported = await replaceDashboardFromBackup(trashed, prepared);
+    const restored = restoreWorkspace(imported.config, original.id);
+    expect(restored.activeWorkspaceId).toBe(original.id);
+    expect(restored.workspaces[0]).toEqual(restoredEntry);
+    expect(await loadWallpaperAsset(wallpaper.assetId)).not.toBeNull();
+    expect(await loadImageAsset(image.source.assetId)).not.toBeNull();
+  });
+
+  it('rejects a backup that omits assets used only by the trash', async () => {
+    const config = createConfig({ type: 'local', assetId: EXPORTED_ASSET_ID });
+    const trashed = trashWorkspace(config, config.workspaces[0]!.id);
+    expect(() =>
+      parseDashboardBackup({
+        format: DASHBOARD_BACKUP_FORMAT,
+        formatVersion: DASHBOARD_BACKUP_FORMAT_VERSION,
+        exportedAt: EXPORTED_AT,
+        dashboard: trashed,
+        localWallpapers: [],
+        localImages: [],
+      }),
+    ).toThrow('В резервной копии отсутствуют локальные обои');
   });
 });

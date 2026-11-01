@@ -21,6 +21,7 @@ import {
 import { saveDashboardConfig } from './dashboard-storage';
 import { clearWeatherCaches } from './weather-cache';
 import type { DashboardConfig } from './schema';
+import { getStoredWorkspaces } from './workspace-trash';
 
 import {
   WallpaperValidationAbortedError,
@@ -139,7 +140,7 @@ export async function createDashboardBackup(
   const localWallpapers: LocalWallpaperAssetV1[] = [];
   const seenWallpaperIds = new Set<string>();
 
-  for (const workspace of dashboard.workspaces) {
+  for (const workspace of getStoredWorkspaces(dashboard)) {
     const wallpaper = workspace.appearance.wallpaper;
     if (
       wallpaper.type === 'local' &&
@@ -166,7 +167,7 @@ export async function createDashboardBackup(
   const localImages: LocalImageAssetV1[] = [];
   const seenImageIds = new Set<string>();
 
-  for (const workspace of dashboard.workspaces) {
+  for (const workspace of getStoredWorkspaces(dashboard)) {
     for (const widget of workspace.widgets) {
       if (widget.type === 'image' && widget.source.type === 'local') {
         const assetId = widget.source.assetId;
@@ -283,7 +284,7 @@ export function parseDashboardBackup(value: unknown): DashboardBackupV3 {
     }
   }
 
-  for (const workspace of dashboard.workspaces) {
+  for (const workspace of getStoredWorkspaces(dashboard)) {
     const wallpaper = workspace.appearance.wallpaper;
     if (wallpaper.type === 'local') {
       if (!wallpaperAssetIdsInBackup.has(wallpaper.assetId)) {
@@ -322,7 +323,7 @@ export function parseDashboardBackup(value: unknown): DashboardBackupV3 {
       localImages.push(asset);
     }
 
-    for (const workspace of dashboard.workspaces) {
+    for (const workspace of getStoredWorkspaces(dashboard)) {
       for (const widget of workspace.widgets) {
         if (widget.type === 'image' && widget.source.type === 'local') {
           if (!imageAssetIdsInBackup.has(widget.source.assetId)) {
@@ -449,7 +450,7 @@ export async function prepareDashboardImport(
   }
 
   const updatedWorkspaces = await Promise.all(
-    backup.dashboard.workspaces.map(async (workspace) => {
+    getStoredWorkspaces(backup.dashboard).map(async (workspace) => {
       let wallpaper = workspace.appearance.wallpaper;
       if (wallpaper.type === 'url') {
         throwIfAborted(signal);
@@ -492,7 +493,17 @@ export async function prepareDashboardImport(
   return {
     dashboard: {
       ...backup.dashboard,
-      workspaces: updatedWorkspaces,
+      workspaces: updatedWorkspaces.slice(
+        0,
+        backup.dashboard.workspaces.length,
+      ),
+      trashedWorkspaces: backup.dashboard.trashedWorkspaces?.map(
+        (entry, index) => ({
+          ...entry,
+          workspace:
+            updatedWorkspaces[backup.dashboard.workspaces.length + index]!,
+        }),
+      ),
     },
     localWallpapers: preparedWallpapers,
     localImages: preparedLocalImages,
@@ -536,7 +547,7 @@ export async function replaceDashboardFromBackup(
   }
 
   const activeWallpaperIds = new Set(
-    config.workspaces
+    getStoredWorkspaces(config)
       .map((w) => w.appearance.wallpaper)
       .filter(
         (w): w is { type: 'local'; assetId: string } => w.type === 'local',
@@ -545,7 +556,7 @@ export async function replaceDashboardFromBackup(
   );
 
   let warning: string | null = null;
-  const currentWallpaperIds = currentConfig.workspaces
+  const currentWallpaperIds = getStoredWorkspaces(currentConfig)
     .map((w) => w.appearance.wallpaper)
     .filter((w): w is { type: 'local'; assetId: string } => w.type === 'local')
     .map((w) => w.assetId);
@@ -568,7 +579,7 @@ export async function replaceDashboardFromBackup(
   }
 
   const activeImageAssetIds = new Set<string>();
-  for (const workspace of config.workspaces) {
+  for (const workspace of getStoredWorkspaces(config)) {
     for (const widget of workspace.widgets) {
       if (widget.type === 'image' && widget.source.type === 'local') {
         activeImageAssetIds.add(widget.source.assetId);

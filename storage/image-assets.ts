@@ -5,6 +5,7 @@ import {
   withDashboardWriteLock,
 } from './dashboard-storage';
 import { isImageAssetId } from './schema';
+import { getStoredWorkspaces } from './workspace-trash';
 import {
   InvalidWallpaperAssetError,
   parseWallpaperAsset,
@@ -104,7 +105,7 @@ export async function releaseClosedTabImageLease(tabId: number): Promise<void> {
     const config = await readStoredDashboardConfig();
     if (config) {
       await cleanupOrphanedImageAssets(
-        collectAllWorkspaceImageAssetIds(config.workspaces),
+        collectAllWorkspaceImageAssetIds(getStoredWorkspaces(config)),
       );
     }
   });

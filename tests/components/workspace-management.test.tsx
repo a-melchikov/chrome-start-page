@@ -1,9 +1,15 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { App } from '../../entrypoints/newtab/App';
+import {
+  loadDashboardConfig,
+  saveDashboardConfig,
+} from '../../storage/dashboard-storage';
+import { createDefaultDashboardConfig } from '../../storage/defaults';
+import { trashWorkspace } from '../../storage/workspace-trash';
 
 describe('Workspace management', () => {
   beforeEach(() => {
@@ -210,5 +216,183 @@ describe('Workspace management', () => {
     await user.keyboard('{Escape}');
     expect(trigger).toHaveFocus();
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+});
+
+describe('safe workspace deletion', () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  it('requires separate confirmation for permanent deletion and preserves the last workspace', async () => {
+    const user = userEvent.setup();
+    const config = createDefaultDashboardConfig();
+    await saveDashboardConfig(trashWorkspace(config, config.workspaces[1]!.id));
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(screen.getByRole('tab', { name: 'Пространства' }));
+    const remove = screen.getByRole('button', {
+      name: 'Удалить навсегда пространство «Работа»',
+    });
+    await user.click(remove);
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Удалить пространство навсегда?',
+    });
+    expect(confirmation).toHaveTextContent(
+      'Восстановить их без резервной копии не получится',
+    );
+    await user.keyboard('{Escape}');
+    expect(remove).toHaveFocus();
+    expect((await loadDashboardConfig()).trashedWorkspaces).toHaveLength(1);
+    await user.click(remove);
+    await user.click(
+      within(
+        screen.getByRole('dialog', { name: 'Удалить пространство навсегда?' }),
+      ).getByRole('button', { name: 'Удалить навсегда' }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText('Корзина пуста')).toBeVisible(),
+    );
+    const stored = await loadDashboardConfig();
+    expect(stored.trashedWorkspaces).toEqual([]);
+    expect(stored.workspaces).toHaveLength(1);
+    expect(
+      screen.getByRole('button', { name: 'Удалить пространство' }),
+    ).toBeDisabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Добавить пространство' }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it.each(['menu', 'settings'] as const)(
+    'confirms even an empty workspace from %s and cancels with focus restored',
+    async (source) => {
+      const user = userEvent.setup();
+      render(<App />);
+      const trigger = await screen.findByRole('button', {
+        name: 'Пространство: Основной',
+      });
+      let remove: HTMLElement;
+      if (source === 'menu') {
+        await user.click(trigger);
+        const row = screen.getByRole('menuitem', {
+          name: 'Основной',
+        }).parentElement!;
+        remove = within(row).getByRole('button', {
+          name: 'Удалить',
+        });
+      } else {
+        await user.click(screen.getByRole('button', { name: 'Настройки' }));
+        await user.click(screen.getByRole('tab', { name: 'Пространства' }));
+        remove = screen.getAllByRole('button', {
+          name: 'Удалить пространство',
+        })[0]!;
+      }
+      await user.click(remove);
+      const confirmation = screen.getByRole('dialog', {
+        name: 'Переместить пространство в корзину?',
+      });
+      expect(within(confirmation).getByText(/«Основной»/)).toBeVisible();
+      expect(confirmation).toHaveTextContent('Виджетов: 0');
+      expect(
+        within(confirmation).getByRole('button', { name: 'Отмена' }),
+      ).toHaveFocus();
+      expect(confirmation).not.toHaveTextContent('Действие можно отменить');
+      await user.keyboard('{Escape}');
+      await waitFor(() => expect(remove).toHaveFocus());
+      expect((await loadDashboardConfig()).workspaces).toHaveLength(2);
+    },
+  );
+
+  it('persists the trash across a new App mount and restores the complete workspace', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+    await user.click(
+      await screen.findByRole('button', { name: 'Пространство: Основной' }),
+    );
+    const original = (await loadDashboardConfig()).workspaces[1]!;
+    const row = screen.getByRole('menuitem', { name: 'Работа' }).parentElement!;
+    await user.click(within(row).getByRole('button', { name: 'Удалить' }));
+    const confirmation = screen.getByRole('dialog', {
+      name: 'Переместить пространство в корзину?',
+    });
+    expect(confirmation).toHaveTextContent('Виджетов: 3');
+    await user.click(
+      within(confirmation).getByRole('button', { name: 'В корзину' }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', {
+          name: 'Переместить пространство в корзину?',
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Пространство: Основной' }),
+      ).toHaveFocus(),
+    );
+    expect(
+      (await loadDashboardConfig()).trashedWorkspaces?.[0]?.workspace,
+    ).toEqual(original);
+    first.unmount();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(screen.getByRole('tab', { name: 'Пространства' }));
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Восстановить пространство «Работа»',
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText('Пространство восстановлено и открыто'),
+      ).toBeVisible(),
+    );
+    const restored = await loadDashboardConfig();
+    expect(restored.workspaces[1]).toEqual(original);
+    expect(restored.activeWorkspaceId).toBe(original.id);
+    expect(restored.trashedWorkspaces).toEqual([]);
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('button', {
+          name: 'Переименовать пространство',
+        })[1],
+      ).toHaveFocus(),
+    );
+  });
+
+  it('keeps the confirmation open and data unchanged on storage failure', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(screen.getByRole('tab', { name: 'Пространства' }));
+    const before = await loadDashboardConfig();
+    await user.click(
+      screen.getAllByRole('button', {
+        name: 'Удалить пространство',
+      })[1]!,
+    );
+    const write = vi
+      .spyOn(fakeBrowser.storage.local, 'set')
+      .mockRejectedValueOnce(new Error('Недостаточно места'));
+    try {
+      await user.click(screen.getByRole('button', { name: 'В корзину' }));
+      const confirmation = screen.getByRole('dialog', {
+        name: 'Переместить пространство в корзину?',
+      });
+      await waitFor(() =>
+        expect(within(confirmation).getByRole('alert')).toHaveTextContent(
+          'Недостаточно места',
+        ),
+      );
+      expect(within(confirmation).getByRole('alert')).toHaveFocus();
+      expect(await loadDashboardConfig()).toEqual(before);
+      expect(
+        within(confirmation).getByRole('button', { name: 'В корзину' }),
+      ).toBeEnabled();
+    } finally {
+      write.mockRestore();
+    }
   });
 });

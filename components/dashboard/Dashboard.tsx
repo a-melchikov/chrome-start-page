@@ -101,7 +101,9 @@ interface DashboardProps {
   ) => void;
   onRenameWorkspace?: (id: string, name: string) => void;
   onDuplicateWorkspace?: (id: string) => void;
-  onDeleteWorkspace?: (id: string) => void;
+  onDeleteWorkspace?: (id: string) => Promise<void>;
+  onRestoreWorkspace?: (id: string) => Promise<void>;
+  onPurgeWorkspace?: (id: string) => Promise<void>;
   onReorderWorkspaces?: (orderedIds: readonly string[]) => void;
 }
 
@@ -161,6 +163,8 @@ export function Dashboard({
   onRenameWorkspace,
   onDuplicateWorkspace,
   onDeleteWorkspace,
+  onRestoreWorkspace,
+  onPurgeWorkspace,
   onReorderWorkspaces,
 }: DashboardProps) {
   const [isLayoutInteracting, setIsLayoutInteracting] = useState(false);
@@ -423,6 +427,7 @@ export function Dashboard({
         config={config}
         isBackupProcessing={isBackupProcessing}
         isEditing={isEditing}
+        isWidgetActionProcessing={isWidgetActionProcessing}
         isWallpaperUpdating={isWallpaperUpdating}
         selectedCount={selectedIds.length}
         wallpaperError={wallpaperError}
@@ -480,6 +485,8 @@ export function Dashboard({
         onRenameWorkspace={onRenameWorkspace}
         onDuplicateWorkspace={onDuplicateWorkspace}
         onDeleteWorkspace={onDeleteWorkspace}
+        onRestoreWorkspace={onRestoreWorkspace}
+        onPurgeWorkspace={onPurgeWorkspace}
         onReorderWorkspaces={onReorderWorkspaces}
       />
       <ConfirmWidgetDeleteDialog

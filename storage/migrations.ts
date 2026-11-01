@@ -7,6 +7,7 @@ import {
   type WallpaperConfig,
   type WidgetConfig,
   type WorkspaceConfig,
+  type TrashedWorkspace,
   isImageAssetId,
   isWallpaperAssetId,
 } from './schema';
@@ -652,7 +653,10 @@ export function isWorkspaceConfig(
   return true;
 }
 
-type DashboardConfigV8 = Omit<DashboardConfig, 'version' | 'toolbar'> & {
+type DashboardConfigV8 = Omit<
+  DashboardConfig,
+  'version' | 'toolbar' | 'trashedWorkspaces'
+> & {
   version: 8;
 };
 
@@ -694,10 +698,21 @@ export function isDashboardConfigV8(
   return isRecord(value) && value.version === 8 && isWorkspaceDashboard(value);
 }
 
-export function isDashboardConfigV9(value: unknown): value is DashboardConfig {
+type DashboardConfigV9 = Omit<
+  DashboardConfig,
+  'version' | 'trashedWorkspaces'
+> & { version: 9 };
+
+export function isDashboardConfigV9(
+  value: unknown,
+): value is DashboardConfigV9 {
   return (
-    isRecord(value) &&
-    value.version === DASHBOARD_CONFIG_VERSION &&
+    isRecord(value) && value.version === 9 && isCurrentWorkspaceDashboard(value)
+  );
+}
+
+function isCurrentWorkspaceDashboard(value: Record<string, unknown>): boolean {
+  return (
     isWorkspaceDashboard(value) &&
     isToolbarConfig(value.toolbar) &&
     (value.animationMode === undefined ||
@@ -705,6 +720,33 @@ export function isDashboardConfigV9(value: unknown): value is DashboardConfig {
       value.animationMode === 'reduced' ||
       value.animationMode === 'off') &&
     (value.shortcuts === undefined || isShortcutOverrides(value.shortcuts))
+  );
+}
+
+function isDashboardConfigV10(value: unknown): value is DashboardConfig {
+  if (
+    !isRecord(value) ||
+    value.version !== DASHBOARD_CONFIG_VERSION ||
+    !isCurrentWorkspaceDashboard(value)
+  )
+    return false;
+  if (value.trashedWorkspaces === undefined) return true;
+  if (!Array.isArray(value.trashedWorkspaces)) return false;
+  const customThemes = value.customThemes as CustomTheme[];
+  const ids = new Set((value.workspaces as WorkspaceConfig[]).map((w) => w.id));
+  return value.trashedWorkspaces.every(
+    (entry: unknown): entry is TrashedWorkspace => {
+      if (
+        !isRecord(entry) ||
+        !isWorkspaceConfig(entry.workspace, customThemes) ||
+        !isIntegerInRange(entry.deletedAt, 0, 8_640_000_000_000_000) ||
+        !isIntegerInRange(entry.originalIndex, 0, Number.MAX_SAFE_INTEGER) ||
+        ids.has(entry.workspace.id)
+      )
+        return false;
+      ids.add(entry.workspace.id);
+      return true;
+    },
   );
 }
 
@@ -810,7 +852,7 @@ function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
     activeWorkspaceId = config.workspaces[0]?.id ?? crypto.randomUUID();
   }
 
-  const workspaces = config.workspaces.map((workspace) => {
+  const normalizeWorkspace = (workspace: WorkspaceConfig) => {
     let workspaceChanged = false;
     const widgets = workspace.widgets.map((widget) => {
       let normalized = widget;
@@ -892,9 +934,22 @@ function normalizeDashboardConfig(config: DashboardConfig): DashboardConfig {
       };
     }
     return workspace;
+  };
+
+  const workspaces = config.workspaces.map(normalizeWorkspace);
+  const trashedWorkspaces = config.trashedWorkspaces?.map((entry) => {
+    const workspace = normalizeWorkspace(entry.workspace);
+    return workspace === entry.workspace ? entry : { ...entry, workspace };
   });
 
-  return hasChanges ? { ...config, activeWorkspaceId, workspaces } : config;
+  return hasChanges
+    ? {
+        ...config,
+        activeWorkspaceId,
+        workspaces,
+        ...(trashedWorkspaces ? { trashedWorkspaces } : {}),
+      }
+    : config;
 }
 
 export function migrateDashboardConfig(value: unknown): DashboardConfig {
@@ -1044,11 +1099,21 @@ export function migrateDashboardConfig(value: unknown): DashboardConfig {
       ...value,
       version: DASHBOARD_CONFIG_VERSION,
       toolbar: { ...DEFAULT_TOOLBAR },
+      trashedWorkspaces: [],
+    });
+  }
+
+  if (version === 9) {
+    if (!isDashboardConfigV9(value)) throw new InvalidDashboardConfigError();
+    return normalizeDashboardConfig({
+      ...value,
+      version: DASHBOARD_CONFIG_VERSION,
+      trashedWorkspaces: [],
     });
   }
 
   if (version === DASHBOARD_CONFIG_VERSION) {
-    if (!isDashboardConfigV9(value)) {
+    if (!isDashboardConfigV10(value)) {
       throw new InvalidDashboardConfigError();
     }
 

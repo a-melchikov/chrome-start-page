@@ -149,7 +149,7 @@ export function BackupSettings({
         </div>
 
         <p className="rounded-md border border-theme-danger-border bg-theme-danger-bg px-3 py-2 text-sm text-theme-danger-text">
-          Импорт заменит все пространства и настройки. Отменить нельзя.
+          Импорт заменит все пространства, корзину и настройки. Отменить нельзя.
         </p>
 
         <input
