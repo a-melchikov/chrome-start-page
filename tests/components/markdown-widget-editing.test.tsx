@@ -175,8 +175,11 @@ describe('MarkdownWidget editing', () => {
       screen.queryByRole('combobox', { name: 'Шаблон виджета' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByText('Изменения сохраняются автоматически'),
-    ).not.toBeInTheDocument();
+      screen.getByRole('dialog', { name: 'Редактор Markdown' }),
+    ).toHaveAccessibleDescription('Изменения сохраняются автоматически');
+    expect(
+      screen.getByText('Изменения сохраняются автоматически').parentElement,
+    ).toHaveClass('sr-only');
 
     await user.click(settingsButton);
     const templatePicker = screen.getByRole('combobox', {
@@ -362,9 +365,11 @@ describe('MarkdownWidget editing', () => {
         name: 'Просмотр: Markdown',
       });
       expect(
+        await within(reader).findByText('Содержимое заметки'),
+      ).toBeVisible();
+      expect(
         within(reader).queryByRole('heading', { name: 'Markdown' }),
       ).not.toBeInTheDocument();
-      expect(within(reader).getByText('Содержимое заметки')).toBeVisible();
       await user.keyboard('{Escape}');
       await waitFor(async () =>
         expect((await getStoredMarkdownWidget())?.title?.trim()).toBe(''),
