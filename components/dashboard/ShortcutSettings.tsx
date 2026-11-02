@@ -24,7 +24,7 @@ export function ShortcutSettings({
     message: string;
   } | null>(null);
   return (
-    <section className="space-y-4 border-b border-theme-border pb-6 mb-6">
+    <section className="space-y-4">
       <p className="text-sm text-theme-text-secondary">
         Нажмите сочетание, чтобы заменить его. Назначения работают при любой
         раскладке. Escape отменяет ввод.

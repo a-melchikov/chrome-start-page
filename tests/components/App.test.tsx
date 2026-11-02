@@ -25,6 +25,15 @@ import type { DashboardConfig } from '../../storage/schema';
 import { saveBrowserCapture } from '../../storage/markdown-capture';
 import { createMarkdownWidgetWithTemplate } from '../../widgets/markdown/templates';
 
+async function expandBlock(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+) {
+  const trigger = await screen.findByRole('button', { name });
+  if (trigger.getAttribute('aria-expanded') === 'false')
+    await user.click(trigger);
+}
+
 function createBackupFile(config: DashboardConfig) {
   return new File(
     [
@@ -437,11 +446,8 @@ describe('App', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: 'Настройки' }));
-    const themeSection = screen.getByText('Выбрать тему', {
-      selector: 'button',
-    });
     expect(screen.getByRole('tab', { name: 'Оформление' })).toHaveFocus();
-    await user.click(themeSection);
+    await expandBlock(user, 'Выбрать тему');
     await user.click(screen.getByRole('button', { name: 'Тёмная' }));
     fireEvent.change(screen.getByLabelText('Цвет фона'), {
       target: { value: '#123456' },
@@ -476,7 +482,7 @@ describe('App', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: 'Настройки' }));
-    await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
+    await expandBlock(user, 'Выбрать тему');
     await user.click(screen.getByRole('button', { name: 'Tokyo Night' }));
 
     expect(document.documentElement).toHaveAttribute(
@@ -515,9 +521,7 @@ describe('App', () => {
         }),
       );
       await user.click(screen.getByRole('button', { name: 'Настройки' }));
-      await user.click(
-        screen.getByText('Выбрать тему', { selector: 'button' }),
-      );
+      await expandBlock(user, 'Выбрать тему');
       await user.click(screen.getByRole('button', { name }));
 
       expect(document.documentElement).toHaveAttribute('data-theme', theme);
@@ -560,7 +564,7 @@ describe('App', () => {
     await saveDashboardConfig(config);
     const view = render(<App />);
     await user.click(await screen.findByRole('button', { name: 'Настройки' }));
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
     const radius = screen.getByRole('slider', { name: 'Скругление углов' });
     expect(
       screen.getByRole('main').style.getPropertyValue('--widget-border-radius'),
@@ -584,7 +588,7 @@ describe('App', () => {
     view.unmount();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: 'Настройки' }));
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
     expect(
       screen.getByRole('slider', { name: 'Скругление углов' }),
     ).toHaveValue('40');
@@ -622,7 +626,7 @@ describe('App', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: 'Настройки' }));
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
@@ -647,7 +651,7 @@ describe('App', () => {
       screen.queryByRole('button', { name: 'Настроить эффект' }),
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole('switch', { name: 'Эффект стекла' }));
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
     await user.click(
       screen.getByRole('button', { name: 'Вернуть стандартные параметры' }),
     );
@@ -689,7 +693,7 @@ describe('App', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: 'Настройки' }));
-    await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
+    await expandBlock(user, 'Выбрать тему');
 
     expect(screen.getByRole('button', { name: 'Светлая' })).toHaveAttribute(
       'aria-pressed',
@@ -779,9 +783,7 @@ describe('App', () => {
       }),
     );
     await user.click(screen.getByRole('button', { name: 'Настройки' }));
-    await user.click(
-      screen.getByText('Использовать ссылку', { selector: 'button' }),
-    );
+    await expandBlock(user, 'Использовать ссылку');
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),
       'http://example.com/wallpaper.jpg',
@@ -996,9 +998,7 @@ describe('App', () => {
     });
     await user.keyboard('e');
     await user.click(await screen.findByRole('button', { name: 'Настройки' }));
-    await user.click(
-      await screen.findByRole('button', { name: 'Выбрать тему' }),
-    );
+    await expandBlock(user, 'Выбрать тему');
     const opener = screen.getByRole('button', { name: /Добавить собственную/ });
     await user.click(opener);
     const name = await screen.findByRole('textbox', {

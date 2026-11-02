@@ -721,6 +721,10 @@ export function DashboardControls({
       </DashboardToolbar>
 
       <SettingsPanel
+        preferences={config?.settingsPanel}
+        onPreferencesChange={(settingsPanel) =>
+          onInterfacePreferencesChange({ settingsPanel })
+        }
         open={settingsSection !== null}
         section={settingsSection ?? 'appearance'}
         onSectionChange={openSettings}
@@ -771,6 +775,7 @@ export function DashboardControls({
           )}
           {settingsSection === 'interface' && (
             <InterfaceSettings
+              requestedSection={requestedSection}
               toolbar={toolbar}
               animationMode={config?.animationMode}
               onAnimationModeChange={(animationMode) =>

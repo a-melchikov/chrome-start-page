@@ -5,6 +5,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppearanceSettings } from '../../components/dashboard/AppearanceSettings';
 import { SettingsPanel } from '../../components/dashboard/SettingsPanel';
 
+async function expandBlock(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+) {
+  const trigger = await screen.findByRole('button', { name });
+  if (trigger.getAttribute('aria-expanded') === 'false')
+    await user.click(trigger);
+}
+
 function AppearanceDialog({
   open,
   onOpenChange,
@@ -107,7 +116,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     ).toBeEnabled();
   });
 
-  it('starts with advanced settings collapsed', () => {
+  it('starts with every settings block expanded', () => {
     const { container } = renderDialog();
 
     expect(
@@ -115,30 +124,28 @@ describe('AppearanceDialog wallpaper controls', () => {
     ).not.toHaveLength(0);
     expect(
       [...container.querySelectorAll('[aria-expanded][aria-controls]')].every(
-        (section) => section.getAttribute('aria-expanded') === 'false',
+        (section) => section.getAttribute('aria-expanded') === 'true',
       ),
     ).toBe(true);
   });
 
-  it('collapses opened sections before the dialog is opened again', async () => {
+  it('keeps collapsed sections when the dialog is opened again', async () => {
     const user = userEvent.setup();
-    const { container, props, rerender } = renderDialog();
+    const { props, rerender } = renderDialog();
     const themeSection = screen.getByText('Выбрать тему', {
       selector: 'button',
     });
 
     await user.click(screen.getByText('Выбрать тему', { selector: 'button' }));
-    expect(themeSection).toHaveAttribute('aria-expanded', 'true');
+    expect(themeSection).toHaveAttribute('aria-expanded', 'false');
 
     rerender(<AppearanceDialog {...props} open={false} />);
     await waitFor(() => expect(themeSection).not.toBeInTheDocument());
     rerender(<AppearanceDialog {...props} open />);
 
     expect(
-      [...container.querySelectorAll('[aria-expanded][aria-controls]')].every(
-        (section) => section.getAttribute('aria-expanded') === 'false',
-      ),
-    ).toBe(true);
+      screen.getByRole('button', { name: 'Выбрать тему' }),
+    ).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('shows card settings immediately and toggles glass', async () => {
@@ -166,7 +173,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     const { props } = renderDialog();
 
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
 
     const transparency = screen.getByRole('slider', {
       name: 'Прозрачность',
@@ -212,7 +219,7 @@ describe('AppearanceDialog wallpaper controls', () => {
       },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Настроить эффект' }));
+    await expandBlock(user, 'Настроить эффект');
 
     expect(screen.getByRole('slider', { name: 'Прозрачность' })).toBeEnabled();
     expect(screen.getByRole('slider', { name: 'Размытие' })).toBeEnabled();
@@ -279,9 +286,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     const onSetUrlWallpaper = vi.fn().mockResolvedValue(undefined);
     renderDialog({ onSetUrlWallpaper });
 
-    await user.click(
-      screen.getByText('Использовать ссылку', { selector: 'button' }),
-    );
+    await expandBlock(user, 'Использовать ссылку');
 
     const input = screen.getByLabelText('Ссылка на изображение');
     await user.type(input, 'https://example.com/wallpaper.jpg');
@@ -329,9 +334,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     const user = userEvent.setup();
     renderDialog({ isWallpaperUpdating: true });
 
-    await user.click(
-      screen.getByText('Использовать ссылку', { selector: 'button' }),
-    );
+    await expandBlock(user, 'Использовать ссылку');
 
     expect(screen.getByLabelText('Локальное изображение')).toBeDisabled();
     expect(screen.getByLabelText('Ссылка на изображение')).toBeDisabled();
@@ -350,9 +353,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     });
     const { props, rerender } = renderDialog({ onSetUrlWallpaper });
 
-    await user.click(
-      screen.getByText('Использовать ссылку', { selector: 'button' }),
-    );
+    await expandBlock(user, 'Использовать ссылку');
 
     await user.type(
       screen.getByLabelText('Ссылка на изображение'),

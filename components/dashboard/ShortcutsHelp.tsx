@@ -3,7 +3,7 @@ import type {
   ShortcutOverrides,
 } from '../../keyboard/shortcuts';
 import { ShortcutSettings } from './ShortcutSettings';
-import { classNames } from '../ui/class-names';
+import { SettingsBlock } from './SettingsBlock';
 
 interface ShortcutItem {
   command?: ShortcutCommand;
@@ -128,16 +128,18 @@ export function ShortcutsHelp({
   onChange?: (value: ShortcutOverrides) => void;
 } = {}) {
   return (
-    <div className="pb-3">
-      {onChange && <ShortcutSettings value={shortcuts} onChange={onChange} />}
+    <div className="space-y-5 pb-3">
+      {onChange && (
+        <SettingsBlock blockId="shortcuts.bindings" title="Назначения клавиш">
+          <ShortcutSettings value={shortcuts} onChange={onChange} />
+        </SettingsBlock>
+      )}
       {SHORTCUT_GROUPS.map((group, groupIndex) => (
-        <section
+        <SettingsBlock
           key={group.title}
-          className={classNames('space-y-2', groupIndex > 0 && 'mt-6')}
+          blockId={groupIndex === 0 ? 'shortcuts.general' : 'shortcuts.editing'}
+          title={group.title}
         >
-          <h3 className="text-sm font-semibold text-theme-text-primary">
-            {group.title}
-          </h3>
           <ul className="space-y-1">
             {group.items
               .filter((item) => !onChange || !item.command)
@@ -164,7 +166,7 @@ export function ShortcutsHelp({
                 </li>
               ))}
           </ul>
-        </section>
+        </SettingsBlock>
       ))}
     </div>
   );

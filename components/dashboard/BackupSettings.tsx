@@ -6,6 +6,7 @@ import type {
 } from '../../storage/dashboard-backup';
 import { Button } from '../ui';
 import { downloadBackup } from './download-backup';
+import { SettingsBlock } from './SettingsBlock';
 
 interface BackupSettingsProps {
   error: string | null;
@@ -123,12 +124,7 @@ export function BackupSettings({
 
   return (
     <div className="space-y-6">
-      <section aria-labelledby="backup-export-title" className="space-y-3">
-        <div>
-          <h3 id="backup-export-title" className="text-sm font-semibold">
-            Экспорт
-          </h3>
-        </div>
+      <SettingsBlock blockId="backup.export" title="Экспорт">
         <Button
           disabled={isProcessing}
           size="small"
@@ -139,15 +135,9 @@ export function BackupSettings({
             ? 'Создаём копию…'
             : 'Скачать резервную копию'}
         </Button>
-      </section>
+      </SettingsBlock>
 
-      <section aria-labelledby="backup-import-title" className="space-y-3">
-        <div>
-          <h3 id="backup-import-title" className="text-sm font-semibold">
-            Импорт
-          </h3>
-        </div>
-
+      <SettingsBlock blockId="backup.import" title="Импорт">
         <p className="rounded-md border border-theme-danger-border bg-theme-danger-bg px-3 py-2 text-sm text-theme-danger-text">
           Импорт заменит все пространства, корзину и настройки. Отменить нельзя.
         </p>
@@ -192,7 +182,7 @@ export function BackupSettings({
             {selectedFile.name}
           </p>
         ) : null}
-      </section>
+      </SettingsBlock>
 
       {error ? (
         <p className="text-sm text-theme-danger" role="alert">

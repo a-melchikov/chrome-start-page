@@ -9,6 +9,10 @@ import { isShortcutOverrides } from '../../keyboard/shortcuts';
 function personalizedConfig() {
   const config = createDefaultDashboardConfig();
   config.animationMode = 'off';
+  config.settingsPanel = {
+    width: 720,
+    collapsedBlocks: ['appearance.theme', 'backup.import', 'shortcuts.general'],
+  };
   config.shortcuts = {
     edit: [{ code: 'KeyQ', ctrl: false, alt: false, shift: true, meta: false }],
     help: [],
@@ -51,6 +55,23 @@ describe('Personalization storage boundary', () => {
   it('accepts old dashboards without the optional settings', () => {
     const config = createDefaultDashboardConfig();
     expect(migrateDashboardConfig(config)).toEqual(config);
+  });
+
+  it.each([
+    null,
+    [],
+    { width: 319 },
+    { width: 10001 },
+    { width: 448.5 },
+    { width: '448' },
+    { width: Infinity },
+    { collapsedBlocks: 'appearance.theme' },
+    { collapsedBlocks: ['unknown'] },
+    { collapsedBlocks: ['appearance.theme', 'appearance.theme'] },
+  ])('rejects invalid settings panel preferences: %j', (settingsPanel) => {
+    expect(() =>
+      migrateDashboardConfig({ ...personalizedConfig(), settingsPanel }),
+    ).toThrow();
   });
 
   it.each([-1, 49, 1.5, '16', null])(

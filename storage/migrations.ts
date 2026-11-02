@@ -22,6 +22,7 @@ import {
 import { isSearchEngine } from '../widgets/search/engines';
 import { isMarkdownTemplateId } from '../widgets/markdown/templates';
 import { isShortcutOverrides } from '../keyboard/shortcuts';
+import { isSettingsPanelPreferences } from './settings-panel';
 import { isMarkdownTypography } from '../widgets/markdown/typography';
 import type { WeatherLocation } from '../widgets/weather/types';
 import {
@@ -719,7 +720,9 @@ function isCurrentWorkspaceDashboard(value: Record<string, unknown>): boolean {
       value.animationMode === 'system' ||
       value.animationMode === 'reduced' ||
       value.animationMode === 'off') &&
-    (value.shortcuts === undefined || isShortcutOverrides(value.shortcuts))
+    (value.shortcuts === undefined || isShortcutOverrides(value.shortcuts)) &&
+    (value.settingsPanel === undefined ||
+      isSettingsPanelPreferences(value.settingsPanel))
   );
 }
 

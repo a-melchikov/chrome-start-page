@@ -1,6 +1,7 @@
 import type { AnimationMode } from '../components/ui/animation-preferences';
 export type { AnimationMode } from '../components/ui/animation-preferences';
 import type { ShortcutOverrides } from '../keyboard/shortcuts';
+import type { SettingsPanelPreferences } from './settings-panel';
 import type { AnalogClockWidgetConfig } from '../widgets/analog-clock/types';
 import type { ClockWidgetConfig } from '../widgets/clock/types';
 import type { ImageWidgetConfig } from '../widgets/image/types';
@@ -97,6 +98,7 @@ export interface ToolbarConfig {
 export interface InterfacePreferences {
   animationMode?: AnimationMode;
   shortcuts?: ShortcutOverrides;
+  settingsPanel?: SettingsPanelPreferences;
 }
 
 export interface DashboardConfig extends InterfacePreferences {

@@ -18,6 +18,7 @@ import {
 import { App } from '../../entrypoints/newtab/App';
 import { DASHBOARD_STORAGE_KEY } from '../../storage/dashboard-storage';
 import type { DashboardConfig } from '../../storage/schema';
+import type { SettingsBlockId } from '../../storage/settings-panel';
 
 async function chooseSection(
   user: ReturnType<typeof userEvent.setup>,
@@ -178,5 +179,206 @@ describe('Shared settings panel', () => {
     ).toBeVisible();
     expect(remove).toHaveFocus();
     expect(screen.getByRole('button', { name: 'Работа' })).toBeVisible();
+  });
+
+  it('persists width and collapsed blocks from every tab across a reload', async () => {
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const handle = screen.getByRole('separator', {
+      name: 'Ширина панели настроек',
+    });
+    handle.focus();
+    await user.keyboard('{ArrowLeft}{Shift>}{ArrowLeft}{/Shift}');
+    expect(screen.getByRole('dialog')).toHaveStyle({ width: '528px' });
+
+    const blocks = [
+      ['Оформление', 'Тема', 'appearance.theme'],
+      ['Оформление', 'Сетка', 'appearance.grid'],
+      ['Интерфейс', 'Панель управления', 'interface.toolbar'],
+      ['Интерфейс', 'Анимации', 'interface.animations'],
+      ['Пространства', 'Список пространств', 'workspaces.active'],
+      ['Пространства', 'Корзина (0)', 'workspaces.trash'],
+      ['Резервные копии', 'Экспорт', 'backup.export'],
+      ['Резервные копии', 'Импорт', 'backup.import'],
+      ['Горячие клавиши', 'Назначения клавиш', 'shortcuts.bindings'],
+      ['Горячие клавиши', 'Общие', 'shortcuts.general'],
+      ['Горячие клавиши', 'В режиме редактирования', 'shortcuts.editing'],
+    ] as const;
+    for (const [tab, title] of blocks) {
+      await chooseSection(user, tab);
+      const trigger = await screen.findByRole('button', { name: title });
+      expect(trigger).toHaveAttribute('aria-expanded', 'true');
+      await user.click(trigger);
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    }
+    await waitFor(async () => {
+      const saved = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(saved?.settingsPanel).toEqual({
+        width: 528,
+        collapsedBlocks: blocks.map(([, , id]) => id),
+      });
+    });
+    view.unmount();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    expect(screen.getByRole('dialog')).toHaveStyle({ width: '528px' });
+    for (const [tab, title] of blocks) {
+      await chooseSection(user, tab);
+      expect(
+        await screen.findByRole('button', { name: title }),
+      ).toHaveAttribute('aria-expanded', 'false');
+    }
+  });
+
+  it('preserves a wallpaper URL draft and excludes fields while its block is collapsed', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const input = await screen.findByRole('textbox', {
+      name: 'Ссылка на изображение',
+    });
+    await user.type(input, 'https://example.com/wallpaper.png');
+    const trigger = screen.getByRole('button', { name: 'Фон' });
+    await user.click(trigger);
+    expect(input.closest('[inert]')).not.toBeNull();
+    expect(trigger).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(
+      screen.getByRole('textbox', { name: 'Ссылка на изображение' }),
+    ).toHaveValue('https://example.com/wallpaper.png');
+  });
+
+  it('opens a collapsed theme block when navigating from the command palette', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(
+      await screen.findByRole('button', { name: 'Выбрать тему' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Тема', exact: true }));
+    await user.keyboard('{Escape}/');
+    await user.type(
+      await screen.findByRole('combobox', { name: 'Поиск команд' }),
+      'Открыть настройки: Тема',
+    );
+    await user.click(
+      screen.getByRole('option', { name: /Открыть настройки: Тема/ }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Тема', exact: true }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(
+      screen.getByRole('button', { name: 'Выбрать тему' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('keeps the preferred width when the viewport temporarily becomes narrower', () => {
+    const originalWidth = window.innerWidth;
+    const onPreferencesChange = vi.fn();
+    const preferences = {
+      width: 720,
+      collapsedBlocks: [] as SettingsBlockId[],
+    };
+    try {
+      render(
+        <SettingsPanel
+          open
+          section="appearance"
+          onSectionChange={() => {}}
+          onOpenChange={() => {}}
+          preferences={preferences}
+          onPreferencesChange={onPreferencesChange}
+        >
+          Содержимое
+        </SettingsPanel>,
+      );
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 400,
+      });
+      fireEvent(window, new Event('resize'));
+      expect(screen.getByRole('dialog')).toHaveStyle({ width: '400px' });
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 1200,
+      });
+      fireEvent(window, new Event('resize'));
+      expect(screen.getByRole('dialog')).toHaveStyle({ width: '720px' });
+      expect(onPreferencesChange).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalWidth,
+      });
+    }
+  });
+
+  it.each(['pointerup', 'lostpointercapture', 'pagehide', 'unmount'])(
+    'saves a completed resize once on %s, without saving intermediate moves',
+    (finish) => {
+      const onPreferencesChange = vi.fn();
+      const view = render(
+        <SettingsPanel
+          open
+          section="appearance"
+          onSectionChange={() => {}}
+          onOpenChange={() => {}}
+          onPreferencesChange={onPreferencesChange}
+        >
+          Содержимое
+        </SettingsPanel>,
+      );
+      const handle = screen.getByRole('separator');
+      Object.assign(handle, {
+        setPointerCapture: vi.fn(),
+        hasPointerCapture: () => true,
+        releasePointerCapture: vi.fn(),
+      });
+      fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 800 });
+      fireEvent.pointerMove(handle, { pointerId: 1, clientX: 700 });
+      expect(screen.getByRole('dialog')).toHaveStyle({ width: '548px' });
+      expect(onPreferencesChange).not.toHaveBeenCalled();
+      if (finish === 'unmount') view.unmount();
+      else if (finish === 'pagehide') fireEvent(window, new Event('pagehide'));
+      else if (finish === 'lostpointercapture')
+        fireEvent.lostPointerCapture(handle, { pointerId: 1 });
+      else fireEvent.pointerUp(handle, { pointerId: 1 });
+      expect(onPreferencesChange).toHaveBeenCalledExactlyOnceWith({
+        width: 548,
+      });
+    },
+  );
+
+  it('cancels a resize with Escape before allowing Escape to close the panel', () => {
+    const onPreferencesChange = vi.fn();
+    const onOpenChange = vi.fn();
+    render(
+      <SettingsPanel
+        open
+        section="appearance"
+        onSectionChange={() => {}}
+        onOpenChange={onOpenChange}
+        onPreferencesChange={onPreferencesChange}
+      >
+        Содержимое
+      </SettingsPanel>,
+    );
+    const handle = screen.getByRole('separator');
+    Object.assign(handle, {
+      setPointerCapture: vi.fn(),
+      hasPointerCapture: () => true,
+      releasePointerCapture: vi.fn(),
+    });
+    fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 800 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 700 });
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(screen.getByRole('dialog')).toHaveStyle({ width: '448px' });
+    expect(onPreferencesChange).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(handle, { key: 'Escape' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

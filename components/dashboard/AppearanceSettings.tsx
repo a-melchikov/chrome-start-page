@@ -13,7 +13,8 @@ import {
 } from '../../storage/defaults';
 import { THEMES } from '../../themes/registry';
 import type { CustomTheme, ThemeRef } from '../../themes/types';
-import { Disclosure } from '../ui/Disclosure';
+import { SettingsBlock } from './SettingsBlock';
+import { useSettingsPanelState } from './settings-panel-state';
 import { RangeField } from '../ui/RangeField';
 import {
   DEFAULT_GRID_GAP,
@@ -70,18 +71,7 @@ export function AppearanceSettings({
   onDuplicateCustomTheme,
   onDeleteCustomTheme,
 }: AppearanceSettingsProps) {
-  const [openSections, setOpenSections] = useState<
-    Partial<Record<AppearanceSection, boolean>>
-  >(() => (requestedSection ? { [requestedSection.section]: true } : {}));
-  const [previousRequest, setPreviousRequest] = useState(requestedSection);
-  if (requestedSection !== previousRequest) {
-    setPreviousRequest(requestedSection);
-    if (requestedSection)
-      setOpenSections((sections) => ({
-        ...sections,
-        [requestedSection.section]: true,
-      }));
-  }
+  const setBlocksOpen = useSettingsPanelState()?.setBlocksOpen;
   const [urlDraft, setUrlDraft] = useState('');
   const [themeToDelete, setThemeToDelete] = useState<CustomTheme | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -117,6 +107,16 @@ export function AppearanceSettings({
 
   useEffect(() => {
     if (!requestedSection) return;
+    const requested = requestedSection.section;
+    if (requested === 'theme')
+      setBlocksOpen?.(['appearance.theme', 'appearance.themeGallery'], true);
+    else if (requested === 'background' || requested === 'wallpaper')
+      setBlocksOpen?.(
+        ['appearance.background', 'appearance.wallpaperUrl'],
+        true,
+      );
+    else if (requested === 'widgets')
+      setBlocksOpen?.(['appearance.widgets', 'appearance.glass'], true);
     const section = sectionsRef.current?.querySelector<HTMLElement>(
       `[data-appearance-section="${requestedSection.section}"]`,
     );
@@ -130,7 +130,7 @@ export function AppearanceSettings({
       target?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
-  }, [requestedSection, requestedThemeEditor]);
+  }, [requestedSection, requestedThemeEditor, setBlocksOpen]);
 
   useEffect(
     () => () => {
@@ -172,8 +172,11 @@ export function AppearanceSettings({
   return (
     <>
       <div ref={sectionsRef} className="space-y-5">
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Тема</h3>
+        <SettingsBlock
+          blockId="appearance.theme"
+          title="Тема"
+          data-appearance-section="theme"
+        >
           <div className="flex items-center gap-3">
             <div
               aria-hidden="true"
@@ -194,15 +197,7 @@ export function AppearanceSettings({
                   )?.name}
             </span>
           </div>
-          <Disclosure
-            title="Выбрать тему"
-
-            data-appearance-section="theme"
-            open={Boolean(openSections.theme)}
-            onOpenChange={(next) =>
-              setOpenSections((sections) => ({ ...sections, theme: next }))
-            }
-          >
+          <SettingsBlock blockId="appearance.themeGallery" title="Выбрать тему">
             <fieldset aria-label="Тема" className="space-y-4 ">
               {/* Built-in Themes Sub-section */}
               <div className="space-y-2 pt-2">
@@ -408,10 +403,14 @@ export function AppearanceSettings({
                 ) : null}
               </div>
             </fieldset>
-          </Disclosure>
-        </section>
-        <section className="space-y-4" data-appearance-section="background">
-          <h3 className="text-sm font-semibold">Фон</h3>
+          </SettingsBlock>
+        </SettingsBlock>
+        <SettingsBlock
+          blockId="appearance.background"
+          title="Фон"
+          contentClassName="space-y-4"
+          data-appearance-section="background"
+        >
           <label
             className="block text-xs text-theme-text-secondary"
             htmlFor="background-color"
@@ -535,7 +534,10 @@ export function AppearanceSettings({
                 </div>
               </div>
 
-              <Disclosure title="Использовать ссылку">
+              <SettingsBlock
+                blockId="appearance.wallpaperUrl"
+                title="Использовать ссылку"
+              >
                 <form className="space-y-2 px-3 pb-3 pt-1" onSubmit={submitUrl}>
                   <label
                     className="block text-sm font-medium text-theme-text-primary"
@@ -564,7 +566,7 @@ export function AppearanceSettings({
                     </Button>
                   </div>
                 </form>
-              </Disclosure>
+              </SettingsBlock>
 
               {isWallpaperUpdating ? (
                 <p
@@ -595,9 +597,13 @@ export function AppearanceSettings({
               )}
             </div>
           </div>
-        </section>
-        <section className="space-y-4" data-appearance-section="grid">
-          <h3 className="text-sm font-semibold">Сетка</h3>
+        </SettingsBlock>
+        <SettingsBlock
+          blockId="appearance.grid"
+          title="Сетка"
+          contentClassName="space-y-4"
+          data-appearance-section="grid"
+        >
           <div className="space-y-4">
             <RangeField
               label="Расстояние между виджетами"
@@ -628,9 +634,13 @@ export function AppearanceSettings({
               Вернуть стандартные отступы
             </Button>
           </div>
-        </section>
-        <section className="space-y-4" data-appearance-section="widgets">
-          <h3 className="text-sm font-semibold">Карточки</h3>
+        </SettingsBlock>
+        <SettingsBlock
+          blockId="appearance.widgets"
+          title="Карточки"
+          contentClassName="space-y-4"
+          data-appearance-section="widgets"
+        >
           <div className="space-y-5 ">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-3 text-sm">
@@ -703,7 +713,10 @@ export function AppearanceSettings({
               />
             </label>
             {appearance.liquidGlass.enabled && (
-              <Disclosure title="Настроить эффект">
+              <SettingsBlock
+                blockId="appearance.glass"
+                title="Настроить эффект"
+              >
                 <LiquidGlassSettings
                   settings={appearance.liquidGlass}
                   onChange={(liquidGlass) =>
@@ -712,10 +725,10 @@ export function AppearanceSettings({
                   onCommit={onFlushAppearancePreview}
                   onReset={(liquidGlass) => onAppearanceChange({ liquidGlass })}
                 />
-              </Disclosure>
+              </SettingsBlock>
             )}
           </div>
-        </section>
+        </SettingsBlock>
       </div>
 
       {themeToDelete && (

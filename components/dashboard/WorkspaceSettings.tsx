@@ -11,6 +11,7 @@ import {
 } from '../icons';
 import { Button, IconButton } from '../ui';
 import { classNames } from '../ui/class-names';
+import { SettingsBlock } from './SettingsBlock';
 
 function formatWidgetCountRu(count: number): string {
   if (count === 0) return 'Пустой дашборд';
@@ -102,151 +103,153 @@ export function WorkspaceSettings({
 
   return (
     <>
-      <fieldset disabled={isProcessing} className="min-w-0 space-y-4">
-        <Button
-          data-workspace-manager-focus
-          variant="secondary"
-          size="small"
-          onClick={() => onAddWorkspace()}
-        >
-          <PlusIcon className="size-4" />
-          Добавить пространство
-        </Button>
-        <div ref={listRef} className="space-y-3">
-          {workspaces.map((workspace, index) => {
-            const isActive = workspace.id === activeWorkspaceId;
-            const isEditingThis = editingId === workspace.id;
+      <SettingsBlock blockId="workspaces.active" title="Список пространств">
+        <fieldset disabled={isProcessing} className="min-w-0 space-y-4">
+          <Button
+            data-workspace-manager-focus
+            variant="secondary"
+            size="small"
+            onClick={() => onAddWorkspace()}
+          >
+            <PlusIcon className="size-4" />
+            Добавить пространство
+          </Button>
+          <div ref={listRef} className="space-y-3">
+            {workspaces.map((workspace, index) => {
+              const isActive = workspace.id === activeWorkspaceId;
+              const isEditingThis = editingId === workspace.id;
 
-            return (
-              <div
-                key={workspace.id}
-                className={classNames(
-                  'space-y-2 rounded-xl border border-theme-border/70 p-2.5 transition-colors',
-                  isActive
-                    ? 'bg-theme-surface-muted/60 border-theme-accent/50'
-                    : 'bg-theme-surface/40 hover:bg-theme-surface-hover/50',
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <IconButton
-                      aria-label="Переместить вверх"
-                      disabled={index === 0}
-                      size="xs"
-                      title="Переместить вверх"
-                      variant="ghost"
-                      onClick={() => handleMoveUp(index)}
-                    >
-                      <ArrowUpIcon className="size-4" />
-                    </IconButton>
-                    <IconButton
-                      aria-label="Переместить вниз"
-                      disabled={index === workspaces.length - 1}
-                      size="xs"
-                      title="Переместить вниз"
-                      variant="ghost"
-                      onClick={() => handleMoveDown(index)}
-                    >
-                      <ArrowDownIcon className="size-4" />
-                    </IconButton>
-                  </div>
+              return (
+                <div
+                  key={workspace.id}
+                  className={classNames(
+                    'space-y-2 rounded-xl border border-theme-border/70 p-2.5 transition-colors',
+                    isActive
+                      ? 'bg-theme-surface-muted/60 border-theme-accent/50'
+                      : 'bg-theme-surface/40 hover:bg-theme-surface-hover/50',
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <IconButton
+                        aria-label="Переместить вверх"
+                        disabled={index === 0}
+                        size="xs"
+                        title="Переместить вверх"
+                        variant="ghost"
+                        onClick={() => handleMoveUp(index)}
+                      >
+                        <ArrowUpIcon className="size-4" />
+                      </IconButton>
+                      <IconButton
+                        aria-label="Переместить вниз"
+                        disabled={index === workspaces.length - 1}
+                        size="xs"
+                        title="Переместить вниз"
+                        variant="ghost"
+                        onClick={() => handleMoveDown(index)}
+                      >
+                        <ArrowDownIcon className="size-4" />
+                      </IconButton>
+                    </div>
 
-                  <div className="min-w-24 flex-1">
-                    {isEditingThis ? (
-                      <input
-                        autoFocus
-                        aria-label="Название пространства"
-                        type="text"
-                        maxLength={64}
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onBlur={finishInlineEdit}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            finishInlineEdit();
-                            focusRenameButton(workspace.id);
-                          }
-                          if (e.key === 'Escape') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setEditingId(null);
-                            focusRenameButton(workspace.id);
-                          }
-                        }}
-                        className="w-full rounded-lg border border-theme-accent bg-theme-surface-muted px-2.5 py-1 text-sm font-medium text-theme-text-primary focus:outline-none"
-                      />
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startInlineEdit(workspace)}
-                          title="Нажмите, чтобы переименовать"
-                          className="truncate text-left text-sm font-medium text-theme-text-primary hover:underline cursor-pointer"
-                        >
-                          {workspace.name}
-                        </button>
-                        {isActive && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-theme-accent/15 px-2 py-0.5 text-[11px] font-semibold text-theme-accent">
-                            <CheckIcon className="size-3" />
-                            Текущее
-                          </span>
-                        )}
+                    <div className="min-w-24 flex-1">
+                      {isEditingThis ? (
+                        <input
+                          autoFocus
+                          aria-label="Название пространства"
+                          type="text"
+                          maxLength={64}
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onBlur={finishInlineEdit}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              finishInlineEdit();
+                              focusRenameButton(workspace.id);
+                            }
+                            if (e.key === 'Escape') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEditingId(null);
+                              focusRenameButton(workspace.id);
+                            }
+                          }}
+                          className="w-full rounded-lg border border-theme-accent bg-theme-surface-muted px-2.5 py-1 text-sm font-medium text-theme-text-primary focus:outline-none"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startInlineEdit(workspace)}
+                            title="Нажмите, чтобы переименовать"
+                            className="truncate text-left text-sm font-medium text-theme-text-primary hover:underline cursor-pointer"
+                          >
+                            {workspace.name}
+                          </button>
+                          {isActive && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-theme-accent/15 px-2 py-0.5 text-[11px] font-semibold text-theme-accent">
+                              <CheckIcon className="size-3" />
+                              Текущее
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className="text-xs text-theme-text-secondary mt-0.5">
+                        {formatWidgetCountRu(workspace.widgets.length)}
                       </div>
-                    )}
-                    <div className="text-xs text-theme-text-secondary mt-0.5">
-                      {formatWidgetCountRu(workspace.widgets.length)}
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-end gap-1">
-                  <IconButton
-                    data-rename-workspace={workspace.id}
-                    aria-label="Переименовать пространство"
-                    size="small"
-                    title="Переименовать"
-                    variant="ghost"
-                    onClick={() => startInlineEdit(workspace)}
-                  >
-                    <PencilIcon className="size-4" />
-                  </IconButton>
-                  {!isActive && (
-                    <Button
-                      variant="ghost"
+                  <div className="flex items-center justify-end gap-1">
+                    <IconButton
+                      data-rename-workspace={workspace.id}
+                      aria-label="Переименовать пространство"
                       size="small"
-                      onClick={() => onSwitchWorkspace(workspace.id)}
+                      title="Переименовать"
+                      variant="ghost"
+                      onClick={() => startInlineEdit(workspace)}
                     >
-                      Переключить
-                    </Button>
-                  )}
-                  <IconButton
-                    aria-label="Дублировать пространство"
-                    size="small"
-                    title="Дублировать"
-                    variant="ghost"
-                    onClick={() => onDuplicateWorkspace(workspace.id)}
-                  >
-                    <DuplicateIcon className="size-4" />
-                  </IconButton>
-                  <IconButton
-                    aria-label="Удалить пространство"
-                    disabled={workspaces.length <= 1}
-                    size="small"
-                    title={
-                      workspaces.length <= 1
-                        ? 'Нельзя удалить единственное пространство'
-                        : 'Удалить'
-                    }
-                    variant="danger-ghost"
-                    onClick={() => onDeleteWorkspace(workspace.id)}
-                  >
-                    <TrashIcon className="size-4" />
-                  </IconButton>
+                      <PencilIcon className="size-4" />
+                    </IconButton>
+                    {!isActive && (
+                      <Button
+                        variant="ghost"
+                        size="small"
+                        onClick={() => onSwitchWorkspace(workspace.id)}
+                      >
+                        Переключить
+                      </Button>
+                    )}
+                    <IconButton
+                      aria-label="Дублировать пространство"
+                      size="small"
+                      title="Дублировать"
+                      variant="ghost"
+                      onClick={() => onDuplicateWorkspace(workspace.id)}
+                    >
+                      <DuplicateIcon className="size-4" />
+                    </IconButton>
+                    <IconButton
+                      aria-label="Удалить пространство"
+                      disabled={workspaces.length <= 1}
+                      size="small"
+                      title={
+                        workspaces.length <= 1
+                          ? 'Нельзя удалить единственное пространство'
+                          : 'Удалить'
+                      }
+                      variant="danger-ghost"
+                      onClick={() => onDeleteWorkspace(workspace.id)}
+                    >
+                      <TrashIcon className="size-4" />
+                    </IconButton>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </fieldset>
+              );
+            })}
+          </div>
+        </fieldset>
+      </SettingsBlock>
 
       {notice ? (
         <p role="status" className="mt-3 text-sm text-theme-text-secondary">
@@ -258,13 +261,11 @@ export function WorkspaceSettings({
           {error}
         </p>
       ) : null}
-      <section
-        aria-labelledby="workspace-trash-title"
-        className="mt-6 space-y-3 border-t border-theme-border pt-5"
+      <SettingsBlock
+        blockId="workspaces.trash"
+        title={`Корзина (${trashedWorkspaces.length})`}
+        className="mt-6"
       >
-        <h3 id="workspace-trash-title" className="text-sm font-semibold">
-          Корзина ({trashedWorkspaces.length})
-        </h3>
         <p className="text-xs text-theme-text-secondary">
           Пространства хранятся до явного удаления из корзины. Виджеты,
           изображения и оформление можно восстановить.
@@ -311,7 +312,7 @@ export function WorkspaceSettings({
             ))}
           </ul>
         )}
-      </section>
+      </SettingsBlock>
     </>
   );
 }

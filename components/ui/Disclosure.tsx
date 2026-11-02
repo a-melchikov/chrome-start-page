@@ -12,6 +12,7 @@ interface DisclosureProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   className?: string;
+  variant?: 'surface' | 'plain';
   resetKey?: boolean | number;
   'data-appearance-section'?: string;
   'data-dialog-initial-focus'?: boolean;
@@ -23,6 +24,7 @@ export function Disclosure({
   open: controlledOpen,
   onOpenChange,
   className,
+  variant = 'surface',
   resetKey,
   'data-appearance-section': section,
   'data-dialog-initial-focus': initialFocus,
@@ -54,31 +56,39 @@ export function Disclosure({
     onOpenChange?.(!open);
   };
 
+  const trigger = (
+    <button
+      ref={buttonRef}
+      type="button"
+      aria-expanded={open}
+      aria-controls={contentId}
+      data-dialog-initial-focus={initialFocus ? '' : undefined}
+      className={classNames(
+        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg text-left text-sm text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring',
+        variant === 'plain' ? 'py-2 font-semibold' : 'px-4 py-3 font-medium',
+      )}
+      onClick={toggle}
+    >
+      {title}
+      <ChevronDownIcon
+        className={classNames(
+          'size-4 shrink-0 text-theme-text-secondary transition-transform duration-150',
+          open && 'rotate-180',
+        )}
+      />
+    </button>
+  );
+
   return (
     <section
       data-appearance-section={section}
       className={classNames(
-        'rounded-lg border border-theme-border bg-theme-surface',
+        variant === 'surface' &&
+          'rounded-lg border border-theme-border bg-theme-surface',
         className,
       )}
     >
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-expanded={open}
-        aria-controls={contentId}
-        data-dialog-initial-focus={initialFocus ? '' : undefined}
-        className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-theme-text-primary outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring"
-        onClick={toggle}
-      >
-        {title}
-        <ChevronDownIcon
-          className={classNames(
-            'size-4 shrink-0 text-theme-text-secondary transition-transform duration-150',
-            open && 'rotate-180',
-          )}
-        />
-      </button>
+      {variant === 'plain' ? <h3>{trigger}</h3> : trigger}
       <MotionProvider>
         <m.div
           ref={contentRef}
