@@ -35,6 +35,7 @@ export interface WeatherWidgetProps {
 
 export function WeatherWidget({ config }: WeatherWidgetProps) {
   const observerRef = useRef<ResizeObserver | null>(null);
+  const [hourlyWidth, setHourlyWidth] = useState(0);
   const [dimensions, setDimensions] = useState<{
     width: number;
     height: number;
@@ -76,6 +77,16 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
     }
   }, []);
 
+  const hourlyRef = useCallback((node: HTMLDivElement | null) => {
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setHourlyWidth(entry.contentRect.width);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     return () => {
       observerRef.current?.disconnect();
@@ -93,6 +104,8 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
     dimensions.height >= (isVisual ? 430 : 340) && dimensions.width >= 260;
   const showDaily =
     dimensions.height >= (isVisual ? 650 : 440) && dimensions.width >= 260;
+  // Each hour needs 44 px, with at least 6 px between adjacent cards.
+  const hourlyCount = Math.max(1, Math.floor((hourlyWidth + 6) / 50));
 
   // Unconfigured state
   if (config.location.type === 'unset') {
@@ -426,7 +439,7 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
           </div>
         )}
 
-        {/* Large View: 12-hour hourly forecast */}
+        {/* Large View: hourly forecast fitted to the available width */}
         {isLarge && hourly.length > 0 && (
           <div
             className={
@@ -440,11 +453,17 @@ export function WeatherWidget({ config }: WeatherWidgetProps) {
             >
               По часам
             </div>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-              {hourly.slice(0, 12).map((hour, idx) => (
+            <div
+              ref={hourlyRef}
+              role="list"
+              aria-label="Почасовой прогноз"
+              className="flex justify-between gap-1.5 pb-1"
+            >
+              {hourly.slice(0, hourlyCount).map((hour, idx) => (
                 <div
                   key={idx}
-                  className={`flex min-w-[44px] shrink-0 flex-col items-center rounded-md border py-1.5 text-center ${isVisual ? 'border-white/15 bg-white/10' : 'border-theme-border/30 bg-theme-surface/40'}`}
+                  role="listitem"
+                  className={`flex w-[44px] shrink-0 flex-col items-center rounded-md border py-1.5 text-center ${isVisual ? 'border-white/15 bg-white/10' : 'border-theme-border/30 bg-theme-surface/40'}`}
                 >
                   <span
                     className={`text-[10px] ${isVisual ? 'text-white/70' : 'text-theme-text-secondary'}`}

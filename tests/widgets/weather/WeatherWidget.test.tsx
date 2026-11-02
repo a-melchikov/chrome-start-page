@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WeatherWidget } from '../../../widgets/weather/WeatherWidget';
@@ -210,7 +210,7 @@ describe('WeatherWidget component', () => {
     const { container } = render(<WeatherWidget config={config} />);
     const resize = (width: number, height: number) => {
       act(() => {
-        callbacks.at(-1)?.(
+        callbacks[0]?.(
           [{ contentRect: { width, height } } as ResizeObserverEntry],
           {} as ResizeObserver,
         );
@@ -246,4 +246,69 @@ describe('WeatherWidget component', () => {
       container.querySelector('[data-weather-metrics="inline"]'),
     ).toHaveClass('grid-cols-4');
   });
+
+  it.each(['compact', 'visual'] as const)(
+    'fits hourly cards to the available row width in %s mode',
+    (mode) => {
+      const callbacks = new Map<Element, ResizeObserverCallback>();
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(private callback: ResizeObserverCallback) {}
+          observe(target: Element) {
+            callbacks.set(target, this.callback);
+          }
+          disconnect() {}
+        },
+      );
+      vi.spyOn(useWeatherModule, 'useWeather').mockReturnValue({
+        forecast: {
+          ...mockForecast,
+          hourly: Array.from({ length: 24 }, (_, index) => ({
+            ...mockForecast.hourly[0]!,
+            time: `2026-09-25T${String(index).padStart(2, '0')}:00`,
+          })),
+        },
+        fetchedAt: Date.now(),
+        loading: false,
+        error: null,
+        accessRequired: false,
+        retry: vi.fn(),
+        grantAccess: vi.fn(),
+      });
+      const { container, unmount } = render(
+        <WeatherWidget
+          config={{
+            id: 'weather-test',
+            type: 'weather',
+            mode,
+            location: cityLocation,
+            layout: { x: 0, y: 0, w: 5, h: 5 },
+          }}
+        />,
+      );
+      const resize = (target: Element, width: number) => {
+        act(() => {
+          callbacks.get(target)?.(
+            [{ contentRect: { width, height: 700 } } as ResizeObserverEntry],
+            {} as ResizeObserver,
+          );
+        });
+      };
+      resize(container.firstElementChild!, 700);
+      const row = screen.getByRole('list', { name: 'Почасовой прогноз' });
+      for (const [width, count] of [
+        [244, 5],
+        [243.5, 4],
+        [600, 12],
+        [744, 15],
+        [1300, 24],
+        [194, 4],
+      ] as const) {
+        resize(row, width);
+        expect(within(row).getAllByRole('listitem')).toHaveLength(count);
+      }
+      unmount();
+    },
+  );
 });
