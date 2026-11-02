@@ -261,6 +261,8 @@
 
   .dashboard-toolbar-left button {
     padding: 0;
+    max-width: 40px;
+    max-height: 40px;
   }
 
   .dashboard-toolbar-left [data-toolbar-actions] {
