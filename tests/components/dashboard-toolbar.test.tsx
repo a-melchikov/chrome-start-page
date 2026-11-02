@@ -97,6 +97,18 @@ async function chooseMode(
 beforeEach(() => fakeBrowser.reset());
 
 describe('toolbar visibility and focus', () => {
+  it('collapses on Escape and restores focus to the reveal button', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const trigger = screen.getByRole('button', {
+      name: 'Раскрыть панель управления',
+    });
+    await user.click(trigger);
+    await user.keyboard('{Escape}');
+    expect(panel()).toHaveAttribute('inert');
+    expect(trigger).toHaveFocus();
+  });
+
   it('opens on trigger click rather than hover and restores focus on collapse', async () => {
     const user = userEvent.setup();
     render(<Harness />);
@@ -296,6 +308,24 @@ describe('dashboard toolbar integration', () => {
     expect(panel()).toHaveAttribute('data-open', 'true');
     await user.keyboard('{Escape}');
     expect(help).toHaveFocus();
+    expect(panel()).toHaveAttribute('data-open', 'true');
+    await user.keyboard('{Escape}');
+    expect(panel()).toHaveAttribute('data-open', 'false');
+    expect(
+      screen.getByRole('button', { name: 'Раскрыть панель управления' }),
+    ).toHaveFocus();
+  });
+
+  it('closes the workspace menu before collapsing the toolbar on Escape', async () => {
+    const user = userEvent.setup();
+    await startApp();
+    await user.keyboard('w');
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(panel()).toHaveAttribute('data-open', 'true');
+    await user.keyboard('{Escape}');
+    expect(panel()).toHaveAttribute('data-open', 'false');
   });
 
   it('W reveals the panel and opens an unclipped workspace menu; switching preserves visibility', async () => {

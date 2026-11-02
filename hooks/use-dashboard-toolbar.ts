@@ -110,6 +110,22 @@ export function useDashboardToolbar({
     return () => document.removeEventListener('click', handleOutside);
   }, [mode, isOpen, toolbarId, collapse]);
 
+  useEffect(() => {
+    if (mode !== 'left-collapsible' || !isOpen || isEditing) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        document.querySelector('dialog[open]')
+      )
+        return;
+      event.preventDefault();
+      collapse();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [mode, isOpen, isEditing, collapse]);
+
   const getReturnFocus = useCallback(() => {
     if (mode === 'left-collapsible' && !isOpen) return revealRef.current;
     return (
