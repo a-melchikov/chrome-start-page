@@ -302,6 +302,20 @@
     transition: opacity 180ms ease-out;
   }
 
+  .dashboard-toolbar-reveal-handle {
+    width: 4px;
+    height: 96px;
+    border-radius: 9999px;
+    background-color: var(--theme-text-secondary);
+    box-shadow: 0 1px 3px var(--theme-surface-bg);
+  }
+
+  .dashboard-toolbar-reveal-button:hover .dashboard-toolbar-reveal-handle,
+  .dashboard-toolbar-reveal-button:focus-visible
+    .dashboard-toolbar-reveal-handle {
+    background-color: var(--theme-text-primary);
+  }
+
   .dashboard-toolbar-reveal:hover .dashboard-toolbar-reveal-button,
   .dashboard-toolbar-reveal:focus-within .dashboard-toolbar-reveal-button {
     opacity: 1;
@@ -894,7 +908,7 @@
 
 /* Keep controls readable over arbitrary wallpaper without changing glass sliders. */
 .dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
-  :is(.dashboard-popover-surface, .dashboard-toolbar-reveal-button) {
+  .dashboard-popover-surface {
   background-color: var(--theme-surface-bg);
 }
 

@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import type { ToolbarMode } from '../../storage/schema';
-import { ChevronLeftIcon, ChevronRightIcon } from '../icons';
+import { ChevronLeftIcon } from '../icons';
 import { IconButton } from '../ui';
 import { classNames } from '../ui/class-names';
 
@@ -52,14 +52,17 @@ export function DashboardToolbar({
                 ? `Раскрыть панель управления (${toggleShortcut})`
                 : 'Раскрыть панель управления'
             }
-            className="dashboard-toolbar-reveal-button dashboard-popover-surface liquid-glass-surface h-16 w-6 rounded-l-none rounded-r-lg !p-0"
+            className="dashboard-toolbar-reveal-button h-28 w-6 !bg-transparent !p-0"
             size="small"
             variant="ghost"
             disabled={!canManage || isInteracting}
             tabIndex={isOpen ? -1 : 0}
             onClick={onExpand}
           >
-            <ChevronRightIcon className="size-5" />
+            <span
+              aria-hidden="true"
+              className="dashboard-toolbar-reveal-handle"
+            />
           </IconButton>
         </div>
       )}
