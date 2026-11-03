@@ -448,6 +448,8 @@ function isLiquidGlassConfig(value: unknown): value is LiquidGlassConfig {
   return (
     isRecord(value) &&
     typeof value.enabled === 'boolean' &&
+    (value.pointerLight === undefined ||
+      typeof value.pointerLight === 'boolean') &&
     isIntegerInRange(value.transparency, 0, 100) &&
     isIntegerInRange(value.blur, 0, 40) &&
     isIntegerInRange(value.shadow, 0, 100)

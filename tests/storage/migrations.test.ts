@@ -522,6 +522,42 @@ describe('migrateDashboardConfig', () => {
     ).toThrow(InvalidDashboardConfigError);
   });
 
+  it.each([undefined, false, true])(
+    'preserves optional pointer light value %s',
+    (pointerLight) => {
+      const config = createDefaultDashboardConfig();
+      config.workspaces[0]!.appearance.liquidGlass.pointerLight = pointerLight;
+      const result = migrateDashboardConfig(JSON.parse(JSON.stringify(config)));
+      expect(result.workspaces[0]!.appearance.liquidGlass.pointerLight).toBe(
+        pointerLight,
+      );
+    },
+  );
+
+  it.each(['yes', 1, null])(
+    'rejects invalid pointer light value %s',
+    (pointerLight) => {
+      const config = createDefaultDashboardConfig();
+      expect(() =>
+        migrateDashboardConfig({
+          ...config,
+          workspaces: [
+            {
+              ...config.workspaces[0]!,
+              appearance: {
+                ...config.workspaces[0]!.appearance,
+                liquidGlass: {
+                  ...config.workspaces[0]!.appearance.liquidGlass,
+                  pointerLight,
+                },
+              },
+            },
+          ],
+        }),
+      ).toThrow(InvalidDashboardConfigError);
+    },
+  );
+
   it('rejects a non-boolean Liquid Glass toggle', () => {
     const config = createDefaultDashboardConfig();
 

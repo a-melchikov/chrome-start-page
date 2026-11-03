@@ -212,6 +212,7 @@ describe('AppearanceDialog wallpaper controls', () => {
         ...appearance,
         liquidGlass: {
           enabled: true,
+          pointerLight: true,
           transparency: 70,
           blur: 8,
           shadow: 90,
@@ -232,6 +233,7 @@ describe('AppearanceDialog wallpaper controls', () => {
     expect(props.onAppearanceChange).toHaveBeenCalledWith({
       liquidGlass: {
         enabled: true,
+        pointerLight: true,
         transparency: 40,
         blur: 18,
         shadow: 50,

@@ -712,6 +712,27 @@ export function AppearanceSettings({
                 }
               />
             </label>
+            <label className="flex cursor-pointer items-center justify-between gap-4 has-disabled:cursor-default has-disabled:opacity-50">
+              <span className="text-sm font-medium text-theme-text-primary">
+                Блик за курсором
+              </span>
+              <input
+                aria-label="Блик за курсором"
+                checked={appearance.liquidGlass.pointerLight === true}
+                className="size-5 accent-theme-accent"
+                disabled={!appearance.liquidGlass.enabled}
+                role="switch"
+                type="checkbox"
+                onChange={(event) =>
+                  onAppearanceChange({
+                    liquidGlass: {
+                      ...appearance.liquidGlass,
+                      pointerLight: event.target.checked,
+                    },
+                  })
+                }
+              />
+            </label>
             {appearance.liquidGlass.enabled && (
               <SettingsBlock
                 blockId="appearance.glass"

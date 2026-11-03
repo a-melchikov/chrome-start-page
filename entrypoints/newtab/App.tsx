@@ -283,6 +283,7 @@ export function App() {
       <main
         aria-busy={isLoading}
         data-theme-motion={themeMotionReady}
+        data-pointer-light-enabled={liquidGlass.pointerLight === true}
         data-wallpaper-active={wallpaperActive}
         className={classNames(
           'dashboard-root relative isolate min-h-screen text-theme-text-primary',

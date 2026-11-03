@@ -550,6 +550,49 @@
     );
   }
 
+  .widget-search-surface {
+    position: relative;
+  }
+
+  .widget-card-surface::after,
+  .widget-search-surface::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      240px circle at var(--pointer-light-x, 50%) var(--pointer-light-y, 50%),
+      rgb(255 255 255 / 0.09),
+      transparent 100%
+    );
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease-out;
+    content: '';
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    :root:not([data-motion='reduced']):not([data-motion='off'])
+      .liquid-glass-enabled[data-pointer-light-enabled='true']
+      :is(
+        .widget-card-surface,
+        .widget-search-surface
+      )[data-pointer-light='true']:not(:has(.weather-visual))::after {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .widget-card-surface::after,
+    .widget-search-surface::after {
+      transition: none;
+    }
+  }
+
+  :root:is([data-motion='reduced'], [data-motion='off'])
+    :is(.widget-card-surface, .widget-search-surface)::after {
+    transition: none;
+  }
+
   .liquid-glass-enabled .widget-card-surface:has(.weather-visual) {
     background-color: transparent;
     backdrop-filter: none;

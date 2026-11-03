@@ -16,6 +16,7 @@ import {
   getWidgetDisplayName,
   type RenderableWidgetConfig,
 } from './widget-display';
+import { useWidgetPointerLight } from './use-widget-pointer-light';
 
 interface WidgetHostProps {
   isEditing: boolean;
@@ -51,6 +52,9 @@ export function WidgetHost({
   const [isEditorExiting, setIsEditorExiting] = useState(false);
   const [readerState, setReaderState] = useState<'closed' | 'open' | 'closing'>(
     'closed',
+  );
+  const pointerLight = useWidgetPointerLight(
+    isEditing || isWidgetEditing || readerState !== 'closed',
   );
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
@@ -222,6 +226,7 @@ export function WidgetHost({
   return (
     <>
       <article
+        {...pointerLight}
         data-widget-id={widget.id}
         data-new-widget={isNew || undefined}
         data-selected={isEditing && isSelected ? 'true' : undefined}

@@ -610,6 +610,58 @@ describe('App', () => {
     });
   });
 
+  it('keeps pointer light off by default and persists its separate workspace toggle', async () => {
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const toggle = await screen.findByRole('switch', {
+      name: 'Блик за курсором',
+    });
+    expect(toggle).not.toBeChecked();
+    expect(screen.getByRole('main')).toHaveAttribute(
+      'data-pointer-light-enabled',
+      'false',
+    );
+    await user.click(toggle);
+    expect(screen.getByRole('main')).toHaveAttribute(
+      'data-pointer-light-enabled',
+      'true',
+    );
+    await waitFor(async () => {
+      const saved = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(saved?.workspaces[0]?.appearance.liquidGlass.pointerLight).toBe(
+        true,
+      );
+      expect(
+        saved?.workspaces[1]?.appearance.liquidGlass.pointerLight ?? false,
+      ).toBe(false);
+    });
+    await user.click(screen.getByRole('switch', { name: 'Эффект стекла' }));
+    expect(toggle).toBeDisabled();
+    expect(toggle).toBeChecked();
+    await user.click(screen.getByRole('switch', { name: 'Эффект стекла' }));
+    expect(toggle).toBeEnabled();
+    await user.keyboard('{Escape}');
+    view.unmount();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    const restored = await screen.findByRole('switch', {
+      name: 'Блик за курсором',
+    });
+    expect(restored).toBeChecked();
+    await user.click(restored);
+    await waitFor(async () => {
+      const saved = await storage.getItem<DashboardConfig>(
+        DASHBOARD_STORAGE_KEY,
+      );
+      expect(saved?.workspaces[0]?.appearance.liquidGlass.pointerLight).toBe(
+        false,
+      );
+    });
+  });
+
   it('previews, persists, resets, and toggles Liquid Glass settings', async () => {
     const user = userEvent.setup();
     render(<App />);

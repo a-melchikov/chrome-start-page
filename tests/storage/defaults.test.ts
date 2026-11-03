@@ -25,6 +25,11 @@ describe('createDefaultDashboardConfig', () => {
       blur: 18,
       shadow: 50,
     });
+    for (const workspace of config.workspaces) {
+      expect(workspace.appearance.liquidGlass.pointerLight ?? false).toBe(
+        false,
+      );
+    }
   });
 
   it('returns a fresh config on every call', () => {

@@ -48,6 +48,7 @@ export function isImageAssetId(value: unknown): value is string {
 
 export interface LiquidGlassConfig {
   enabled: boolean;
+  pointerLight?: boolean;
   transparency: number;
   blur: number;
   shadow: number;

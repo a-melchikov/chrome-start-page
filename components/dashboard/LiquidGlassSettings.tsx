@@ -89,7 +89,11 @@ export function LiquidGlassSettings({
         size="small"
         variant="secondary"
         onClick={() =>
-          onReset({ ...DEFAULT_LIQUID_GLASS, enabled: settings.enabled })
+          onReset({
+            ...settings,
+            ...DEFAULT_LIQUID_GLASS,
+            enabled: settings.enabled,
+          })
         }
       >
         Вернуть стандартные параметры
