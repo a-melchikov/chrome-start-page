@@ -4,6 +4,7 @@ import { browser } from 'wxt/browser';
 import { registerCaptureContextMenus } from '../capture/context-menus';
 import { loadDashboardConfig } from '../storage/dashboard-storage';
 import { releaseClosedTabImageLease } from '../storage/image-assets';
+import { registerEventReminders } from '../widgets/events/background-reminders';
 import {
   getPhaseDurationSeconds,
   getPomodoroStorageKey,
@@ -200,6 +201,7 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 
 export default defineBackground(() => {
   registerCaptureContextMenus();
+  registerEventReminders();
 
   browser.tabs.onRemoved.addListener((tabId) => {
     void releaseClosedTabImageLease(tabId).catch((error: unknown) => {

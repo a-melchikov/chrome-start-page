@@ -17,7 +17,8 @@ export default defineConfig({
     // favicon services and does not require access to users' linked websites.
     // `unlimitedStorage` lets local wallpapers retain their original bytes
     // when lossless compression cannot bring them below the 6 MiB target.
-    // `alarms`, `notifications`, and `offscreen` enable the background Pomodoro timer and audio.
+    // `alarms` and `notifications` enable Pomodoro and timed event reminders;
+    // `offscreen` enables Pomodoro audio.
     permissions: [
       // Allows explicit capture of links and selected text through Chrome's menu.
       'contextMenus',

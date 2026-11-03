@@ -4,6 +4,7 @@ import type { WidgetType } from '../../storage/schema';
 import { getAvailableWidgetDefinitions } from '../../widgets/registry';
 import {
   AnalogClockIcon,
+  CalendarIcon,
   ClockIcon,
   CloudSunIcon,
   DocumentTextIcon,
@@ -23,6 +24,7 @@ const WIDGET_ICONS: Record<
   WidgetType,
   ComponentType<{ className?: string }>
 > = {
+  events: CalendarIcon,
   markdown: DocumentTextIcon,
   search: SearchIcon,
   pomodoro: TimerIcon,

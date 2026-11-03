@@ -755,4 +755,79 @@ describe('widget lifecycle', () => {
       });
     });
   });
+
+  it('saves event dialogs from the card and restores events after remount', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+    await enableEditMode(user);
+    await user.click(screen.getByRole('button', { name: 'Добавить виджет' }));
+    await user.click(screen.getByRole('button', { name: 'Ближайшие события' }));
+    const card = await screen.findByRole('article', {
+      name: 'Ближайшие события',
+    });
+    expect(card).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'Выключить режим редактирования' }),
+    );
+    await user.click(
+      (
+        await screen.findAllByRole('button', {
+          name: /^Добавить событие$/,
+        })
+      ).at(-1)!,
+    );
+    await user.type(
+      screen.getByLabelText('Название события'),
+      'Проверить выпуск',
+    );
+    fireEvent.change(screen.getByLabelText('Дата'), {
+      target: { value: '2099-01-31' },
+    });
+    await user.click(screen.getByRole('combobox', { name: 'Повтор' }));
+    await user.click(screen.getByRole('option', { name: 'Ежемесячно' }));
+    await user.click(screen.getByRole('button', { name: /^Сохранить$/ }));
+    expect(
+      screen.queryByRole('dialog', { name: 'Новое событие' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Добавить событие' }),
+    ).toHaveFocus();
+    await waitFor(async () =>
+      expect((await getStoredConfig())?.widgets[0]).toMatchObject({
+        type: 'events',
+        events: [
+          {
+            title: 'Проверить выпуск',
+            date: '2099-01-31',
+            time: '',
+            repeat: 'monthly',
+          },
+        ],
+      }),
+    );
+    first.unmount();
+    render(<App />);
+    expect(
+      await screen.findByRole('button', {
+        name: 'Изменить событие «Проверить выпуск»',
+      }),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Изменить событие «Проверить выпуск»',
+      }),
+    );
+    await user.clear(screen.getByLabelText('Название события'));
+    await user.type(
+      screen.getByLabelText('Название события'),
+      'Новое название',
+    );
+    await user.click(screen.getByRole('button', { name: /^Сохранить$/ }));
+    act(() => window.dispatchEvent(new Event('pagehide')));
+    await waitFor(async () =>
+      expect((await getStoredConfig())?.widgets[0]).toMatchObject({
+        events: [{ title: 'Новое название', repeat: 'monthly' }],
+      }),
+    );
+  });
 });

@@ -8,6 +8,12 @@ import {
 import type { WidgetConfig, WidgetType } from '../storage/schema';
 import { createWidgetId } from './create-widget-id';
 import {
+  createDefaultEventsWidget,
+  DEFAULT_EVENTS_WIDGET_LAYOUT,
+} from './events/defaults';
+import { isCalendarEvents } from './events/event-utils';
+import type { EventsWidgetConfig } from './events/types';
+import {
   createDefaultClockWidget,
   DEFAULT_CLOCK_WIDGET_LAYOUT,
 } from './clock/defaults';
@@ -46,6 +52,8 @@ import {
 } from './analog-clock/defaults';
 import type { AnalogClockWidgetConfig } from './analog-clock/types';
 import {
+  EventsWidget,
+  EventsWidgetEditor,
   AnalogClockWidget,
   AnalogClockWidgetEditor,
   ClockWidget,
@@ -500,6 +508,34 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       layout: {
         minW: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minW,
         minH: DEFAULT_ANALOG_CLOCK_WIDGET_LAYOUT.minH,
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
+      },
+    },
+  }),
+  defineWidget<EventsWidgetConfig>({
+    type: 'events',
+    metadata: {
+      name: 'Ближайшие события',
+      description: 'Встречи, важные даты, повторы и обратный отсчёт.',
+    },
+    create: createDefaultEventsWidget,
+    isConfig: (value): value is EventsWidgetConfig =>
+      typeof value === 'object' &&
+      value !== null &&
+      'type' in value &&
+      value.type === 'events' &&
+      'events' in value &&
+      isCalendarEvents(value.events),
+    Renderer: EventsWidget,
+    Editor: EventsWidgetEditor,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: true,
+      editorTitle: 'Управление событиями',
+      layout: {
+        minW: DEFAULT_EVENTS_WIDGET_LAYOUT.minW,
+        minH: DEFAULT_EVENTS_WIDGET_LAYOUT.minH,
         resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
       },
     },

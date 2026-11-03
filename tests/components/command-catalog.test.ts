@@ -59,7 +59,10 @@ describe('command catalog', () => {
     const commands = buildCommandCatalog(config, false);
 
     expect(commands.filter((command) => command.kind === 'add')).toHaveLength(
-      7,
+      8,
+    );
+    expect(commands).toContainEqual(
+      expect.objectContaining({ id: 'add:events', kind: 'add' }),
     );
 
     expect(commands.filter((command) => command.kind === 'theme')).toHaveLength(

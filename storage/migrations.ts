@@ -12,6 +12,7 @@ import {
   isWallpaperAssetId,
 } from './schema';
 import type { AnalogClockDialStyle } from '../widgets/analog-clock/types';
+import { isCalendarEvents } from '../widgets/events/event-utils';
 import type { ClockDateFormat, ClockTimeFormat } from '../widgets/clock/types';
 import {
   IMAGE_OBJECT_POSITIONS,
@@ -247,6 +248,10 @@ function isWidgetConfigV6(value: unknown): boolean {
 
   if (value.type === 'markdown') {
     return typeof value.content === 'string';
+  }
+
+  if (value.type === 'events') {
+    return isCalendarEvents(value.events);
   }
 
   if (value.type === 'search') {

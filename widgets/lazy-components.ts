@@ -1,5 +1,16 @@
 import { lazy } from 'react';
 
+export const EventsWidget = lazy(() =>
+  import('./events/EventsWidget').then((module) => ({
+    default: module.EventsWidget,
+  })),
+);
+export const EventsWidgetEditor = lazy(() =>
+  import('./events/EventsWidgetEditor').then((module) => ({
+    default: module.EventsWidgetEditor,
+  })),
+);
+
 export const MarkdownWidget = lazy(() =>
   import('./markdown/MarkdownWidget').then((module) => ({
     default: module.MarkdownWidget,

@@ -4,6 +4,7 @@ import type { ShortcutOverrides } from '../keyboard/shortcuts';
 import type { SettingsPanelPreferences } from './settings-panel';
 import type { AnalogClockWidgetConfig } from '../widgets/analog-clock/types';
 import type { ClockWidgetConfig } from '../widgets/clock/types';
+import type { EventsWidgetConfig } from '../widgets/events/types';
 import type { ImageWidgetConfig } from '../widgets/image/types';
 import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
@@ -65,6 +66,7 @@ export interface AppearanceConfig {
 }
 
 export interface WidgetConfigMap {
+  events: EventsWidgetConfig;
   markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;
   pomodoro: PomodoroWidgetConfig;

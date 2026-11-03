@@ -27,6 +27,15 @@ function BaseIcon({ children, ...props }: BaseIconProps) {
   );
 }
 
+export function CalendarIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 11h18m-13 5h2m4 0h2" />
+    </BaseIcon>
+  );
+}
+
 export function PlusIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

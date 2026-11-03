@@ -134,6 +134,13 @@ export function AboutSettings() {
               onValueChange={setVersion}
               options={[
                 { value: 'all', label: 'Все версии' },
+                ...(FEATURE_GROUPS.some((group) =>
+                  group.features.some(
+                    (feature) => feature.introducedIn === 'unreleased',
+                  ),
+                )
+                  ? [{ value: 'unreleased', label: 'Не выпущено' }]
+                  : []),
                 ...RELEASE_NOTES.map((release) => ({
                   value: release.version,
                   label: release.version,
@@ -173,18 +180,24 @@ export function AboutSettings() {
                       <h4 className="text-sm font-semibold text-theme-text-primary">
                         {feature.title}
                       </h4>
-                      <button
-                        type="button"
-                        aria-label={`${feature.title}: история версии ${feature.introducedIn}`}
-                        className="rounded-sm text-xs tabular-nums text-theme-accent underline decoration-theme-accent/40 underline-offset-4 outline-none hover:decoration-current focus-visible:ring-2 focus-visible:ring-theme-ring"
-                        onClick={() => {
-                          setExpandedVersions([feature.introducedIn]);
-                          setRequestedRelease(feature.introducedIn);
-                          setView('history');
-                        }}
-                      >
-                        С версии {feature.introducedIn}
-                      </button>
+                      {feature.introducedIn === 'unreleased' ? (
+                        <span className="text-xs text-theme-text-secondary">
+                          Не выпущено
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={`${feature.title}: история версии ${feature.introducedIn}`}
+                          className="rounded-sm text-xs tabular-nums text-theme-accent underline decoration-theme-accent/40 underline-offset-4 outline-none hover:decoration-current focus-visible:ring-2 focus-visible:ring-theme-ring"
+                          onClick={() => {
+                            setExpandedVersions([feature.introducedIn]);
+                            setRequestedRelease(feature.introducedIn);
+                            setView('history');
+                          }}
+                        >
+                          С версии {feature.introducedIn}
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm leading-relaxed text-theme-text-secondary">
                       {feature.description}

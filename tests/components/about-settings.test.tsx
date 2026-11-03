@@ -28,7 +28,7 @@ describe('About and feature guide', () => {
       features.length,
     );
     for (const feature of features)
-      expect(versions).toContain(feature.introducedIn);
+      expect([...versions, 'unreleased']).toContain(feature.introducedIn);
     expect(
       features
         .flatMap((feature) => (feature.widgetType ? [feature.widgetType] : []))
@@ -90,6 +90,26 @@ describe('About and feature guide', () => {
     expect(
       screen.getByRole('heading', { name: 'Ссылки на локальные файлы' }),
     ).toBeVisible();
+  });
+
+  it('lists unreleased events without linking them to a published release', async () => {
+    const user = userEvent.setup();
+    render(<AboutSettings />);
+    await user.click(
+      screen.getByRole('combobox', { name: 'Версия появления' }),
+    );
+    await user.click(screen.getByRole('option', { name: 'Не выпущено' }));
+    expect(
+      screen.getByRole('heading', { name: 'Ближайшие события' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('heading', { name: 'Цифровые часы' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', {
+        name: /Ближайшие события: история версии/,
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it('opens a feature release and focuses it, retaining the search when returning', async () => {

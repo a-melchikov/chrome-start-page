@@ -14,7 +14,7 @@ have the complete dashboard restored from local Chrome storage.
 а также встроенную историю из `CHANGELOG.md`: номера версий, даты выпусков
 и понятное описание изменений.
 
-Приложение поддерживает семь повторяемых типов виджетов:
+Приложение поддерживает восемь повторяемых типов виджетов:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar
@@ -47,6 +47,9 @@ have the complete dashboard restored from local Chrome storage.
   date window at 3 o'clock, timezone label, and local or IANA timezones.
 - **Pomodoro** — a configurable focus/break timer with cycle progression,
   persistent runtime state, background alarms, notifications, and audio.
+- **Ближайшие события** — карточка `4×4` (минимум `3×3`) с ручным вводом,
+  необязательным временем, повторами и обратным отсчётом. Прошедшие разовые
+  события скрываются после конца дня и доступны в управлении событиями.
 - **Weather** — a card widget (default `5×5`, minimum `3×3`) supporting visual
   and compact modes, Open-Meteo forecasts and city geocoding,
   detailed meteorological metrics and a 5-day daily forecast.
@@ -222,6 +225,15 @@ Rationale and rejected alternatives are in `docs/DECISIONS.md`.
   recovery/reset flow.
 
 ## Current Priorities
+
+Виджет «Ближайшие события» работает локально без внешних календарей.
+Повторы доступны каждый день, неделю, месяц или год. Для событий с временем
+расширение показывает системные уведомления за 5 минут и в минуту начала,
+в том числе в неактивных пространствах и при закрытых стартовых страницах,
+пока запущен Chrome. События без времени и пространства в корзине не уведомляют.
+В веб-версии системных напоминаний нет. Пропущенные минуты после сна или
+закрытия браузера не догоняются; Chrome и настройки ОС могут задерживать
+или блокировать показ уведомлений.
 
 No unfinished product requirement is recorded. README lists Google Calendar as
 a roadmap idea; confirm scope with the user before starting it. See
