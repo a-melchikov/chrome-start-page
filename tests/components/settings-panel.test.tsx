@@ -258,7 +258,7 @@ describe('Shared settings panel', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Выбрать тему' }),
     );
-    await user.click(screen.getByRole('button', { name: 'Тема', exact: true }));
+    await user.click(screen.getByRole('button', { name: /^Тема$/ }));
     await user.keyboard('{Escape}/');
     await user.type(
       await screen.findByRole('combobox', { name: 'Поиск команд' }),
@@ -268,10 +268,13 @@ describe('Shared settings panel', () => {
       screen.getByRole('option', { name: /Открыть настройки: Тема/ }),
     );
     expect(
-      await screen.findByRole('button', { name: 'Тема', exact: true }),
+      await screen.findByRole('button', { name: /^Тема$/, expanded: true }),
     ).toHaveAttribute('aria-expanded', 'true');
     expect(
-      screen.getByRole('button', { name: 'Выбрать тему' }),
+      await screen.findByRole('button', {
+        name: 'Выбрать тему',
+        expanded: true,
+      }),
     ).toHaveAttribute('aria-expanded', 'true');
   });
 
