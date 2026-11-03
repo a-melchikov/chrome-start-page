@@ -22,6 +22,7 @@ describe('About and feature guide', () => {
     const features = FEATURE_GROUPS.flatMap((group) => group.features);
     const versions = RELEASE_NOTES.map((release) => release.version);
     expect(versions[0]).toBe(APP_VERSION);
+    expect(RELEASE_NOTES[0]?.releasedAt).toBe('2026-11-03');
     expect(new Set(versions).size).toBe(versions.length);
     expect(new Set(features.map((feature) => feature.id)).size).toBe(
       features.length,
@@ -40,7 +41,14 @@ describe('About and feature guide', () => {
     expect(RELEASE_NOTES.every((release) => release.content.length > 0)).toBe(
       true,
     );
-    expect(RELEASE_NOTES.at(-1)?.content).not.toContain('## Ведение истории');
+    for (const release of RELEASE_NOTES) {
+      expect(new Date(release.releasedAt).toISOString().slice(0, 10)).toBe(
+        release.releasedAt,
+      );
+      expect(release.content).not.toMatch(
+        /восстановлена по Git|готовится к выпуску|Номер установлен в коммите/,
+      );
+    }
   });
 
   it('searches instructions and combines search with the introduction version filter', async () => {
@@ -94,16 +102,14 @@ describe('About and feature guide', () => {
       }),
     );
     const release = screen.getByRole('button', {
-      name: '0.1.1 — история восстановлена по Git',
+      name: 'V0.1.1',
     });
     expect(release).toHaveFocus();
     expect(release).toHaveAttribute('aria-expanded', 'true');
     await waitFor(() =>
-      expect(screen.getByText(/Номер установлен в коммите/)).toBeVisible(),
+      expect(screen.getByText(/22 октября 2026/)).toBeVisible(),
     );
-    expect(
-      screen.getByText(/даты публикации этих выпусков не подтверждены/),
-    ).toBeVisible();
+    expect(screen.queryByText(/восстановлена по Git/)).not.toBeInTheDocument();
     await user.click(release);
     expect(release).toHaveAttribute('aria-expanded', 'false');
     await user.click(screen.getByRole('button', { name: 'Возможности' }));

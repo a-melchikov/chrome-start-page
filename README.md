@@ -178,6 +178,8 @@ pnpm package
 
 Каталоги `.output/` и `.wxt/` являются генерируемыми и не коммитятся.
 
+Готовые архивы выпусков доступны в [GitHub Releases](https://github.com/a-melchikov/chrome-start-page/releases).
+
 ## Локальная установка production-сборки
 
 1. Выполните `pnpm build`.

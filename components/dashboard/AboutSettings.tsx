@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { FEATURE_GROUPS } from '../../app/features';
-import { RELEASE_NOTES } from '../../app/release-notes';
+import { formatReleaseDate, RELEASE_NOTES } from '../../app/release-notes';
 import { APP_VERSION } from '../../app/version';
 import { MarkdownRenderer } from '../../widgets/markdown/MarkdownRenderer';
 import { Button, Input, Select } from '../ui';
@@ -9,6 +9,9 @@ import { classNames } from '../ui/class-names';
 import { Disclosure } from '../ui/Disclosure';
 
 export function AboutSettings() {
+  const currentRelease = RELEASE_NOTES.find(
+    (release) => release.version === APP_VERSION,
+  );
   const [view, setView] = useState<'features' | 'history'>('features');
   const [query, setQuery] = useState('');
   const [version, setVersion] = useState('all');
@@ -62,12 +65,11 @@ export function AboutSettings() {
           <span className="font-semibold tabular-nums text-theme-text-primary">
             Версия {APP_VERSION}
           </span>
-          <span>
-            {
-              RELEASE_NOTES.find((release) => release.version === APP_VERSION)
-                ?.status
-            }
-          </span>
+          {currentRelease && (
+            <time dateTime={currentRelease.releasedAt}>
+              от {formatReleaseDate(currentRelease.releasedAt)}
+            </time>
+          )}
         </p>
       </header>
 
@@ -207,15 +209,11 @@ export function AboutSettings() {
         hidden={view !== 'history'}
         className="space-y-4"
       >
-        <p className="text-sm leading-relaxed text-theme-text-secondary">
-          История 0.1.0 и 0.1.1 восстановлена по Git. Указанные в записях даты
-          относятся к разработке; даты публикации этих выпусков не подтверждены.
-        </p>
         <div ref={historyRef} className="space-y-3">
           {RELEASE_NOTES.map((release) => (
             <div key={release.version} data-release-version={release.version}>
               <Disclosure
-                title={`${release.version} — ${release.status}`}
+                title={`V${release.version}`}
                 open={expandedVersions.includes(release.version)}
                 onOpenChange={(open) =>
                   setExpandedVersions((previous) =>
@@ -225,7 +223,13 @@ export function AboutSettings() {
                   )
                 }
               >
-                <div className="px-4 pb-4">
+                <div className="space-y-3 px-4 pb-4">
+                  <p className="text-sm text-theme-text-secondary">
+                    Дата выпуска:{' '}
+                    <time dateTime={release.releasedAt}>
+                      {formatReleaseDate(release.releasedAt)}
+                    </time>
+                  </p>
                   <MarkdownRenderer content={release.content} />
                 </div>
               </Disclosure>
