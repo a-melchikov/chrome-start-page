@@ -73,9 +73,28 @@ Tailwind явно сканирует корень репозитория нез�
 UI does not access Chrome storage directly. Storage does not depend on React.
 Renderer-derived state is not persisted.
 
+## Версия и встроенная справка
+
+`package.json` — единственный источник текущего номера приложения. WXT берёт его
+для manifest автоматически; `app/version.ts` экспортирует тот же номер общему
+React-интерфейсу расширения и веб-приложения. Номер приложения не связан
+с версиями схемы дашборда и оболочки резервной копии.
+
+`app/features.ts` содержит справочник текущих возможностей: группы, описание,
+инструкцию и версию первого появления. При добавлении функции обновляются
+справочник и `CHANGELOG.md`. `app/release-notes.ts` включает Markdown в сборку
+и выделяет разделы формата `## X.Y.Z — статус или дата`. Разделы «Не выпущено»
+и служебная инструкция в интерфейс не попадают. Содержимое истории отображается
+через существующий безопасный `MarkdownRenderer` без сетевой загрузки.
+
+`AboutSettings` загружается лениво из панели настроек; поиск, фильтр и раскрытые
+записи — временное состояние просмотра. Они не меняют дашборд и не требуют
+миграции. Исторические версии отмечаются как восстановленные по Git до появления
+подтверждённых данных о публикации.
+
 ## Configuration and Registry
 
-`storage/schema.ts` defines `DashboardConfig` version 9 and maps widget type
+`storage/schema.ts` defines `DashboardConfig` version 10 and maps widget type
 literals to concrete configs through `WidgetConfigMap`. Each config contains an
 ID, type, optional title, and `{x,y,w,h}` layout; Markdown adds `content`,
 `template` (`'blank' | 'tasks' | 'daily-plan' | 'links' | 'draft'`),

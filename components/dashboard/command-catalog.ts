@@ -24,6 +24,7 @@ export type PaletteCommand =
         | 'edit'
         | 'add-dialog'
         | 'appearance'
+        | 'about'
         | 'backup'
         | 'export'
         | 'themes'
@@ -155,6 +156,14 @@ export function buildCommandCatalog(
       action: 'backup',
       label: 'Импорт и экспорт',
       category: 'Действия',
+    },
+    {
+      id: 'action:about',
+      kind: 'action',
+      action: 'about',
+      label: 'О приложении: возможности и история изменений',
+      category: 'Настройки',
+      keywords: 'версия справка функции changelog релиз обновления',
     },
     {
       id: 'action:export',

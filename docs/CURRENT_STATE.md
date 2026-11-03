@@ -1,9 +1,13 @@
 # Current State
 
-Last updated: 2026-10-28
+Last updated: 2026-11-03
 
 ## Implemented
 
+- Подготовка 0.2.0: единый номер из `package.json` для расширения и веб-приложения,
+  встроенный `CHANGELOG.md`, раздел «О приложении» со справочником возможностей,
+  поиском, фильтром по версии появления и историей. Старые записи восстановлены
+  по Git с явной оговоркой. Коммит, тег и публикация выпуска не выполнены.
 - Запуск без установки расширения: `dev:app` открывает отдельное окно
   Chrome/Chromium с отдельным профилем, `dev:web` запускает Vite с обновлением
   исходников, `build:web` / `preview:web` дают веб-сборку с source maps.
@@ -37,7 +41,7 @@ Last updated: 2026-10-28
   закрывается кнопкой/завершённым внешним кликом/M; редактирование доступно
   при скрытой панели. Состояние раскрытия не сохраняется; настройки мигрируют в v9.
 
-- WXT/React/TypeScript Manifest V3 new-tab extension, version 0.1.1.
+- WXT/React/TypeScript Manifest V3 new-tab extension; version is defined in `package.json`.
 - Version 10 local dashboard schema with independent Workspaces / Profiles (`workspaces: WorkspaceConfig[]`, `activeWorkspaceId: string`),
   isolated `widgets`, `layout`, `appearance` (`theme`, `backgroundColor`, `wallpaper`, `liquidGlass`) per workspace, global shared `customThemes`,
   full CRUD (create, rename, duplicate, reorder, delete with fallback protection), quick switcher in toolbar, hotkey `W`, and Command Palette switching.

@@ -9,7 +9,12 @@ have the complete dashboard restored from local Chrome storage.
 
 ## Current Product
 
-Version 0.1.1 implements seven repeatable widget types:
+Текущая версия задана в `package.json`. Раздел «Настройки → О приложении»
+показывает её, полный справочник функций с поиском и версией появления,
+а также встроенную историю из `CHANGELOG.md`. История 0.1.0 и 0.1.1 восстановлена
+по Git и явно помечена; готовящаяся версия не выдаётся за опубликованный выпуск.
+
+Приложение поддерживает семь повторяемых типов виджетов:
 
 - **Markdown** — a resizable `4×3` card by default with a separate title,
   5 note templates (`blank`, `tasks`, `daily-plan`, `links`, `draft`), quick add input bar

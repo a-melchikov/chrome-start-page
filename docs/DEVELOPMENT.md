@@ -214,7 +214,7 @@ pnpm package
 ```
 
 - Unpacked production extension: `.output/chrome-mv3`
-- ZIP package: `.output/chrome-start-page-0.1.1-chrome.zip`
+- ZIP package: `.output/chrome-start-page-<version>-chrome.zip`
 
 Both paths are generated and ignored by Git.
 

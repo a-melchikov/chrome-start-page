@@ -44,6 +44,7 @@ describe('Shared settings panel', () => {
       'Пространства',
       'Резервные копии',
       'Горячие клавиши',
+      'О приложении',
       'Оформление',
     ]) {
       await chooseSection(user, name);
@@ -99,7 +100,7 @@ describe('Shared settings panel', () => {
       );
     }
     render(<Harness />);
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(screen.getAllByRole('tab')).toHaveLength(6);
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Интерфейс' })).toBeDisabled();
     await user.keyboard('{ArrowRight}');
@@ -108,9 +109,9 @@ describe('Shared settings panel', () => {
       screen.getByRole('tabpanel', { name: 'Пространства' }),
     ).toBeVisible();
     await user.keyboard('{End}');
-    expect(screen.getByRole('tab', { name: 'Горячие клавиши' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'О приложении' })).toHaveFocus();
     await user.keyboard('{Home}{ArrowLeft}');
-    expect(screen.getByRole('tab', { name: 'Горячие клавиши' })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'О приложении' })).toHaveFocus();
     expect(onSectionChange).not.toHaveBeenCalledWith('interface');
     expect(onSectionChange).not.toHaveBeenCalledWith('backup');
   });

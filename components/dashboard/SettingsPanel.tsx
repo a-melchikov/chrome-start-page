@@ -23,6 +23,7 @@ const SETTINGS_SECTIONS = [
   { value: 'workspaces', label: 'Пространства' },
   { value: 'backup', label: 'Резервные копии' },
   { value: 'shortcuts', label: 'Горячие клавиши' },
+  { value: 'about', label: 'О приложении' },
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]['value'];

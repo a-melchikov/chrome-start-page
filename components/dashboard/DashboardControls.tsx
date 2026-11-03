@@ -57,6 +57,11 @@ const AppearanceSettings = lazy(() =>
     default: module.AppearanceSettings,
   })),
 );
+const AboutSettings = lazy(() =>
+  import('./AboutSettings').then((module) => ({
+    default: module.AboutSettings,
+  })),
+);
 const BackupSettings = lazy(() =>
   import('./BackupSettings').then((module) => ({
     default: module.BackupSettings,
@@ -431,6 +436,9 @@ export function DashboardControls({
       if (command.action === 'appearance') {
         openSettings('appearance');
       }
+      if (command.action === 'about') {
+        openSettings('about');
+      }
       if (command.action === 'backup' && !isWallpaperUpdating) {
         openSettings('backup');
       }
@@ -746,6 +754,7 @@ export function DashboardControls({
             </p>
           }
         >
+          {settingsSection === 'about' && <AboutSettings />}
           {settingsSection === 'appearance' && (
             <AppearanceSettings
               appearance={appearance}
