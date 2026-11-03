@@ -171,7 +171,7 @@ describe('MarkdownWidget', () => {
     render(
       <MarkdownWidget
         config={createConfig(
-          '[Учебник](file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf)',
+          '[Учебник](file:///home/user/Downloads/sample.pdf)',
         )}
       />,
     );
@@ -179,20 +179,20 @@ describe('MarkdownWidget', () => {
     const link = screen.getByRole('link', { name: 'Учебник' });
     expect(link).toHaveAttribute(
       'href',
-      'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+      'file:///home/user/Downloads/sample.pdf',
     );
     expect(screen.getByTestId('link-file-icon')).toBeVisible();
 
     await user.click(link);
     expect(fakeBrowser.tabs.update).toHaveBeenCalledWith({
-      url: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+      url: 'file:///home/user/Downloads/sample.pdf',
     });
 
     await user.keyboard('{Control>}');
     await user.click(link);
     await user.keyboard('{/Control}');
     expect(fakeBrowser.tabs.create).toHaveBeenCalledWith({
-      url: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+      url: 'file:///home/user/Downloads/sample.pdf',
     });
   });
 
@@ -211,7 +211,7 @@ describe('MarkdownWidget', () => {
     render(
       <MarkdownWidget
         config={createConfig(
-          '[Локальный документ](/home/andrey/Downloads/doc.pdf)',
+          '[Локальный документ](/home/user/Downloads/doc.pdf)',
         )}
       />,
     );
@@ -220,7 +220,7 @@ describe('MarkdownWidget', () => {
     await user.click(link);
 
     expect(writeText).toHaveBeenCalledWith(
-      'file:///home/andrey/Downloads/doc.pdf',
+      'file:///home/user/Downloads/doc.pdf',
     );
     expect(
       await screen.findByText(/Ссылка скопирована в буфер обмена/),

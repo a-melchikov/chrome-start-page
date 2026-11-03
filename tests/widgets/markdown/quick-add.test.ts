@@ -57,11 +57,11 @@ describe('quick add domain logic', () => {
     it('formats normalized links with optional label or hostname fallback', () => {
       const withLabel = formatQuickAddEntry(
         'links',
-        'https://github.com/a-melchikov GitHub Profile',
+        'https://example.com/profile Example Profile',
       );
       expect(withLabel).toEqual({
         success: true,
-        entry: '[GitHub Profile](https://github.com/a-melchikov)',
+        entry: '[Example Profile](https://example.com/profile)',
       });
 
       const withoutLabel = formatQuickAddEntry(

@@ -6,3 +6,23 @@ dist/
 
 .DS_Store
 *.log
+
+# Локальные настройки и секреты; шаблоны окружения можно хранить в Git.
+.env
+.env.*
+!.env.example
+!.env.*.example
+.npmrc
+.netrc
+.pypirc
+
+# Закрытые ключи и контейнеры сертификатов.
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Резервные копии с пользовательскими данными приложения.
+chrome-start-page-backup-*.json

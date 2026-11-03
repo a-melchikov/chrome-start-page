@@ -22,31 +22,23 @@ describe('normalizeLinkUrl', () => {
   });
 
   it('normalizes explicit file:// URLs including spaces and percent-encoding', () => {
-    expect(
-      normalizeLinkUrl(
-        'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
-      ),
-    ).toEqual({
+    expect(normalizeLinkUrl('file:///home/user/Downloads/sample.pdf')).toEqual({
       valid: true,
-      href: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+      href: 'file:///home/user/Downloads/sample.pdf',
     });
 
-    expect(
-      normalizeLinkUrl('file:///home/andrey/Downloads/My Book.pdf'),
-    ).toEqual({
-      valid: true,
-      href: 'file:///home/andrey/Downloads/My%20Book.pdf',
-    });
+    expect(normalizeLinkUrl('file:///home/user/Downloads/My Book.pdf')).toEqual(
+      {
+        valid: true,
+        href: 'file:///home/user/Downloads/My%20Book.pdf',
+      },
+    );
   });
 
   it('converts absolute POSIX paths into file:// URLs', () => {
-    expect(
-      normalizeLinkUrl(
-        '/home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
-      ),
-    ).toEqual({
+    expect(normalizeLinkUrl('/home/user/Downloads/sample.pdf')).toEqual({
       valid: true,
-      href: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
+      href: 'file:///home/user/Downloads/sample.pdf',
     });
 
     expect(normalizeLinkUrl('/var/log/app.log')).toEqual({
@@ -56,9 +48,9 @@ describe('normalizeLinkUrl', () => {
   });
 
   it('converts Windows drive paths into file:// URLs', () => {
-    expect(normalizeLinkUrl('C:\\Users\\Andrey\\Documents\\book.pdf')).toEqual({
+    expect(normalizeLinkUrl('C:\\Users\\User\\Documents\\book.pdf')).toEqual({
       valid: true,
-      href: 'file:///C:/Users/Andrey/Documents/book.pdf',
+      href: 'file:///C:/Users/User/Documents/book.pdf',
     });
 
     expect(normalizeLinkUrl('D:/Media/Document.pdf')).toEqual({

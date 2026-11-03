@@ -55,15 +55,15 @@ describe('extractMarkdownLinks', () => {
   it('extracts local file links and absolute paths', () => {
     expect(
       extractMarkdownLinks(
-        '[Go Handbook](file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf)\n\n[Docs](/home/andrey/docs.pdf)',
+        '[Sample document](file:///home/user/Downloads/sample.pdf)\n\n[Docs](/home/user/docs.pdf)',
       ),
     ).toEqual([
       {
-        href: 'file:///home/andrey/Downloads/Go_Backend_Engineering_2026_Expanded_A4.pdf',
-        label: 'Go Handbook',
+        href: 'file:///home/user/Downloads/sample.pdf',
+        label: 'Sample document',
       },
       {
-        href: 'file:///home/andrey/docs.pdf',
+        href: 'file:///home/user/docs.pdf',
         label: 'Docs',
       },
     ]);
