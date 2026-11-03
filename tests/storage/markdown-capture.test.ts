@@ -105,6 +105,7 @@ describe('markdown browser capture repository', () => {
     expect(note).toMatchObject({
       type: 'markdown',
       title: 'Новая статья',
+      content: '- [example](<https://example.com/>)\n',
       layout: { x: 0, y: 5, w: 4, h: 3 },
     });
     expect(saved?.workspaces[1]?.widgets.slice(0, -1)).toEqual(

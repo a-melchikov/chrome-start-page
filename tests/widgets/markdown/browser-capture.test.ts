@@ -8,7 +8,7 @@ import {
 } from '../../../widgets/markdown/search-text';
 
 describe('browser capture formatting', () => {
-  it('saves a page title and preserves parentheses in its URL', () => {
+  it('uses a short site label instead of the page title and preserves the full URL', () => {
     const entry = formatBrowserCapture({
       pageUrl: 'https://example.com/wiki/(test)',
       pageTitle: 'Статья [важное]',
@@ -16,7 +16,7 @@ describe('browser capture formatting', () => {
     expect(extractMarkdownLinks(entry)).toEqual([
       {
         href: 'https://example.com/wiki/(test)',
-        label: 'Статья [важное]',
+        label: 'example',
       },
     ]);
   });
@@ -30,9 +30,38 @@ describe('browser capture formatting', () => {
     expect(extractMarkdownLinks(entry)).toEqual([
       {
         href: 'https://target.example.com/path',
-        label: 'https://target.example.com/path',
+        label: 'target.example',
       },
     ]);
+  });
+
+  it('formats the requested site link while retaining its path and fragment', () => {
+    expect(
+      formatBrowserCapture({
+        pageUrl: 'https://opentherank.com/ru/codex-reset/#cal-2026-10',
+        pageTitle: 'Трекер и календарь Codex reset',
+      }),
+    ).toBe(
+      '- [opentherank](<https://opentherank.com/ru/codex-reset/#cal-2026-10>)',
+    );
+  });
+
+  it.each([
+    ['https://docs.example.ru/path?q=1#part', 'docs.example'],
+    ['http://www.docs.example.org:8080/path', 'www.docs.example'],
+    ['https://example.com./path', 'example'],
+    ['http://127.0.0.1:5173/path', '127.0.0.1'],
+    ['http://[::1]:5173/path', '[::1]'],
+    ['http://localhost:5173/path', 'localhost'],
+    ['file:///tmp/example.md', 'file:///tmp/example.md'],
+    [
+      'file://server.example.com/shared/file.md',
+      'file://server.example.com/shared/file.md',
+    ],
+    ['https://my_site.example.com/path', 'my_site.example'],
+  ])('keeps subdomains and handles non-domain addresses: %s', (url, label) => {
+    const entry = formatBrowserCapture({ linkUrl: url });
+    expect(extractMarkdownLinks(entry)).toEqual([{ href: url, label }]);
   });
 
   it('quotes multiline selection as literal text and adds the source', () => {
