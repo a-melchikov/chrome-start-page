@@ -1,4 +1,5 @@
 import { escapeMarkdownSpecialChars } from './quick-add';
+import { getShortLinkLabel } from './link-label';
 import { normalizeLinkUrl } from './validation';
 
 export interface BrowserCapture {
@@ -12,22 +13,13 @@ function escapeText(text: string): string {
   return escapeMarkdownSpecialChars(text).replace(/([<>!|&])/g, '\\$1');
 }
 
-function captureLinkLabel(href: string): string {
-  const { hostname, protocol } = new URL(href);
-  if (protocol === 'file:' || !hostname) return href;
-  if (hostname.startsWith('[') || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return hostname;
-  }
-  return hostname.replace(/\.$/, '').replace(/\.[^.]+$/, '');
-}
-
 function captureLink(url: string | undefined, label?: string): string | null {
   if (!url) return null;
   const normalized = normalizeLinkUrl(url);
   if (!normalized.valid) return null;
   return (
     '[' +
-    escapeText(label?.trim() || captureLinkLabel(normalized.href)) +
+    escapeText(label?.trim() || getShortLinkLabel(normalized.href)) +
     '](<' +
     normalized.href +
     '>)'

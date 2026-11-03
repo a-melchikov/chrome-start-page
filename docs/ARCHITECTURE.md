@@ -343,6 +343,15 @@ Links stay in the current tab and use Chrome's local `_favicon` via
 `SiteFavicon`; images are lazy, async-decoded, bounded, and `no-referrer`.
 Fenced code is unhighlighted, horizontally scrollable, and copyable.
 
+Обычные URL и ссылки вида `[URL](URL)` отображаются короткой подписью:
+`https://mail.google.com/mail/u/0/#inbox` → `mail.google`. Общий модуль
+`link-label.ts` сохраняет поддомены и убирает последнюю доменную зону;
+используется также при сохранении из браузера, быстром добавлении ссылок
+и извлечении подписей для поиска команд. Полный адрес остаётся в `href`,
+а при сокращении виден в подсказке. Пользовательские подписи, форматирование,
+ссылки на файлы и содержимое блоков кода сохраняются. Отображение не изменяет
+исходный Markdown и не требует миграции сохранённых заметок.
+
 Task-list interaction uses the list item's AST source offset to toggle the exact
 `[ ]`/`[x]` marker in source text. The fullscreen editor owns ephemeral
 split state (50/50 on each open, keyboard/pointer range 30–70), provides behavior

@@ -3,6 +3,7 @@ import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
 import { normalizeLinkUrl } from './validation';
+import { getLinkDisplayLabel } from './link-label';
 
 export interface MarkdownLink {
   href: string;
@@ -46,7 +47,7 @@ export function extractMarkdownLinks(content: string): MarkdownLink[] {
     if (normalized.valid) {
       links.push({
         href: normalized.href,
-        label: label.trim() || normalized.href,
+        label: getLinkDisplayLabel(normalized.href, label.trim()),
       });
     }
   };

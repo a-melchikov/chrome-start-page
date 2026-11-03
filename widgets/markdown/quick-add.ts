@@ -1,4 +1,5 @@
 import type { MarkdownTemplateId } from './types';
+import { getShortLinkLabel } from './link-label';
 import { normalizeLinkUrl } from './validation';
 
 export function escapeMarkdownSpecialChars(text: string): string {
@@ -52,15 +53,7 @@ export function formatQuickAddEntry(
       return { success: false, error: normalized.message };
     }
 
-    let displayName = labelPart;
-    if (!displayName) {
-      try {
-        const parsed = new URL(normalized.href);
-        displayName = parsed.hostname.replace(/^www\./, '');
-      } catch {
-        displayName = normalized.href;
-      }
-    }
+    const displayName = labelPart || getShortLinkLabel(normalized.href);
 
     return {
       success: true,

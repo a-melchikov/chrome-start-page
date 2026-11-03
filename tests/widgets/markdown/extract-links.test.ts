@@ -28,8 +28,19 @@ describe('extractMarkdownLinks', () => {
       ),
     ).toEqual([
       { href: 'https://example.com/', label: 'Работа' },
-      { href: 'https://openai.com/', label: 'https://openai.com' },
+      { href: 'https://openai.com/', label: 'openai' },
       { href: 'http://example.org/', label: 'Пример' },
+    ]);
+  });
+
+  it('uses short URL labels in extracted links and preserves custom names', () => {
+    const url = 'https://mail.google.com/mail/u/0/#inbox';
+    expect(
+      extractMarkdownLinks(`${url}\n\n[${url}](${url})\n\n[Почта](${url})`),
+    ).toEqual([
+      { href: url, label: 'mail.google' },
+      { href: url, label: 'mail.google' },
+      { href: url, label: 'Почта' },
     ]);
   });
 

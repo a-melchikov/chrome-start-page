@@ -70,11 +70,20 @@ describe('quick add domain logic', () => {
       );
       expect(withoutLabel).toEqual({
         success: true,
-        entry: '[google.com](https://www.google.com/search)',
+        entry: '[www.google](https://www.google.com/search)',
       });
 
       const invalidUrl = formatQuickAddEntry('links', 'ftp://ftp.example.com');
       expect(invalidUrl.success).toBe(false);
+    });
+
+    it('uses the same short site label when quickly adding a bare URL', () => {
+      expect(
+        formatQuickAddEntry('links', 'https://mail.google.com/mail/u/0/#inbox'),
+      ).toEqual({
+        success: true,
+        entry: '[mail.google](https://mail.google.com/mail/u/0/#inbox)',
+      });
     });
 
     it('formats plain text for blank and draft templates', () => {

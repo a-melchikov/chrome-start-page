@@ -28,6 +28,7 @@ import { Button } from '../../components/ui';
 import { MotionNotice } from '../../components/ui/MotionNotice';
 import { classNames } from '../../components/ui/class-names';
 import { LinkFavicon } from './LinkFavicon';
+import { getLinkDisplayLabel } from './link-label';
 import { openLocalFileLink } from './open-file-link';
 import { toggleMarkdownTask } from './task-list';
 import { normalizeImageUrl, normalizeLinkUrl } from './validation';
@@ -353,7 +354,7 @@ function createComponents(
           disabled={!onContentChange}
         />
       ) : null,
-    a: ({ node: _node, href = '', children, title: _title, ...props }) => {
+    a: ({ node, href = '', children, title: _title, ...props }) => {
       if (href.startsWith('#')) {
         return (
           <a
@@ -376,6 +377,11 @@ function createComponents(
       }
 
       const isFileLink = normalizedUrl.href.startsWith('file:');
+      const text = getTextContent(children);
+      const label = node?.children.every((child) => child.type === 'text')
+        ? getLinkDisplayLabel(normalizedUrl.href, text)
+        : text;
+      const shortened = label !== text;
 
       const handleLinkClick = async (event: MouseEvent<HTMLAnchorElement>) => {
         if (!isFileLink) {
@@ -413,13 +419,13 @@ function createComponents(
             'inline-flex max-w-full items-center rounded-md align-middle font-medium text-theme-text-primary transition-colors hover:bg-theme-surface-elevated focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-ring focus-visible:outline-none',
           )}
           href={normalizedUrl.href}
-          title={getTextContent(children)}
+          title={shortened ? normalizedUrl.href : text}
           {...props}
           onClick={handleLinkClick}
           onAuxClick={handleAuxClick}
         >
           <LinkFavicon href={normalizedUrl.href} compact={compact} />
-          <span className="min-w-0">{children}</span>
+          <span className="min-w-0">{shortened ? label : children}</span>
         </a>
       );
     },

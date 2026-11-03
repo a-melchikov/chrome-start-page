@@ -97,6 +97,69 @@ describe('MarkdownWidget', () => {
     expect(screen.getByTestId('link-favicon-fallback')).toBeVisible();
   });
 
+  it.each([
+    'https://mail.google.com/mail/u/0/#inbox',
+    '<https://mail.google.com/mail/u/0/#inbox>',
+    '[https://mail.google.com/mail/u/0/#inbox](https://mail.google.com/mail/u/0/#inbox)',
+    '[https://mail.google.com/mail/u/0/#inbox][mail]\n\n[mail]: https://mail.google.com/mail/u/0/#inbox',
+    '<div><a href="https://mail.google.com/mail/u/0/#inbox">https://mail.google.com/mail/u/0/#inbox</a></div>',
+  ])(
+    'shortens URL-only labels without changing source or destination: %s',
+    (content) => {
+      const onChange = vi.fn();
+      const config = createConfig(content);
+      render(<MarkdownWidget config={config} onChange={onChange} />);
+
+      const link = screen.getByRole('link', { name: 'mail.google' });
+      expect(link).toHaveAttribute(
+        'href',
+        'https://mail.google.com/mail/u/0/#inbox',
+      );
+      expect(link).toHaveAttribute(
+        'title',
+        'https://mail.google.com/mail/u/0/#inbox',
+      );
+      expect(link).not.toHaveAttribute('target');
+      expect(config.content).toBe(content);
+      expect(onChange).not.toHaveBeenCalled();
+    },
+  );
+
+  it('preserves custom labels, rich formatting, file links and literal code', () => {
+    const { container } = render(
+      <MarkdownWidget
+        config={createConfig(
+          [
+            '[Почта](https://mail.google.com/mail/u/0/#inbox)',
+            '[https://other.example.com](https://mail.google.com/mail/u/0/#inbox)',
+            '[**https://example.com**](https://example.com)',
+            '[file:///tmp/doc.pdf](file:///tmp/doc.pdf)',
+            '[/tmp/guide.pdf](/tmp/guide.pdf)',
+            '`https://mail.google.com/mail/u/0/#inbox`',
+            '```text\nhttps://mail.google.com/mail/u/0/#inbox\n```',
+          ].join('\n\n'),
+        )}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Почта' })).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'https://other.example.com' }),
+    ).toBeVisible();
+    expect(
+      screen
+        .getByRole('link', { name: 'https://example.com' })
+        .querySelector('strong'),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'file:///tmp/doc.pdf' }),
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: '/tmp/guide.pdf' })).toBeVisible();
+    expect(container.querySelectorAll('code')).toHaveLength(2);
+    expect(container.querySelector('code')).toHaveTextContent(
+      'https://mail.google.com/mail/u/0/#inbox',
+    );
+  });
+
   it('renders local file links with DocumentTextIcon and opens them via tabs when allowed', async () => {
     const user = userEvent.setup();
     fakeBrowser.extension.isAllowedFileSchemeAccess = vi
