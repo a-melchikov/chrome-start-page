@@ -257,6 +257,12 @@ function isWidgetConfigV6(value: unknown): boolean {
     return isCalendarEvents(value.events);
   }
 
+  if (value.type === 'yandex-music') {
+    return Object.keys(value).every((key) =>
+      ['id', 'type', 'title', 'appearance', 'layout'].includes(key),
+    );
+  }
+
   if (value.type === 'search') {
     return isSearchEngine(value.engine);
   }

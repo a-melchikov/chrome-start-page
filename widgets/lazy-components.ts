@@ -1,5 +1,11 @@
 import { lazy } from 'react';
 
+export const YandexMusicWidget = lazy(() =>
+  import('./yandex-music/YandexMusicWidget').then((module) => ({
+    default: module.YandexMusicWidget,
+  })),
+);
+
 export const EventsWidget = lazy(() =>
   import('./events/EventsWidget').then((module) => ({
     default: module.EventsWidget,

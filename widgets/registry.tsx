@@ -6,6 +6,9 @@ import {
 } from 'react';
 
 import type { WidgetConfig, WidgetType } from '../storage/schema';
+import { isExtensionRuntime } from '../app/platform';
+import { createDefaultYandexMusicWidget } from './yandex-music/defaults';
+import type { YandexMusicWidgetConfig } from './yandex-music/types';
 import { createWidgetId } from './create-widget-id';
 import {
   createDefaultEventsWidget,
@@ -70,11 +73,13 @@ import {
   SearchWidgetEditor,
   WeatherWidget,
   WeatherWidgetEditor,
+  YandexMusicWidget,
 } from './lazy-components';
 
 export interface WidgetMetadata {
   name: string;
   description: string;
+  platform?: 'extension';
 }
 
 export type WidgetResizeHandle =
@@ -540,6 +545,31 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       },
     },
   }),
+  defineWidget<YandexMusicWidgetConfig>({
+    type: 'yandex-music',
+    metadata: {
+      name: 'Яндекс.Музыка',
+      description: 'Мини-плеер для управления Музыкой в отдельной вкладке.',
+      platform: 'extension',
+    },
+    create: createDefaultYandexMusicWidget,
+    isConfig: (value): value is YandexMusicWidgetConfig =>
+      typeof value === 'object' &&
+      value !== null &&
+      'type' in value &&
+      value.type === 'yandex-music',
+    Renderer: YandexMusicWidget,
+    presentation: {
+      chrome: 'card',
+      editor: 'dialog',
+      allowCustomTitle: true,
+      layout: {
+        minW: 3,
+        minH: 4,
+        resizeHandles: DEFAULT_WIDGET_RESIZE_HANDLES,
+      },
+    },
+  }),
 ];
 
 const registry = new Map(
@@ -548,6 +578,14 @@ const registry = new Map(
 
 export function getAvailableWidgetDefinitions(): readonly RegisteredWidgetDefinition[] {
   return definitions;
+}
+
+export function getWidgetUnavailableReason(
+  definition: RegisteredWidgetDefinition,
+): string | null {
+  return definition.metadata.platform === 'extension' && !isExtensionRuntime()
+    ? 'Управление доступно в расширении'
+    : null;
 }
 
 export function getWidgetDefinition(

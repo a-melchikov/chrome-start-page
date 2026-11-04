@@ -10,7 +10,10 @@ import {
   createSearchSnippet,
   extractMarkdownSearchText,
 } from '../../widgets/markdown/search-text';
-import { getAvailableWidgetDefinitions } from '../../widgets/registry';
+import {
+  getAvailableWidgetDefinitions,
+  getWidgetUnavailableReason,
+} from '../../widgets/registry';
 import { getWidgetDisplayName } from './widget-display';
 
 export type AppearanceSection =
@@ -215,14 +218,16 @@ export function buildCommandCatalog(
       label: `Открыть настройки: ${name}`,
       category: 'Настройки',
     })),
-    ...getAvailableWidgetDefinitions().map((definition): PaletteCommand => ({
-      id: `add:${definition.type}`,
-      kind: 'add',
-      widgetType: definition.type,
-      label: `Добавить ${definition.metadata.name}`,
-      category: 'Добавить виджет',
-      keywords: `${definition.metadata.description} Добавить ${definition.type}`,
-    })),
+    ...getAvailableWidgetDefinitions()
+      .filter((definition) => !getWidgetUnavailableReason(definition))
+      .map((definition): PaletteCommand => ({
+        id: `add:${definition.type}`,
+        kind: 'add',
+        widgetType: definition.type,
+        label: `Добавить ${definition.metadata.name}`,
+        category: 'Добавить виджет',
+        keywords: `${definition.metadata.description} Добавить ${definition.type}`,
+      })),
     ...widgets.map((widget, index): PaletteCommand => ({
       id: `focus:${widget.id}`,
       kind: 'focus',

@@ -10,6 +10,7 @@ import type { MarkdownWidgetConfig } from '../widgets/markdown/types';
 import type { PomodoroWidgetConfig } from '../widgets/pomodoro/types';
 import type { SearchWidgetConfig } from '../widgets/search/types';
 import type { WeatherWidgetConfig } from '../widgets/weather/types';
+import type { YandexMusicWidgetConfig } from '../widgets/yandex-music/types';
 
 import type { CustomTheme, ThemeRef } from '../themes/types';
 
@@ -66,6 +67,7 @@ export interface AppearanceConfig {
 }
 
 export interface WidgetConfigMap {
+  'yandex-music': YandexMusicWidgetConfig;
   events: EventsWidgetConfig;
   markdown: MarkdownWidgetConfig;
   search: SearchWidgetConfig;

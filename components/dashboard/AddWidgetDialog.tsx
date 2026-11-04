@@ -1,7 +1,10 @@
 import { useId, type ComponentType } from 'react';
 
 import type { WidgetType } from '../../storage/schema';
-import { getAvailableWidgetDefinitions } from '../../widgets/registry';
+import {
+  getAvailableWidgetDefinitions,
+  getWidgetUnavailableReason,
+} from '../../widgets/registry';
 import {
   AnalogClockIcon,
   CalendarIcon,
@@ -11,6 +14,7 @@ import {
   PhotoIcon,
   SearchIcon,
   TimerIcon,
+  MusicIcon,
 } from '../icons';
 import { Button, Dialog } from '../ui';
 
@@ -32,6 +36,7 @@ const WIDGET_ICONS: Record<
   clock: ClockIcon,
   weather: CloudSunIcon,
   'analog-clock': AnalogClockIcon,
+  'yandex-music': MusicIcon,
 };
 
 export function AddWidgetDialog({
@@ -55,6 +60,7 @@ export function AddWidgetDialog({
       <div className="space-y-2 pb-2">
         {getAvailableWidgetDefinitions().map((definition, index) => {
           const Icon = WIDGET_ICONS[definition.type];
+          const unavailableReason = getWidgetUnavailableReason(definition);
 
           return (
             <Button
@@ -65,6 +71,7 @@ export function AddWidgetDialog({
               data-dialog-initial-focus={index === 0 ? true : undefined}
               size="small"
               variant="secondary"
+              disabled={!!unavailableReason}
               onClick={() => selectWidgetType(definition.type)}
             >
               {Icon ? (
@@ -81,7 +88,7 @@ export function AddWidgetDialog({
                   id={`${labelId}-${definition.type}-description`}
                   className="mt-0.5 block text-xs font-normal text-theme-text-secondary"
                 >
-                  {definition.metadata.description}
+                  {unavailableReason ?? definition.metadata.description}
                 </span>
               </span>
             </Button>

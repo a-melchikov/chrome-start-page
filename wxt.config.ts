@@ -34,6 +34,8 @@ export default defineConfig({
       'https://geocoding-api.open-meteo.com/*',
       'file:///*',
     ],
+    optional_permissions: ['scripting'],
+    optional_host_permissions: ['https://music.yandex.ru/*'],
     content_security_policy: {
       extension_pages: "script-src 'self'; object-src 'none'; base-uri 'none';",
     },

@@ -163,6 +163,32 @@ export function PlayIcon(props: IconProps) {
   );
 }
 
+export function MusicIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M9 18V5l12-2v13M9 9l12-2" />
+      <ellipse cx="6" cy="18" rx="3" ry="3" />
+      <ellipse cx="18" cy="16" rx="3" ry="3" />
+    </BaseIcon>
+  );
+}
+
+export function PreviousTrackIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M5 5v14M19 5 8 12l11 7V5Z" />
+    </BaseIcon>
+  );
+}
+
+export function ExternalLinkIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M14 3h7v7M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
+    </BaseIcon>
+  );
+}
+
 export function PauseIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

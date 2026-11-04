@@ -166,6 +166,13 @@ reserved for user-selected local wallpapers whose original bytes must be kept.
 The product is a personal start page and does not require accounts, remote
 configuration, analytics, or broad access to browsing data.
 
+Дополнение для виджета Яндекс.Музыки: необязательные `scripting` и доступ только
+к `https://music.yandex.ru/*` запрашиваются по явной кнопке подключения.
+Команды передаются изолированному DOM-адаптеру через фоновый координатор.
+Общий доступ `tabs`, cookies, токены и закрытый API Музыки не требуются.
+Метаданные и прогресс не сохраняются; выбор источника ограничен сессией браузера.
+Отдельный плеер сервиса сохраняет воспроизведение при закрытии новой вкладки.
+
 ### Consequences
 
 There is no device sync or collaboration. New permissions/network integrations

@@ -5,6 +5,7 @@ import { registerCaptureContextMenus } from '../capture/context-menus';
 import { loadDashboardConfig } from '../storage/dashboard-storage';
 import { releaseClosedTabImageLease } from '../storage/image-assets';
 import { registerEventReminders } from '../widgets/events/background-reminders';
+import { registerMusicIntegration } from '../widgets/yandex-music/background';
 import {
   getPhaseDurationSeconds,
   getPomodoroStorageKey,
@@ -202,6 +203,7 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 export default defineBackground(() => {
   registerCaptureContextMenus();
   registerEventReminders();
+  registerMusicIntegration();
 
   browser.tabs.onRemoved.addListener((tabId) => {
     void releaseClosedTabImageLease(tabId).catch((error: unknown) => {
