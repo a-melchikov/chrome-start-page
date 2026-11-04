@@ -202,6 +202,60 @@ describe('toolbar visibility and focus', () => {
 });
 
 describe('dashboard toolbar integration', () => {
+  it('reserves space for a wrapped top toolbar and releases the measurement on unmount', async () => {
+    let bottom = 120;
+    let notify = () => {};
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private callback: () => void) {}
+        observe(target: Element) {
+          if (target.classList.contains('dashboard-toolbar'))
+            notify = this.callback;
+        }
+        unobserve() {}
+        disconnect = disconnect;
+      },
+    );
+    const bounds = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        return {
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: this.classList.contains('dashboard-toolbar') ? bottom : 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        };
+      });
+    try {
+      const view = await startApp('top-right');
+      const root = document.querySelector<HTMLElement>('main')!;
+      expect(root.style.getPropertyValue('--toolbar-top-clearance')).toBe(
+        '136px',
+      );
+      bottom = 180;
+      act(() => notify());
+      expect(root.style.getPropertyValue('--toolbar-top-clearance')).toBe(
+        '196px',
+      );
+      expect(document.querySelector('.dashboard-canvas')).toHaveStyle({
+        paddingTop: 'max(80px, 64px, var(--toolbar-top-clearance, 0px))',
+      });
+      view.unmount();
+      expect(root.style.getPropertyValue('--toolbar-top-clearance')).toBe('');
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      bounds.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it.each(['top-right', 'left-fixed'] as const)(
     'opens settings and backup without editing in %s mode and restores focus',
     async (mode) => {

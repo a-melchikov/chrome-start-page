@@ -1,10 +1,12 @@
 import {
   Suspense,
   useCallback,
+  useContext,
   useEffect,
   useId,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 
 import type { WidgetConfig } from '../../storage/schema';
@@ -17,6 +19,11 @@ import {
   type RenderableWidgetConfig,
 } from './widget-display';
 import { useWidgetPointerLight } from './use-widget-pointer-light';
+import { WidgetAppearanceContext } from './widget-appearance-context';
+import { WidgetAppearanceSettings } from './WidgetAppearanceSettings';
+import { DEFAULT_WIDGET_BORDER_RADIUS } from '../../storage/defaults';
+import { isWidgetConfig } from '../../storage/migrations';
+import { resolveWidgetGlass } from '../../storage/widget-appearance';
 
 interface WidgetHostProps {
   isEditing: boolean;
@@ -43,6 +50,17 @@ export function WidgetHost({
   onWidgetChange,
   onWidgetEnterEnd,
 }: WidgetHostProps) {
+  const inheritedAppearance = useContext(WidgetAppearanceContext);
+  const glass = resolveWidgetGlass(
+    inheritedAppearance.liquidGlass,
+    widget.appearance?.liquidGlass,
+  );
+  const widgetStyle = {
+    '--widget-border-radius': `${widget.appearance?.borderRadius ?? inheritedAppearance.widgetBorderRadius ?? DEFAULT_WIDGET_BORDER_RADIUS}px`,
+    '--liquid-glass-opacity': 1 - glass.transparency / 100,
+    '--liquid-glass-blur': `${glass.blur}px`,
+    '--liquid-glass-shadow': glass.shadow / 100,
+  } as CSSProperties;
   const titleId = useId();
   const readerDialogId = useId();
   const [headerActionsTarget, setHeaderActionsTarget] =
@@ -54,7 +72,11 @@ export function WidgetHost({
     'closed',
   );
   const pointerLight = useWidgetPointerLight(
-    isEditing || isWidgetEditing || readerState !== 'closed',
+    isEditing ||
+      isWidgetEditing ||
+      readerState !== 'closed' ||
+      !glass.enabled ||
+      glass.pointerLight !== true,
   );
   const definition = getWidgetDefinition(widget.type);
   const displayName = getWidgetDisplayName(widget);
@@ -228,6 +250,9 @@ export function WidgetHost({
       <article
         {...pointerLight}
         data-widget-id={widget.id}
+        data-widget-glass={glass.enabled}
+        data-widget-pointer-light={glass.pointerLight === true}
+        style={widgetStyle}
         data-new-widget={isNew || undefined}
         data-selected={isEditing && isSelected ? 'true' : undefined}
         tabIndex={isEditing ? 0 : -1}
@@ -281,7 +306,7 @@ export function WidgetHost({
               ) : (
                 <div
                   className={classNames(
-                    'h-full w-full min-w-0',
+                    'widget-content h-full w-full min-w-0',
                     isEditing && 'pointer-events-none select-none',
                     !isEditing && !hasImage && 'cursor-pointer',
                   )}
@@ -311,7 +336,7 @@ export function WidgetHost({
             <div className="flex h-full w-full items-center gap-2">
               <div
                 className={classNames(
-                  'min-w-0 flex-1',
+                  'widget-content min-w-0 flex-1',
                   isEditing && 'pointer-events-none select-none',
                 )}
                 inert={isEditing ? true : undefined}
@@ -328,7 +353,7 @@ export function WidgetHost({
             </div>
             <div
               className={classNames(
-                'min-h-0 min-w-0 flex-1',
+                'widget-content min-h-0 min-w-0 flex-1',
                 isClock
                   ? 'flex flex-col justify-center overflow-hidden'
                   : isWeather
@@ -365,7 +390,7 @@ export function WidgetHost({
             </header>
             <div
               className={classNames(
-                'min-h-0 min-w-0 flex-1',
+                'widget-content min-h-0 min-w-0 flex-1',
                 isClock
                   ? 'flex flex-col justify-center overflow-hidden'
                   : 'overflow-auto overscroll-contain pr-1',
@@ -411,7 +436,7 @@ export function WidgetHost({
                 <CloseIcon className="size-5" />
               </IconButton>
             </header>
-            <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="widget-content min-h-0 flex-1 overflow-hidden">
               <Suspense
                 fallback={
                   <p
@@ -449,7 +474,26 @@ export function WidgetHost({
               }
             }}
           >
-            {editor}
+            <div
+              className={classNames(
+                'flex min-h-0 flex-col',
+                definition?.presentation.editorDialogSize === 'fullscreen' &&
+                  'h-full',
+              )}
+            >
+              {onWidgetChange && isWidgetConfig(widget) && (
+                <WidgetAppearanceSettings
+                  value={widget.appearance}
+                  onChange={(appearance) => {
+                    const next = { ...widget };
+                    if (appearance) next.appearance = appearance;
+                    else delete next.appearance;
+                    onWidgetChange(next);
+                  }}
+                />
+              )}
+              <div className="min-h-0 flex-1">{editor}</div>
+            </div>
           </Dialog>
         </Suspense>
       ) : null}

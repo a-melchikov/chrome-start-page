@@ -99,6 +99,7 @@ export interface ToolbarConfig {
 }
 
 export interface InterfacePreferences {
+  interfaceTextScale?: number;
   animationMode?: AnimationMode;
   shortcuts?: ShortcutOverrides;
   settingsPanel?: SettingsPanelPreferences;

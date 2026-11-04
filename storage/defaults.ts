@@ -24,6 +24,9 @@ export const MAX_GRID_PADDING = 64;
 
 export const DEFAULT_WIDGET_BORDER_RADIUS = 12;
 export const MAX_WIDGET_BORDER_RADIUS = 40;
+export const DEFAULT_INTERFACE_TEXT_SCALE = 100;
+export const MIN_INTERFACE_TEXT_SCALE = 80;
+export const MAX_INTERFACE_TEXT_SCALE = 150;
 
 export const DEFAULT_TOOLBAR: Readonly<ToolbarConfig> = { mode: 'top-right' };
 

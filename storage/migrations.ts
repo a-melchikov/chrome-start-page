@@ -24,6 +24,7 @@ import { isSearchEngine } from '../widgets/search/engines';
 import { isMarkdownTemplateId } from '../widgets/markdown/templates';
 import { isShortcutOverrides } from '../keyboard/shortcuts';
 import { isSettingsPanelPreferences } from './settings-panel';
+import { isWidgetAppearance } from './widget-appearance';
 import { isMarkdownTypography } from '../widgets/markdown/typography';
 import type { WeatherLocation } from '../widgets/weather/types';
 import {
@@ -32,6 +33,8 @@ import {
   MAX_WIDGET_BORDER_RADIUS,
   MAX_GRID_GAP,
   MAX_GRID_PADDING,
+  MIN_INTERFACE_TEXT_SCALE,
+  MAX_INTERFACE_TEXT_SCALE,
   createDefaultWorkWorkspace,
 } from './defaults';
 import {
@@ -311,12 +314,17 @@ function isWidgetConfigV6(value: unknown): boolean {
   return false;
 }
 
-function isWidgetConfig(value: unknown): value is WidgetConfig {
+export function isWidgetConfig(value: unknown): value is WidgetConfig {
   if (!isWidgetConfigV6(value)) {
     return false;
   }
 
   const candidate = value as Record<string, unknown>;
+  if (
+    candidate.appearance !== undefined &&
+    !isWidgetAppearance(candidate.appearance)
+  )
+    return false;
   if (candidate.type === 'markdown') {
     return (
       typeof candidate.content === 'string' &&
@@ -723,6 +731,12 @@ function isCurrentWorkspaceDashboard(value: Record<string, unknown>): boolean {
   return (
     isWorkspaceDashboard(value) &&
     isToolbarConfig(value.toolbar) &&
+    (value.interfaceTextScale === undefined ||
+      isIntegerInRange(
+        value.interfaceTextScale,
+        MIN_INTERFACE_TEXT_SCALE,
+        MAX_INTERFACE_TEXT_SCALE,
+      )) &&
     (value.animationMode === undefined ||
       value.animationMode === 'system' ||
       value.animationMode === 'reduced' ||

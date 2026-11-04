@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WidgetHost } from '../../components/dashboard/WidgetHost';
+import { WidgetAppearanceContext } from '../../components/dashboard/widget-appearance-context';
+import { DEFAULT_APPEARANCE } from '../../storage/defaults';
+import type { WidgetAppearance } from '../../storage/widget-appearance';
 import {
   AnimationContext,
   type AnimationMode,
@@ -17,6 +20,7 @@ function setup({
   light = true,
   mode = 'system' as AnimationMode,
   search = false,
+  appearance = undefined as WidgetAppearance | undefined,
 } = {}) {
   return render(
     <AnimationContext.Provider value={mode}>
@@ -24,11 +28,25 @@ function setup({
         className={glass ? 'liquid-glass-enabled' : ''}
         data-pointer-light-enabled={light}
       >
-        <WidgetHost
-          isEditing={editing}
-          widget={search ? createDefaultSearchWidget('search', 0) : widget}
-          onRequestDelete={vi.fn()}
-        />
+        <WidgetAppearanceContext.Provider
+          value={{
+            ...DEFAULT_APPEARANCE,
+            liquidGlass: {
+              ...DEFAULT_APPEARANCE.liquidGlass,
+              enabled: glass,
+              pointerLight: light,
+            },
+          }}
+        >
+          <WidgetHost
+            isEditing={editing}
+            widget={{
+              ...(search ? createDefaultSearchWidget('search', 0) : widget),
+              appearance,
+            }}
+            onRequestDelete={vi.fn()}
+          />
+        </WidgetAppearanceContext.Provider>
       </div>
     </AnimationContext.Provider>,
   );
@@ -122,6 +140,27 @@ describe('widget pointer light', () => {
     move(screen.getByRole('article'), 'pen');
     expect(window.requestAnimationFrame).not.toHaveBeenCalled();
   });
+
+  it('enables card light independently of disabled workspace glass and light', () => {
+    setup({
+      glass: false,
+      light: false,
+      appearance: { liquidGlass: { enabled: true, pointerLight: true } },
+    });
+    const article = screen.getByRole('article');
+    move(article);
+    frame();
+    expect(article).toHaveAttribute('data-pointer-light', 'true');
+  });
+
+  it.each([{ enabled: false }, { pointerLight: false }])(
+    'disables inherited light with card overrides %j',
+    (liquidGlass) => {
+      setup({ appearance: { liquidGlass } });
+      move(screen.getByRole('article'));
+      expect(window.requestAnimationFrame).not.toHaveBeenCalled();
+    },
+  );
 
   it('cancels pending work on pointer exit and unmount', () => {
     const { unmount } = setup();

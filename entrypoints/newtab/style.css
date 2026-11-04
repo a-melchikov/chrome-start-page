@@ -25,6 +25,37 @@
   --color-theme-link-hover: var(--theme-link-hover);
 }
 
+@theme inline {
+  --text-xs: calc(
+    0.75rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-sm: calc(
+    0.875rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-base: calc(
+    1rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-lg: calc(
+    1.125rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-xl: calc(
+    1.25rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-2xl: calc(
+    1.5rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-3xl: calc(
+    1.875rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-4xl: calc(
+    2.25rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+  --text-5xl: calc(3rem * var(--ui-text-scale, var(--interface-text-scale, 1)));
+  --text-6xl: calc(
+    3.75rem * var(--ui-text-scale, var(--interface-text-scale, 1))
+  );
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @utility widget-rounded {
@@ -389,6 +420,15 @@
     display: none;
   }
 
+  .widget-content,
+  .markdown-text {
+    --ui-text-scale: 1;
+  }
+
+  .widget-content :is(button, input, select, [role='combobox']) {
+    --ui-text-scale: var(--interface-text-scale, 1);
+  }
+
   .widget-card-surface {
     border: 1px solid var(--theme-border, var(--color-zinc-200));
     background-color: var(--theme-surface-bg, white);
@@ -516,11 +556,16 @@
     box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.32);
   }
 
-  .liquid-glass-enabled .liquid-glass-surface,
-  .liquid-glass-enabled article:has(.widget-image-media) {
+  .liquid-glass-enabled :is(.dashboard-toolbar, .dashboard-popover-surface),
+  article[data-widget-glass='true']:is(
+      .liquid-glass-surface,
+      :has(.widget-image-media)
+    ),
+  article[data-widget-glass='true'] .liquid-glass-surface {
     --glass-soft-shadow: color-mix(
       in srgb,
-      var(--theme-glass-shadow-color, rgba(0, 0, 0, 0.2)) 55%,
+      var(--theme-glass-shadow-color, rgba(0, 0, 0, 0.2))
+        calc(var(--liquid-glass-shadow, 0.5) * 55%),
       transparent
     );
 
@@ -531,7 +576,9 @@
       0 10px 20px -11px var(--glass-soft-shadow);
   }
 
-  .liquid-glass-enabled .liquid-glass-surface {
+  .liquid-glass-enabled :is(.dashboard-toolbar, .dashboard-popover-surface),
+  article[data-widget-glass='true'].liquid-glass-surface,
+  article[data-widget-glass='true'] .liquid-glass-surface {
     background-color: color-mix(
       in srgb,
       var(--theme-surface-bg) calc(var(--liquid-glass-opacity, 0.6) * 100%),
@@ -541,7 +588,7 @@
     -webkit-backdrop-filter: blur(var(--liquid-glass-blur)) saturate(125%);
   }
 
-  .liquid-glass-enabled .widget-search-surface {
+  article[data-widget-glass='true'] .widget-search-surface {
     background-color: color-mix(
       in srgb,
       var(--theme-surface-bg)
@@ -572,10 +619,10 @@
 
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     :root:not([data-motion='reduced']):not([data-motion='off'])
-      .liquid-glass-enabled[data-pointer-light-enabled='true']
       :is(
-        .widget-card-surface,
-        .widget-search-surface
+        article[data-widget-glass='true'][data-widget-pointer-light='true'],
+        article[data-widget-glass='true'][data-widget-pointer-light='true']
+          .widget-search-surface
       )[data-pointer-light='true']:not(:has(.weather-visual))::after {
       opacity: 1;
     }
@@ -593,16 +640,18 @@
     transition: none;
   }
 
-  .liquid-glass-enabled .widget-card-surface:has(.weather-visual) {
+  article[data-widget-glass='true'].widget-card-surface:has(.weather-visual) {
     background-color: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
-  .liquid-glass-enabled
-    .react-grid-item:is(.react-draggable-dragging, .resizing)
+  .react-grid-item:is(.react-draggable-dragging, .resizing)
     > div
-    > article:is(.liquid-glass-surface, :has(.widget-image-media)) {
+    > article[data-widget-glass='true']:is(
+      .liquid-glass-surface,
+      :has(.widget-image-media)
+    ) {
     box-shadow:
       inset 0 1px 0 var(--theme-glass-rim, rgba(255, 255, 255, 0.16)),
       0 3px 8px -3px var(--glass-soft-shadow),
@@ -975,13 +1024,16 @@
   background-color: var(--theme-surface-elevated);
 }
 
-.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
-  .widget-card-surface:not(:has(.weather-visual))
+.dashboard-root[data-wallpaper-active='true']
+  article[data-widget-glass='true'].widget-card-surface:not(
+    :has(.weather-visual)
+  )
   :where(.text-theme-text-secondary):not(button):not(svg) {
   color: var(--theme-text-primary);
 }
 
-.dashboard-root[data-wallpaper-active='true'].liquid-glass-enabled
+.dashboard-root[data-wallpaper-active='true']
+  article[data-widget-glass='true']
   .widget-search-surface
   input::placeholder {
   color: var(--theme-text-primary);

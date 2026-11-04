@@ -787,6 +787,10 @@ export function DashboardControls({
               requestedSection={requestedSection}
               toolbar={toolbar}
               animationMode={config?.animationMode}
+              interfaceTextScale={config?.interfaceTextScale}
+              onInterfaceTextScaleChange={(interfaceTextScale) =>
+                onInterfacePreferencesChange({ interfaceTextScale })
+              }
               onAnimationModeChange={(animationMode) =>
                 onInterfacePreferencesChange({ animationMode })
               }

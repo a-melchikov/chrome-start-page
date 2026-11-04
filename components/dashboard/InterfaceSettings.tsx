@@ -1,7 +1,13 @@
 import { useEffect } from 'react';
 import type { AnimationMode, ToolbarConfig } from '../../storage/schema';
 import { isToolbarConfig } from '../../storage/migrations';
-import { Select } from '../ui';
+import { Button, Select } from '../ui';
+import { RangeField } from '../ui/RangeField';
+import {
+  DEFAULT_INTERFACE_TEXT_SCALE,
+  MIN_INTERFACE_TEXT_SCALE,
+  MAX_INTERFACE_TEXT_SCALE,
+} from '../../storage/defaults';
 import { SettingsBlock } from './SettingsBlock';
 import { useSettingsPanelState } from './settings-panel-state';
 import type { AppearanceSection } from './command-catalog';
@@ -9,6 +15,8 @@ import type { AppearanceSection } from './command-catalog';
 interface InterfaceSettingsProps {
   toolbar: ToolbarConfig;
   animationMode?: AnimationMode;
+  interfaceTextScale?: number;
+  onInterfaceTextScaleChange: (scale: number) => void;
   onAnimationModeChange: (mode: AnimationMode) => void;
   onToolbarChange: (toolbar: ToolbarConfig) => void;
   requestedSection?: { section: AppearanceSection; token: number } | null;
@@ -17,6 +25,8 @@ interface InterfaceSettingsProps {
 export function InterfaceSettings({
   toolbar,
   animationMode = 'system',
+  interfaceTextScale = DEFAULT_INTERFACE_TEXT_SCALE,
+  onInterfaceTextScaleChange,
   onAnimationModeChange,
   onToolbarChange,
   requestedSection,
@@ -29,6 +39,30 @@ export function InterfaceSettings({
 
   return (
     <div className="space-y-5">
+      <SettingsBlock blockId="interface.text" title="Размер текста">
+        <RangeField
+          label="Размер текста интерфейса"
+          value={interfaceTextScale}
+          min={MIN_INTERFACE_TEXT_SCALE}
+          max={MAX_INTERFACE_TEXT_SCALE}
+          unit="%"
+          onChange={onInterfaceTextScaleChange}
+        />
+        <p className="text-xs text-theme-text-secondary">
+          Подписи, меню, кнопки и настройки. Размер содержимого виджетов
+          сохраняется.
+        </p>
+        <Button
+          size="small"
+          variant="ghost"
+          disabled={interfaceTextScale === DEFAULT_INTERFACE_TEXT_SCALE}
+          onClick={() =>
+            onInterfaceTextScaleChange(DEFAULT_INTERFACE_TEXT_SCALE)
+          }
+        >
+          Вернуть размер 100%
+        </Button>
+      </SettingsBlock>
       <SettingsBlock
         blockId="interface.toolbar"
         title="Панель управления"

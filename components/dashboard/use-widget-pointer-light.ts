@@ -26,7 +26,8 @@ export function useWidgetPointerLight(disabled: boolean) {
     if (disabled || reduced || event.pointerType !== 'mouse') return;
     const host = event.currentTarget;
     if (
-      !host.closest('.liquid-glass-enabled[data-pointer-light-enabled="true"]')
+      host.dataset.widgetGlass !== 'true' ||
+      host.dataset.widgetPointerLight !== 'true'
     )
       return;
     const surface = host.matches('.liquid-glass-surface')

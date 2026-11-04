@@ -12,6 +12,7 @@ export const SETTINGS_BLOCK_IDS = [
   'appearance.glass',
   'interface.toolbar',
   'interface.animations',
+  'interface.text',
   'workspaces.active',
   'workspaces.trash',
   'backup.export',

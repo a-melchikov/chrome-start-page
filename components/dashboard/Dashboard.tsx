@@ -1,3 +1,4 @@
+import { WidgetAppearanceContext } from './widget-appearance-context';
 import { useEffect, useState } from 'react';
 
 import { DEFAULT_GRID_GAP } from '../../storage/defaults';
@@ -378,32 +379,34 @@ export function Dashboard({
               : undefined
           }
         >
-          <WidgetCanvas
-            gridGap={appearance.gridGap}
-            gridPadding={appearance.gridPadding}
-            key={activeWorkspaceId ?? 'default'}
-            topPadding={toolbar.mode === 'top-right' ? 80 : 24}
-            onInteractionChange={setIsLayoutInteracting}
-            editingWidgetId={editingWidgetId}
-            isEditing={canEditSelection}
-            newWidgetIds={newWidgetIds}
-            selectedWidgetIds={selectedWidgetIds}
-            widgets={activeWidgets}
-            onClearSelection={() => setSelectedWidgetIds(new Set())}
-            onFinishWidgetEditing={finishWidgetEditing}
-            onRemoveWidget={removeWidget}
-            onSelectWidget={selectWidget}
-            onStartWidgetEditing={startWidgetEditing}
-            onUpdateWidget={onUpdateWidget}
-            onUpdateWidgetLayouts={onUpdateWidgetLayouts}
-            onWidgetEnterEnd={(widgetId) => {
-              setNewWidgetIds((ids) => {
-                const next = new Set(ids);
-                next.delete(widgetId);
-                return next;
-              });
-            }}
-          />
+          <WidgetAppearanceContext.Provider value={appearance}>
+            <WidgetCanvas
+              gridGap={appearance.gridGap}
+              gridPadding={appearance.gridPadding}
+              key={activeWorkspaceId ?? 'default'}
+              topPadding={toolbar.mode === 'top-right' ? 80 : 24}
+              onInteractionChange={setIsLayoutInteracting}
+              editingWidgetId={editingWidgetId}
+              isEditing={canEditSelection}
+              newWidgetIds={newWidgetIds}
+              selectedWidgetIds={selectedWidgetIds}
+              widgets={activeWidgets}
+              onClearSelection={() => setSelectedWidgetIds(new Set())}
+              onFinishWidgetEditing={finishWidgetEditing}
+              onRemoveWidget={removeWidget}
+              onSelectWidget={selectWidget}
+              onStartWidgetEditing={startWidgetEditing}
+              onUpdateWidget={onUpdateWidget}
+              onUpdateWidgetLayouts={onUpdateWidgetLayouts}
+              onWidgetEnterEnd={(widgetId) => {
+                setNewWidgetIds((ids) => {
+                  const next = new Set(ids);
+                  next.delete(widgetId);
+                  return next;
+                });
+              }}
+            />
+          </WidgetAppearanceContext.Provider>
         </div>
       ) : null}
 

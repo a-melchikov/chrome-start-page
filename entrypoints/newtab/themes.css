@@ -27,12 +27,7 @@
   --theme-pomodoro-progress: #f4f4f5;
   --theme-glass-border: rgba(255, 255, 255, 0.1);
   --theme-glass-rim: rgba(255, 255, 255, 0.16);
-  --theme-glass-shadow-color: rgba(
-    0,
-    0,
-    0,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.56)
-  );
+  --theme-glass-shadow-color: rgba(0, 0, 0, 0.56);
   --theme-glow: none;
 }
 
@@ -64,12 +59,7 @@
   --theme-pomodoro-progress: #18181b;
   --theme-glass-border: rgba(0, 0, 0, 0.08);
   --theme-glass-rim: rgba(255, 255, 255, 0.8);
-  --theme-glass-shadow-color: rgba(
-    24,
-    24,
-    27,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.28)
-  );
+  --theme-glass-shadow-color: rgba(24, 24, 27, 0.28);
   --theme-glow: none;
 }
 
@@ -101,12 +91,7 @@
   --theme-pomodoro-progress: #42c7b4;
   --theme-glass-border: rgba(225, 234, 232, 0.1);
   --theme-glass-rim: rgba(225, 234, 232, 0.16);
-  --theme-glass-shadow-color: rgba(
-    10,
-    15,
-    17,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(10, 15, 17, 0.65);
   --theme-glow: none;
 }
 
@@ -137,12 +122,7 @@
   --theme-pomodoro-track: #2f3549;
   --theme-pomodoro-progress: #7aa2f7;
   --theme-glass-border: rgba(122, 162, 247, 0.12);
-  --theme-glass-shadow-color: rgba(
-    15,
-    16,
-    26,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(15, 16, 26, 0.65);
   --theme-glow: none;
 }
 
@@ -173,12 +153,7 @@
   --theme-pomodoro-track: #2f3747;
   --theme-pomodoro-progress: #59c2c6;
   --theme-glass-border: rgba(89, 194, 198, 0.11);
-  --theme-glass-shadow-color: rgba(
-    16,
-    20,
-    28,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(16, 20, 28, 0.65);
   --theme-glow: none;
 }
 
@@ -209,12 +184,7 @@
   --theme-pomodoro-track: #362d42;
   --theme-pomodoro-progress: #f5a97f;
   --theme-glass-border: rgba(245, 169, 127, 0.1);
-  --theme-glass-shadow-color: rgba(
-    18,
-    14,
-    24,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(18, 14, 24, 0.65);
   --theme-glow: none;
 }
 
@@ -245,12 +215,7 @@
   --theme-pomodoro-track: #313244;
   --theme-pomodoro-progress: #b4befe;
   --theme-glass-border: rgba(180, 190, 254, 0.1);
-  --theme-glass-shadow-color: rgba(
-    17,
-    17,
-    27,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(17, 17, 27, 0.65);
   --theme-glow: none;
 }
 
@@ -282,12 +247,7 @@
   --theme-pomodoro-progress: #1e66f5;
   --theme-glass-border: rgba(30, 102, 245, 0.12);
   --theme-glass-rim: rgba(255, 255, 255, 0.8);
-  --theme-glass-shadow-color: rgba(
-    76,
-    79,
-    105,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.25)
-  );
+  --theme-glass-shadow-color: rgba(76, 79, 105, 0.25);
   --theme-glow: none;
 }
 
@@ -319,12 +279,7 @@
   --theme-pomodoro-progress: #276354;
   --theme-glass-border: rgba(39, 99, 84, 0.2);
   --theme-glass-rim: rgba(255, 255, 255, 0.82);
-  --theme-glass-shadow-color: rgba(
-    37,
-    49,
-    43,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.26)
-  );
+  --theme-glass-shadow-color: rgba(37, 49, 43, 0.26);
   --theme-glow: none;
 }
 
@@ -356,12 +311,7 @@
   --theme-pomodoro-progress: #b34f36;
   --theme-glass-border: rgba(179, 79, 54, 0.2);
   --theme-glass-rim: rgba(255, 255, 255, 0.82);
-  --theme-glass-shadow-color: rgba(
-    59,
-    42,
-    37,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.25)
-  );
+  --theme-glass-shadow-color: rgba(59, 42, 37, 0.25);
   --theme-glow: none;
 }
 
@@ -392,12 +342,7 @@
   --theme-pomodoro-track: #434c5e;
   --theme-pomodoro-progress: #88c0d0;
   --theme-glass-border: rgba(136, 192, 208, 0.11);
-  --theme-glass-shadow-color: rgba(
-    20,
-    24,
-    32,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.65)
-  );
+  --theme-glass-shadow-color: rgba(20, 24, 32, 0.65);
   --theme-glow: none;
 }
 
@@ -428,12 +373,7 @@
   --theme-pomodoro-track: #34294f;
   --theme-pomodoro-progress: #ff7edb;
   --theme-glass-border: rgba(255, 126, 219, 0.18);
-  --theme-glass-shadow-color: rgba(
-    15,
-    8,
-    24,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.7)
-  );
+  --theme-glass-shadow-color: rgba(15, 8, 24, 0.7);
   --theme-glow:
     0 0 8px rgba(255, 126, 219, 0.55), 0 0 16px rgba(54, 249, 246, 0.25);
 }
@@ -465,11 +405,6 @@
   --theme-pomodoro-track: #0c4452;
   --theme-pomodoro-progress: #2aa198;
   --theme-glass-border: rgba(42, 161, 152, 0.11);
-  --theme-glass-shadow-color: rgba(
-    0,
-    20,
-    26,
-    calc(var(--liquid-glass-shadow, 0.5) * 0.7)
-  );
+  --theme-glass-shadow-color: rgba(0, 20, 26, 0.7);
   --theme-glow: none;
 }

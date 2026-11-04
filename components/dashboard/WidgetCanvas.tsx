@@ -240,10 +240,10 @@ export function WidgetCanvas({
         className="dashboard-canvas overflow-x-auto"
         style={{
           // Keep the fixed top toolbar clear even with zero outer padding.
-          paddingTop: Math.max(
-            topPadding - DEFAULT_GRID_PADDING + gridPadding,
-            topPadding === 80 ? 64 : 0,
-          ),
+          paddingTop:
+            topPadding === 80
+              ? `max(${topPadding - DEFAULT_GRID_PADDING + gridPadding}px, 64px, var(--toolbar-top-clearance, 0px))`
+              : gridPadding,
           paddingInline: gridPadding,
           paddingBottom: gridPadding,
         }}

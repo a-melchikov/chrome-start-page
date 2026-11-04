@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import { useLayoutEffect, type ReactNode, type RefObject } from 'react';
 import type { ToolbarMode } from '../../storage/schema';
 import { ChevronLeftIcon } from '../icons';
 import { IconButton } from '../ui';
@@ -33,6 +33,29 @@ export function DashboardToolbar({
 }: DashboardToolbarProps) {
   const isLeft = mode !== 'top-right';
   const isCollapsible = mode === 'left-collapsible';
+  useLayoutEffect(() => {
+    if (isLeft) return;
+    const panel = panelRef.current;
+    const root = panel?.closest<HTMLElement>('.dashboard-root');
+    if (!panel || !root) return;
+    const measure = () =>
+      root.style.setProperty(
+        '--toolbar-top-clearance',
+        `${Math.ceil(panel.getBoundingClientRect().bottom + 16)}px`,
+      );
+    measure();
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(measure);
+    observer?.observe(panel);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+      root.style.removeProperty('--toolbar-top-clearance');
+    };
+  }, [isLeft, panelRef]);
   return (
     <>
       {isCollapsible && (

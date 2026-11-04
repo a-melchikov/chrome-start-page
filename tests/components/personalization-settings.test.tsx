@@ -23,6 +23,154 @@ const stored = () => storage.getItem<DashboardConfig>(DASHBOARD_STORAGE_KEY);
 describe('Personalization settings', () => {
   beforeEach(() => fakeBrowser.reset());
 
+  it('saves the interface text scale globally, restores it on reload and resets to 100%', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(screen.getByRole('tab', { name: 'Интерфейс' }));
+    fireEvent.change(
+      screen.getByRole('slider', { name: 'Размер текста интерфейса' }),
+      { target: { value: '150' } },
+    );
+    await user.keyboard('{Escape}');
+    await waitFor(async () =>
+      expect((await stored())?.interfaceTextScale).toBe(150),
+    );
+    expect(
+      document
+        .querySelector('main')
+        ?.style.getPropertyValue('--interface-text-scale'),
+    ).toBe('1.5');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Настройки' })).toHaveFocus(),
+    );
+    first.unmount();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Настройки' }));
+    await user.click(screen.getByRole('tab', { name: 'Интерфейс' }));
+    expect(
+      screen.getByRole('slider', { name: 'Размер текста интерфейса' }),
+    ).toHaveValue('150');
+    await user.click(
+      screen.getByRole('button', { name: 'Вернуть размер 100%' }),
+    );
+    await waitFor(async () =>
+      expect((await stored())?.interfaceTextScale).toBe(100),
+    );
+  });
+
+  it('persists individual card settings on Escape, preserves inheritance and resets all overrides', async () => {
+    const config = createDefaultDashboardConfig();
+    const workspace = config.workspaces[0]!;
+    workspace.appearance.liquidGlass.enabled = false;
+    workspace.appearance.liquidGlass.blur = 9;
+    workspace.widgets = [
+      {
+        ...createDefaultMarkdownWidget('card', 0),
+        title: 'Карточка',
+        content: 'Текст',
+      },
+    ];
+    await saveDashboardConfig(config);
+    const user = userEvent.setup();
+    const first = render(<App />);
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Редактировать виджет «Карточка»' }),
+    );
+    await user.click(await screen.findByText('Оформление карточки'));
+    expect(
+      screen.getByRole('slider', { name: 'Размытие карточки' }),
+    ).toHaveValue('9');
+    fireEvent.change(
+      screen.getByRole('slider', { name: 'Скругление карточки' }),
+      { target: { value: '30' } },
+    );
+    await user.click(screen.getByRole('combobox', { name: 'Стекло карточки' }));
+    await user.click(screen.getByRole('option', { name: 'Включён' }));
+    fireEvent.change(
+      screen.getByRole('slider', { name: 'Прозрачность карточки' }),
+      { target: { value: '80' } },
+    );
+    await user.keyboard('{Escape}');
+    await waitFor(async () =>
+      expect((await stored())?.workspaces[0]?.widgets[0]?.appearance).toEqual({
+        borderRadius: 30,
+        liquidGlass: { enabled: true, transparency: 80 },
+      }),
+    );
+    expect((await stored())?.workspaces[0]?.appearance).toEqual(
+      workspace.appearance,
+    );
+    const article = screen.getByRole('article');
+    expect(article).toHaveAttribute('data-widget-glass', 'true');
+    expect(article.style.getPropertyValue('--widget-border-radius')).toBe(
+      '30px',
+    );
+    expect(article.style.getPropertyValue('--liquid-glass-blur')).toBe('9px');
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Редактировать виджет «Карточка»' }),
+      ).toHaveFocus(),
+    );
+    first.unmount();
+    render(<App />);
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'Включить режим редактирования',
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'Редактировать виджет «Карточка»' }),
+    );
+    await user.click(await screen.findByText('Оформление карточки'));
+    expect(
+      screen.getByRole('slider', { name: 'Скругление карточки' }),
+    ).toHaveValue('30');
+    await user.click(
+      screen.getByRole('button', { name: 'Скругление как у пространства' }),
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Прозрачность карточки: как у пространства',
+      }),
+    );
+    expect(
+      screen.getByRole('slider', { name: 'Скругление карточки' }),
+    ).toHaveValue('12');
+    expect(
+      screen.getByRole('slider', { name: 'Прозрачность карточки' }),
+    ).toHaveValue('40');
+    await waitFor(async () =>
+      expect((await stored())?.workspaces[0]?.widgets[0]?.appearance).toEqual({
+        liquidGlass: { enabled: true },
+      }),
+    );
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Использовать оформление пространства',
+      }),
+    );
+    await user.keyboard('{Escape}');
+    await waitFor(async () =>
+      expect(
+        (await stored())?.workspaces[0]?.widgets[0]?.appearance,
+      ).toBeUndefined(),
+    );
+    expect(screen.getByRole('article')).toHaveAttribute(
+      'data-widget-glass',
+      'false',
+    );
+    expect((await stored())?.workspaces[0]?.widgets[0]).toMatchObject({
+      content: 'Текст',
+      title: 'Карточка',
+    });
+  });
+
   it('saves workspace spacing on close and reloads the global animation preference', async () => {
     const user = userEvent.setup();
     const first = render(<App />);

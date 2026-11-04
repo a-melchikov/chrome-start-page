@@ -44,6 +44,7 @@ type DashboardStyle = CSSProperties & {
   '--liquid-glass-blur': string;
   '--liquid-glass-shadow': number;
   '--widget-border-radius': string;
+  '--interface-text-scale': number;
 };
 
 export function App() {
@@ -177,6 +178,7 @@ export function App() {
 
   const dashboardStyle: DashboardStyle = {
     backgroundColor: effectiveBgColor,
+    '--interface-text-scale': (config?.interfaceTextScale ?? 100) / 100,
     '--widget-border-radius': `${appearance.widgetBorderRadius ?? DEFAULT_WIDGET_BORDER_RADIUS}px`,
     '--liquid-glass-opacity': 1 - liquidGlass.transparency / 100,
     '--liquid-glass-blur': `${liquidGlass.blur}px`,
