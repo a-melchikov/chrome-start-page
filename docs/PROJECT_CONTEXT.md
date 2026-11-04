@@ -48,7 +48,9 @@ have the complete dashboard restored from local Chrome storage.
 - **Pomodoro** — a configurable focus/break timer with cycle progression,
   persistent runtime state, background alarms, notifications, and audio.
 - **Ближайшие события** — карточка `4×4` (минимум `3×3`) с ручным вводом,
-  необязательным временем, повторами и обратным отсчётом. Прошедшие разовые
+  необязательным временем, повторами и обратным отсчётом. Записи компактные:
+  название и отсчёт сверху, дата и повтор ниже; в узкой карточке отсчёт
+  переносится к дате, длинные названия отображаются полностью. Прошедшие разовые
   события скрываются после конца дня и доступны в управлении событиями.
 - **Weather** — a card widget (default `5×5`, minimum `3×3`) supporting visual
   and compact modes, Open-Meteo forecasts and city geocoding,

@@ -62,7 +62,7 @@ export function EventsWidget({
   ) : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3" data-no-drag>
+    <div className="@container flex h-full min-h-0 flex-col gap-3" data-no-drag>
       {onChange && headerActionsTarget
         ? createPortal(
             <IconButton
@@ -90,49 +90,34 @@ export function EventsWidget({
                   type="button"
                   disabled={!onChange}
                   aria-label={`Изменить событие «${event.title}»`}
-                  aria-describedby={`${descriptionId}-${event.id}-date ${descriptionId}-${event.id}-countdown`}
-                  className="w-full cursor-pointer rounded-md px-1 py-3 text-left outline-none transition-colors hover:bg-theme-surface-elevated/60 focus-visible:ring-2 focus-visible:ring-theme-ring disabled:cursor-default"
+                  aria-describedby={`${descriptionId}-${event.id}-date ${descriptionId}-${event.id}-countdown${event.repeat !== 'none' ? ` ${descriptionId}-${event.id}-repeat` : ''}`}
+                  className="flex w-full cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md px-1 py-2 text-left outline-none transition-colors hover:bg-theme-surface-elevated/60 focus-visible:ring-2 focus-visible:ring-theme-ring disabled:cursor-default @min-[22rem]:grid @min-[22rem]:grid-cols-[minmax(0,1fr)_auto]"
                   onClick={() => setDraft(event)}
                 >
-                  <span
-                    id={`${descriptionId}-${event.id}-date`}
-                    className="block text-xs text-theme-text-secondary"
-                  >
-                    {formatEventDate(event, occurrence, currentTime)}
-                  </span>
-                  <span className="mt-1 block break-words text-sm font-medium text-theme-text-primary">
+                  <span className="w-full min-w-0 break-words text-sm font-medium text-theme-text-primary @min-[22rem]:col-start-1 @min-[22rem]:row-start-1">
                     {event.title}
                   </span>
-                  <span
-                    id={`${descriptionId}-${event.id}-countdown`}
-                    className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs"
-                  >
-                    <span className="font-medium tabular-nums text-theme-accent">
-                      {formatCountdown(event, occurrence, currentTime)}
+                  <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-theme-text-secondary @min-[22rem]:col-span-2 @min-[22rem]:row-start-2">
+                    <span id={`${descriptionId}-${event.id}-date`}>
+                      {formatEventDate(event, occurrence, currentTime)}
                     </span>
                     {event.repeat !== 'none' ? (
-                      <span className="text-theme-text-secondary">
+                      <span id={`${descriptionId}-${event.id}-repeat`}>
                         {REPEAT_LABELS[event.repeat]}
                       </span>
                     ) : null}
+                  </span>
+                  <span
+                    id={`${descriptionId}-${event.id}-countdown`}
+                    className="text-xs font-medium tabular-nums text-theme-accent @min-[22rem]:col-start-2 @min-[22rem]:row-start-1 @min-[22rem]:text-right"
+                  >
+                    {formatCountdown(event, occurrence, currentTime)}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
-        ) : (
-          <div className="py-4">
-            <p className="text-sm font-medium text-theme-text-primary">
-              Ближайших событий нет
-            </p>
-            <p className="mt-1 text-sm text-theme-text-secondary">
-              Добавьте встречу, важную дату или дедлайн.
-            </p>
-            {headerActionsTarget ? (
-              <div className="mt-3">{addButton}</div>
-            ) : null}
-          </div>
-        )}
+        ) : null}
         {past.length ? (
           <div className="mt-4 border-t border-theme-border pt-3">
             <h3 className="mb-2 text-sm font-medium text-theme-text-secondary">

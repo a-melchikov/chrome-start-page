@@ -769,12 +769,10 @@ describe('widget lifecycle', () => {
     await user.click(
       screen.getByRole('button', { name: 'Выключить режим редактирования' }),
     );
+    expect(card).not.toHaveTextContent('Ближайших событий нет');
+    expect(card).not.toHaveTextContent('Добавьте встречу');
     await user.click(
-      (
-        await screen.findAllByRole('button', {
-          name: /^Добавить событие$/,
-        })
-      ).at(-1)!,
+      await screen.findByRole('button', { name: 'Добавить событие' }),
     );
     await user.type(
       screen.getByLabelText('Название события'),

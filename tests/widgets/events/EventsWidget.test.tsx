@@ -42,7 +42,7 @@ describe('EventsWidget', () => {
   it('adds an event with an optional time and repeat', async () => {
     const input = user();
     render(<Harness />);
-    expect(screen.getByText('Ближайших событий нет')).toBeVisible();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
     await input.click(screen.getByRole('button', { name: 'Добавить событие' }));
     expect(screen.getByLabelText('Название события')).toHaveFocus();
     await input.type(
@@ -113,7 +113,7 @@ describe('EventsWidget', () => {
     await input.click(
       screen.getByRole('button', { name: 'Подтвердить удаление' }),
     );
-    expect(screen.getByText('Ближайших событий нет')).toBeVisible();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Добавить событие' }),
     ).toHaveFocus();
@@ -123,7 +123,7 @@ describe('EventsWidget', () => {
     render(<Harness events={[{ ...meeting, repeat: 'daily' }]} />);
     expect(
       screen.getByRole('button', { name: /Изменить событие/ }),
-    ).toHaveAccessibleDescription('Сегодня, 15:00 Через 3 ч.Ежедневно');
+    ).toHaveAccessibleDescription('Сегодня, 15:00 Через 3 ч. Ежедневно');
     expect(screen.getByText('Через 3 ч.')).toBeVisible();
     act(() => {
       vi.setSystemTime(new Date('2026-11-03T16:00:00'));
@@ -139,7 +139,7 @@ describe('EventsWidget', () => {
     render(<Harness events={[meeting]} />);
     expect(screen.getByText('Уже наступило')).toBeVisible();
     act(() => vi.advanceTimersByTime(30000));
-    expect(screen.getByText('Ближайших событий нет')).toBeVisible();
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
   });
 
   it('hides past events on the card and keeps them accessible in management', async () => {
