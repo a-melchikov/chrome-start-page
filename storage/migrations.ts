@@ -258,8 +258,19 @@ function isWidgetConfigV6(value: unknown): boolean {
   }
 
   if (value.type === 'yandex-music') {
-    return Object.keys(value).every((key) =>
-      ['id', 'type', 'title', 'appearance', 'layout'].includes(key),
+    return (
+      (value.surfaceWaves === undefined ||
+        typeof value.surfaceWaves === 'boolean') &&
+      Object.keys(value).every((key) =>
+        [
+          'id',
+          'type',
+          'title',
+          'appearance',
+          'layout',
+          'surfaceWaves',
+        ].includes(key),
+      )
     );
   }
 

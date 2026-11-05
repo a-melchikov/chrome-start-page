@@ -9,6 +9,7 @@ import {
 } from '../../../widgets/yandex-music/background';
 import {
   MUSIC_MATCH,
+  MUSIC_PROTOCOL_VERSION,
   MUSIC_SCRIPT_FILE,
   isMusicContentRequest,
   type MusicSelection,
@@ -36,6 +37,7 @@ describe('Yandex Music coordinator', () => {
     ).mockResolvedValue();
     vi.spyOn(fakeBrowser.runtime, 'sendMessage').mockResolvedValue(undefined);
     vi.spyOn(fakeBrowser.tabs, 'sendMessage').mockImplementation(async () => ({
+      protocolVersion: MUSIC_PROTOCOL_VERSION,
       player: player(),
       error: null,
     }));
@@ -135,6 +137,75 @@ describe('Yandex Music coordinator', () => {
     ]);
   });
 
+  it('upgrades a still-responsive legacy receiver and restores reaction capabilities without reloading the tab', async () => {
+    const tab = await addTab();
+    vi.spyOn(fakeBrowser.tabs, 'query').mockImplementation(async () => [tab]);
+    const legacyPlayer = player();
+    delete legacyPlayer.liked;
+    delete legacyPlayer.disliked;
+    delete legacyPlayer.capabilities.like;
+    delete legacyPlayer.capabilities.dislike;
+    let upgraded = false;
+    vi.mocked(fakeBrowser.tabs.sendMessage).mockImplementation(async () =>
+      upgraded
+        ? {
+            protocolVersion: MUSIC_PROTOCOL_VERSION,
+            player: player(),
+            error: null,
+          }
+        : { player: legacyPlayer, error: null },
+    );
+    const inject = vi
+      .spyOn(fakeBrowser.scripting, 'executeScript')
+      .mockImplementation(async () => {
+        upgraded = true;
+        return [];
+      });
+    const coordinator = createMusicCoordinator();
+    const state = await coordinator.getState();
+    expect(state.status).toBe('ready');
+    expect(state.player).toMatchObject({
+      liked: false,
+      disliked: false,
+      capabilities: { like: true, dislike: true },
+    });
+    expect(inject).toHaveBeenCalledOnce();
+    await coordinator.getState();
+    expect(inject).toHaveBeenCalledOnce();
+    expect(
+      vi
+        .mocked(fakeBrowser.tabs.sendMessage)
+        .mock.calls.every(
+          (call) => isMusicContentRequest(call[1]) && call[1].action === 'read',
+        ),
+    ).toBe(true);
+  });
+
+  it('reports unavailable if reinjection still returns an obsolete receiver', async () => {
+    const tab = await addTab();
+    vi.spyOn(fakeBrowser.tabs, 'query').mockImplementation(async () => [tab]);
+    vi.mocked(fakeBrowser.tabs.sendMessage).mockImplementation(async () => ({
+      player: player(),
+      error: null,
+    }));
+    const inject = vi
+      .spyOn(fakeBrowser.scripting, 'executeScript')
+      .mockImplementation(async () => []);
+    expect((await createMusicCoordinator().getState()).status).toBe(
+      'unavailable',
+    );
+    expect(inject).toHaveBeenCalledOnce();
+    expect(fakeBrowser.tabs.sendMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not reinject a receiver with the current protocol', async () => {
+    const tab = await addTab();
+    vi.spyOn(fakeBrowser.tabs, 'query').mockImplementation(async () => [tab]);
+    const inject = vi.spyOn(fakeBrowser.scripting, 'executeScript');
+    expect((await createMusicCoordinator().getState()).status).toBe('ready');
+    expect(inject).not.toHaveBeenCalled();
+  });
+
   it('rejects unsafe source changes and never retries a playback command', async () => {
     const tab = await addTab();
     vi.spyOn(fakeBrowser.tabs, 'query').mockImplementation(async () => [tab]);
@@ -150,7 +221,11 @@ describe('Yandex Music coordinator', () => {
       async (_tabId, message) => {
         if (isMusicContentRequest(message) && message.action === 'command')
           throw new Error('reply lost');
-        return { player: player(), error: null };
+        return {
+          protocolVersion: MUSIC_PROTOCOL_VERSION,
+          player: player(),
+          error: null,
+        };
       },
     );
     const failed = await coordinator.handle({
@@ -217,6 +292,7 @@ describe('Yandex Music coordinator', () => {
     const tab = await addTab();
     vi.spyOn(fakeBrowser.tabs, 'query').mockImplementation(async () => [tab]);
     vi.mocked(fakeBrowser.tabs.sendMessage).mockImplementation(async () => ({
+      protocolVersion: MUSIC_PROTOCOL_VERSION,
       player: null,
       error: null,
     }));

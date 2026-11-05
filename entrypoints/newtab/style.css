@@ -1075,3 +1075,14 @@
     }
   }
 }
+
+/* Registry-driven overlay header; widgets own contrast over their artwork. */
+.widget-overlay-header {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}

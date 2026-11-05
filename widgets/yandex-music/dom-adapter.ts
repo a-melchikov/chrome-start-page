@@ -39,6 +39,59 @@ function numeric(value: string | undefined, maximum: number): number {
   return Number.isFinite(parsed) ? Math.min(maximum, Math.max(0, parsed)) : 0;
 }
 
+function reaction(root: HTMLElement, label: string) {
+  const button = control(root, label);
+  const value =
+    button?.getAttribute('aria-pressed') ??
+    button?.getAttribute('aria-checked');
+  const selected =
+    value === 'true' ? true : value === 'false' ? false : undefined;
+  return {
+    selected,
+    available:
+      selected !== undefined &&
+      enabled(button) &&
+      !button?.closest('[hidden], [aria-hidden="true"]'),
+  };
+}
+
+function visibleText(el: Element | null | undefined): string {
+  if (!el || el.closest('[hidden], [aria-hidden="true"]')) return '';
+  const copy = el.cloneNode(true) as Element;
+  copy
+    .querySelectorAll('[hidden], [aria-hidden="true"], svg')
+    .forEach((node) => node.remove());
+  return text(copy);
+}
+
+function readVibeTrack(seek: HTMLInputElement | null): {
+  title: string;
+  artist: string;
+} {
+  // The visible name sits beside the seek slider. On pause its artist prefix
+  // becomes a separate span; reading the entire block mixes the two fields.
+  const name = Array.from(
+    seek?.parentElement?.querySelectorAll('div') ?? [],
+  ).find(
+    (el) =>
+      !el.closest('[hidden], [aria-hidden="true"]') &&
+      Array.from(el.childNodes).some(
+        (node) => node.nodeType === 3 && node.textContent?.trim(),
+      ),
+  );
+  if (!name) return { title: '', artist: '' };
+  const copy = name.cloneNode(true) as HTMLElement;
+  copy
+    .querySelectorAll('[hidden], [aria-hidden="true"], svg')
+    .forEach((el) => el.remove());
+  const prefix = Array.from(copy.children).find(
+    (el) => el.tagName === 'SPAN' && /\s+[—–-]\s*$/.test(text(el)),
+  );
+  const artist = text(prefix).replace(/\s+[—–-]\s*$/, '');
+  prefix?.remove();
+  return { title: text(copy), artist };
+}
+
 export function readMusicPlayer(doc: Document): MusicPlayer | null {
   const root = getPlayerRoot(doc);
   if (!root) return null;
@@ -47,30 +100,29 @@ export function readMusicPlayer(doc: Document): MusicPlayer | null {
   const play = control(root, 'Воспроизведение');
   const pause = control(root, 'Пауза');
   if (!play && !pause) return null;
-  const track = root.querySelector<HTMLAnchorElement>('a[aria-label^="Трек "]');
-  let title = text(track);
+  const track = Array.from(
+    root.querySelectorAll<HTMLAnchorElement>('a[aria-label^="Трек "]'),
+  ).find((el) => visibleText(el));
   const vibe = root.closest('[aria-label="Моя волна"]');
-  if (!title && vibe && seek?.parentElement) {
-    // Vibe renders the title next to the seek input, with an aria-hidden duplicate.
-    const titleArea = seek.parentElement.cloneNode(true) as HTMLElement;
-    titleArea
-      .querySelectorAll('input, svg, [aria-hidden="true"]')
-      .forEach((el) => el.remove());
-    title = text(titleArea);
-  }
+  const vibeTrack = vibe ? readVibeTrack(seek) : { title: '', artist: '' };
+  const title = visibleText(track) || vibeTrack.title;
   const artistRoot = vibe ?? root;
   const artistMenu = artistRoot.querySelector(
     '[aria-label="Контекстное меню с артистами"]',
   );
   const artist =
-    text(artistMenu) ||
+    vibeTrack.artist ||
+    visibleText(artistMenu) ||
     Array.from(artistRoot.querySelectorAll('a[aria-label^="Артист "]'))
-      .map(text)
+      .map(visibleText)
+      .filter(Boolean)
       .join(', ')
       .slice(0, 512);
   const image = root.querySelector<HTMLImageElement>('img');
   const artwork = safeArtwork(image?.currentSrc || image?.getAttribute('src'));
   const duration = numeric(seek?.max, 604800);
+  const like = reaction(root, 'Нравится');
+  const dislike = reaction(root, 'Не нравится');
   return {
     title,
     artist,
@@ -82,6 +134,8 @@ export function readMusicPlayer(doc: Document): MusicPlayer | null {
     position: numeric(seek?.value, duration),
     duration,
     volume: volume ? numeric(volume.value, 1) : 0,
+    liked: like.selected,
+    disliked: dislike.selected,
     capabilities: {
       play: !!title && enabled(play ?? pause),
       pause: !!title && enabled(pause ?? play),
@@ -89,6 +143,8 @@ export function readMusicPlayer(doc: Document): MusicPlayer | null {
       next: !!title && enabled(control(root, 'Следующая песня')),
       seek: !!title && duration > 0 && enabled(seek),
       volume: enabled(volume),
+      like: !!title && like.available,
+      dislike: !!title && dislike.available,
     },
   };
 }
@@ -109,6 +165,16 @@ export function applyMusicCommand(doc: Document, command: MusicCommand): void {
     control(
       root,
       command.type === 'previous' ? 'Предыдущая песня' : 'Следующая песня',
+    )?.click();
+  } else if (command.type === 'like' || command.type === 'dislike') {
+    if (
+      (command.type === 'like' ? player.liked : player.disliked) ===
+      command.value
+    )
+      return;
+    control(
+      root,
+      command.type === 'like' ? 'Нравится' : 'Не нравится',
     )?.click();
   } else if ('value' in command) {
     if (command.type === 'seek' && command.value > player.duration) {
@@ -150,5 +216,12 @@ export function commandConfirmed(
       return before.trackKey !== after.trackKey;
     case 'previous':
       return before.trackKey !== after.trackKey || after.position <= 2;
+    case 'like':
+      return after.liked === command.value;
+    case 'dislike':
+      return (
+        after.disliked === command.value ||
+        (command.value && before.trackKey !== after.trackKey)
+      );
   }
 }

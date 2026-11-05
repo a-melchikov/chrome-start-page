@@ -8,6 +8,7 @@ import {
 import {
   isMusicCommand,
   isMusicContentReply,
+  MUSIC_PROTOCOL_VERSION,
   isMusicContentRequest,
   isMusicPlayer,
   isMusicRequest,
@@ -16,13 +17,110 @@ import {
   emptyMusicState,
   safeArtwork,
 } from '../../../widgets/yandex-music/types';
-import { player, standardPlayer } from './fixtures';
+import { player, standardPlayer, vibePlayer } from './fixtures';
 
 afterEach(() => {
   document.body.innerHTML = '';
 });
 
 describe('Yandex Music DOM adapter', () => {
+  it('reads reactions, sets explicit desired values once and confirms actual changes', () => {
+    standardPlayer();
+    const like = document.querySelector('button[aria-label="Нравится"]')!;
+    const dislike = document.querySelector('button[aria-label="Не нравится"]')!;
+    const before = readMusicPlayer(document)!;
+    const click = vi.fn(() =>
+      like.setAttribute(
+        'aria-pressed',
+        like.getAttribute('aria-pressed') === 'true' ? 'false' : 'true',
+      ),
+    );
+    like.addEventListener('click', click);
+    applyMusicCommand(document, { type: 'like', value: true });
+    applyMusicCommand(document, { type: 'like', value: true });
+    expect(click).toHaveBeenCalledOnce();
+    expect(readMusicPlayer(document)?.liked).toBe(true);
+    expect(
+      commandConfirmed(
+        { type: 'like', value: true },
+        before,
+        readMusicPlayer(document)!,
+      ),
+    ).toBe(true);
+    applyMusicCommand(document, { type: 'like', value: false });
+    expect(readMusicPlayer(document)?.liked).toBe(false);
+    expect(
+      commandConfirmed(
+        { type: 'like', value: true },
+        before,
+        readMusicPlayer(document)!,
+      ),
+    ).toBe(false);
+    dislike.setAttribute('aria-disabled', 'true');
+    expect(readMusicPlayer(document)?.capabilities.dislike).toBe(false);
+    expect(() =>
+      applyMusicCommand(document, { type: 'dislike', value: true }),
+    ).toThrow('недоступна');
+    dislike.removeAttribute('aria-disabled');
+    dislike.addEventListener('click', () =>
+      dislike.setAttribute('aria-pressed', 'true'),
+    );
+    applyMusicCommand(document, { type: 'dislike', value: true });
+    expect(
+      commandConfirmed(
+        { type: 'dislike', value: true },
+        before,
+        readMusicPlayer(document)!,
+      ),
+    ).toBe(true);
+    expect(
+      commandConfirmed(
+        { type: 'dislike', value: true },
+        before,
+        player({ trackKey: 'next-track' }),
+      ),
+    ).toBe(true);
+    like.removeAttribute('aria-pressed');
+    expect(readMusicPlayer(document)?.capabilities.like).toBe(false);
+  });
+  it('reads a paused Vibe player on the first read without merging the artist prefix into its title', () => {
+    vibePlayer(false);
+    expect(readMusicPlayer(document)).toMatchObject({
+      title: 'Новый — день',
+      artist: 'Группа А, Группа Б',
+      playing: false,
+    });
+  });
+
+  it('preserves Vibe identity through pause/resume and reads a different track while paused', () => {
+    vibePlayer(true);
+    const playing = readMusicPlayer(document)!;
+    vibePlayer(false);
+    expect(readMusicPlayer(document)).toEqual({ ...playing, playing: false });
+    vibePlayer(true);
+    expect(readMusicPlayer(document)).toEqual(playing);
+    vibePlayer(false, 'Другой трек', 'Другой артист');
+    expect(readMusicPlayer(document)).toMatchObject({
+      title: 'Другой трек',
+      artist: 'Другой артист',
+      playing: false,
+    });
+    expect(readMusicPlayer(document)?.trackKey).not.toBe(playing.trackKey);
+  });
+
+  it('ignores hidden artist and track duplicates in the standard player in both playback states', () => {
+    standardPlayer();
+    const root = document.querySelector('section')!;
+    root.insertAdjacentHTML(
+      'afterbegin',
+      '<a aria-label="Трек Скрытый" aria-hidden="true">Скрытый</a><a aria-label="Артист Скрытый" hidden>Скрытый</a>',
+    );
+    expect(readMusicPlayer(document)).toEqual(player());
+    root
+      .querySelector('[aria-label="Пауза"]')!
+      .setAttribute('aria-label', 'Воспроизведение');
+    expect(readMusicPlayer(document)).toEqual(player({ playing: false }));
+  });
   it('reads the standard player without page internals or generated class names', () => {
     standardPlayer();
     expect(readMusicPlayer(document)).toEqual(player());
@@ -140,6 +238,31 @@ describe('Yandex Music DOM adapter', () => {
 });
 
 describe('Yandex Music boundary validation', () => {
+  it('validates reaction commands and accepts old snapshots without guessing reaction state', () => {
+    expect(isMusicCommand({ type: 'like', value: true })).toBe(true);
+    expect(isMusicCommand({ type: 'dislike', value: false })).toBe(true);
+    expect(isMusicCommand({ type: 'like', value: 1 })).toBe(false);
+    expect(isMusicCommand({ type: 'dislike' })).toBe(false);
+    const legacy = player();
+    delete legacy.liked;
+    delete legacy.disliked;
+    delete legacy.capabilities.like;
+    delete legacy.capabilities.dislike;
+    expect(isMusicPlayer(legacy)).toBe(true);
+    expect(
+      isMusicPlayer({
+        ...legacy,
+        capabilities: { ...legacy.capabilities, like: true },
+      }),
+    ).toBe(false);
+    expect(isMusicPlayer({ ...player(), liked: 'yes' })).toBe(false);
+    expect(
+      isMusicPlayer({
+        ...player(),
+        capabilities: { ...player().capabilities, dislike: 1 },
+      }),
+    ).toBe(false);
+  });
   it('accepts only the exact HTTPS music origin', () => {
     expect(isMusicUrl('https://music.yandex.ru/album/10')).toBe(true);
     for (const url of [
@@ -178,6 +301,20 @@ describe('Yandex Music boundary validation', () => {
       }),
     ).toBe(true);
     expect(isMusicContentReply({ player: player(), error: null })).toBe(true);
+    expect(
+      isMusicContentReply({
+        protocolVersion: MUSIC_PROTOCOL_VERSION,
+        player: player(),
+        error: null,
+      }),
+    ).toBe(true);
+    expect(
+      isMusicContentReply({
+        protocolVersion: 'current',
+        player: player(),
+        error: null,
+      }),
+    ).toBe(false);
     expect(isMusicPlayer({ ...player(), title: 'x'.repeat(513) })).toBe(false);
     expect(
       isMusicState({

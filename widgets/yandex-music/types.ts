@@ -1,15 +1,19 @@
 import type { BaseWidgetConfig } from '../types';
 
-export type YandexMusicWidgetConfig = BaseWidgetConfig<'yandex-music'>;
+export interface YandexMusicWidgetConfig extends BaseWidgetConfig<'yandex-music'> {
+  surfaceWaves?: boolean;
+}
 
 export const MUSIC_ORIGIN = 'https://music.yandex.ru';
 export const MUSIC_MATCH = `${MUSIC_ORIGIN}/*`;
 export const MUSIC_SCRIPT_ID = 'yandex-music-player';
 export const MUSIC_SCRIPT_FILE = '/yandex-music.js';
+export const MUSIC_PROTOCOL_VERSION = 2 as const;
 
 export type MusicCommand =
   | { type: 'play' | 'pause' | 'previous' | 'next' }
-  | { type: 'seek' | 'volume'; value: number };
+  | { type: 'seek' | 'volume'; value: number }
+  | { type: 'like' | 'dislike'; value: boolean };
 
 export interface MusicPlayer {
   title: string;
@@ -20,7 +24,13 @@ export interface MusicPlayer {
   position: number;
   duration: number;
   volume: number;
-  capabilities: Record<MusicCommand['type'], boolean>;
+  liked?: boolean;
+  disliked?: boolean;
+  capabilities: Record<
+    Exclude<MusicCommand['type'], 'like' | 'dislike'>,
+    boolean
+  > &
+    Partial<Record<'like' | 'dislike', boolean>>;
 }
 
 export type MusicSelection =
@@ -66,6 +76,7 @@ export type MusicContentRequest =
   | { type: 'yandex-music:content'; action: 'command'; command: MusicCommand };
 
 export interface MusicContentReply {
+  protocolVersion?: typeof MUSIC_PROTOCOL_VERSION;
   player: MusicPlayer | null;
   error: string | null;
 }
@@ -137,6 +148,8 @@ export function isMusicCommand(value: unknown): value is MusicCommand {
   if (['play', 'pause', 'previous', 'next'].includes(String(value.type)))
     return true;
   if (value.type === 'volume') return isNumber(value.value, 0, 1);
+  if (value.type === 'like' || value.type === 'dislike')
+    return typeof value.value === 'boolean';
   return value.type === 'seek' && isNumber(value.value, 0, 604800);
 }
 
@@ -155,6 +168,15 @@ export function isMusicPlayer(value: unknown): value is MusicPlayer {
     isNumber(value.position, 0, 604800) &&
     isNumber(value.duration, 0, 604800) &&
     isNumber(value.volume, 0, 1) &&
+    (value.liked === undefined || typeof value.liked === 'boolean') &&
+    (value.disliked === undefined || typeof value.disliked === 'boolean') &&
+    (capabilities.like !== true || typeof value.liked === 'boolean') &&
+    (capabilities.dislike !== true || typeof value.disliked === 'boolean') &&
+    ['like', 'dislike'].every(
+      (key) =>
+        capabilities[key] === undefined ||
+        typeof capabilities[key] === 'boolean',
+    ) &&
     ['play', 'pause', 'previous', 'next', 'seek', 'volume'].every(
       (key) => typeof capabilities[key] === 'boolean',
     )
@@ -190,6 +212,8 @@ export function isMusicContentReply(
 ): value is MusicContentReply {
   return (
     isRecord(value) &&
+    (value.protocolVersion === undefined ||
+      value.protocolVersion === MUSIC_PROTOCOL_VERSION) &&
     (value.player === null || isMusicPlayer(value.player)) &&
     (value.error === null || isText(value.error))
   );

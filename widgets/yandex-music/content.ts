@@ -5,13 +5,30 @@ import {
   commandConfirmed,
   readMusicPlayer,
 } from './dom-adapter';
-import { isMusicContentRequest, type MusicContentReply } from './types';
+import {
+  MUSIC_PROTOCOL_VERSION,
+  isMusicContentRequest,
+  type MusicContentReply,
+} from './types';
 
-type MusicWindow = Window & { __startPageMusicCleanup?: () => void };
+type MusicWindow = Window & {
+  __startPageMusicCleanup?: () => void;
+  __startPageMusicVersion?: number;
+};
 
 export function installMusicContentScript(): void {
   const target = window as MusicWindow;
-  if (target.__startPageMusicCleanup) return;
+  if (
+    target.__startPageMusicCleanup &&
+    target.__startPageMusicVersion === MUSIC_PROTOCOL_VERSION
+  )
+    return;
+  try {
+    target.__startPageMusicCleanup?.();
+  } catch {
+    // An older extension context can already be invalid after an update.
+  }
+  target.__startPageMusicVersion = MUSIC_PROTOCOL_VERSION;
   let watchTimeout: ReturnType<typeof setTimeout> | undefined;
   let notifyTimeout: ReturnType<typeof setTimeout> | undefined;
   const observer = new MutationObserver(() => {
@@ -33,6 +50,8 @@ export function installMusicContentScript(): void {
       attributeFilter: [
         'value',
         'aria-label',
+        'aria-pressed',
+        'aria-checked',
         'aria-disabled',
         'disabled',
         'src',
@@ -52,11 +71,16 @@ export function installMusicContentScript(): void {
       return;
     if (message.action === 'stop') {
       target.__startPageMusicCleanup?.();
-      return Promise.resolve({ player: null, error: null });
+      return Promise.resolve({
+        protocolVersion: MUSIC_PROTOCOL_VERSION,
+        player: null,
+        error: null,
+      });
     }
     watch();
     if (message.action === 'read')
       return Promise.resolve({
+        protocolVersion: MUSIC_PROTOCOL_VERSION,
         player: readMusicPlayer(document),
         error: null,
       });
@@ -73,15 +97,21 @@ export function installMusicContentScript(): void {
           await new Promise((resolve) => setTimeout(resolve, 100));
           const after = readMusicPlayer(document);
           if (after && commandConfirmed(command, before, after))
-            return { player: after, error: null };
+            return {
+              protocolVersion: MUSIC_PROTOCOL_VERSION,
+              player: after,
+              error: null,
+            };
         }
         return {
+          protocolVersion: MUSIC_PROTOCOL_VERSION,
           player: readMusicPlayer(document),
           error:
             'Яндекс.Музыка не подтвердила команду. Проверьте плеер во вкладке',
         };
       } catch (error) {
         return {
+          protocolVersion: MUSIC_PROTOCOL_VERSION,
           player: readMusicPlayer(document),
           error:
             error instanceof Error
@@ -98,5 +128,6 @@ export function installMusicContentScript(): void {
     observer.disconnect();
     browser.runtime.onMessage.removeListener(listener);
     delete target.__startPageMusicCleanup;
+    delete target.__startPageMusicVersion;
   };
 }

@@ -4,6 +4,7 @@ import { browser } from 'wxt/browser';
 import {
   MUSIC_MATCH,
   MUSIC_ORIGIN,
+  MUSIC_PROTOCOL_VERSION,
   MUSIC_SCRIPT_FILE,
   MUSIC_SCRIPT_ID,
   emptyMusicState,
@@ -125,24 +126,30 @@ export function createMusicCoordinator() {
 
   const readTab = async (tabId: number): Promise<MusicContentReply> => {
     try {
-      return await sendContent(tabId, {
+      const reply = await sendContent(tabId, {
         type: 'yandex-music:content',
         action: 'read',
       });
+      if (reply.protocolVersion === MUSIC_PROTOCOL_VERSION) return reply;
     } catch {
-      const tab = await browser.tabs.get(tabId);
-      if (!isMusicUrl(tab.url))
-        throw new Error('Вкладка Яндекс.Музыки закрыта');
-      await browser.scripting.executeScript({
-        target: { tabId, frameIds: [0] },
-        files: [MUSIC_SCRIPT_FILE],
-        world: 'ISOLATED',
-      });
-      return sendContent(tabId, {
-        type: 'yandex-music:content',
-        action: 'read',
-      });
+      // No receiver, invalid reply, or a receiver from an older build.
     }
+    const tab = await browser.tabs.get(tabId);
+    if (!isMusicUrl(tab.url)) throw new Error('Вкладка Яндекс.Музыки закрыта');
+    await browser.scripting.executeScript({
+      target: { tabId, frameIds: [0] },
+      files: [MUSIC_SCRIPT_FILE],
+      world: 'ISOLATED',
+    });
+    const reply = await sendContent(tabId, {
+      type: 'yandex-music:content',
+      action: 'read',
+    });
+    if (reply.protocolVersion !== MUSIC_PROTOCOL_VERSION)
+      throw new Error(
+        'Скрипт плеера не обновился. Обновите вкладку Яндекс.Музыки',
+      );
+    return reply;
   };
 
   const readState = async (): Promise<MusicState> => {

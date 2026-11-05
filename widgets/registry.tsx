@@ -106,6 +106,7 @@ export interface WidgetLayoutConstraints {
 export interface WidgetPresentation {
   chrome: 'card' | 'bare';
   cardInset?: 'default' | 'none';
+  headerPosition?: 'default' | 'overlay';
   editor: 'inline' | 'dialog';
   allowCustomTitle: boolean;
   emptyTitle?: 'type-name' | 'blank';
@@ -561,6 +562,8 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
     Renderer: YandexMusicWidget,
     presentation: {
       chrome: 'card',
+      cardInset: 'none',
+      headerPosition: 'overlay',
       editor: 'dialog',
       allowCustomTitle: true,
       layout: {

@@ -173,6 +173,39 @@ export function MusicIcon(props: IconProps) {
   );
 }
 
+export function HeartIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" />
+    </BaseIcon>
+  );
+}
+
+export function HeartOffIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="m3 3 18 18M8.5 3.5a5.5 5.5 0 0 1 2.4 1.1L12 5.7l1.1-1.1a5.5 5.5 0 0 1 7.7 7.8l-2.3 2.2M15.7 17.4 12 21l-8.8-8.6A5.5 5.5 0 0 1 3 5" />
+    </BaseIcon>
+  );
+}
+
+export function VolumeIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+      <path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14" />
+    </BaseIcon>
+  );
+}
+
+export function VolumeOffIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M11 5 6 9H3v6h3l5 4V5Zm5 4 5 6m0-6-5 6" />
+    </BaseIcon>
+  );
+}
+
 export function PreviousTrackIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

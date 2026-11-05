@@ -96,6 +96,8 @@ export function WidgetHost({
   const isBare = definition?.presentation.chrome === 'bare';
   const isFullBleedCard =
     !isBare && definition?.presentation.cardInset === 'none';
+  const hasOverlayHeader =
+    !isBare && definition?.presentation.headerPosition === 'overlay';
   const isOverlayControls =
     isBare && definition?.presentation.controlsPosition === 'overlay';
   const hasImage =
@@ -346,6 +348,22 @@ export function WidgetHost({
               {isEditing || readerButton ? widgetControls : null}
             </div>
           )
+        ) : hasOverlayHeader ? (
+          <>
+            <h2 id={titleId} className="sr-only">
+              {displayName}
+            </h2>
+            <div className="widget-overlay-header" data-no-drag>
+              <div
+                ref={setHeaderActionsTarget}
+                className="flex items-center gap-1 empty:hidden"
+              />
+              {widgetControls}
+            </div>
+            <div className="widget-content min-h-0 min-w-0 flex-1 overflow-hidden">
+              {content ?? fallback}
+            </div>
+          </>
         ) : isTitleHidden ? (
           <>
             <div className="absolute right-2 top-2 z-10 rounded-lg p-0.5">
