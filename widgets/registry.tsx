@@ -533,12 +533,14 @@ const definitions: readonly RegisteredWidgetDefinition[] = [
       'events' in value &&
       isCalendarEvents(value.events),
     Renderer: EventsWidget,
+    getTitleStyle: () => ({ fontSize: 20 }),
     Editor: EventsWidgetEditor,
     presentation: {
       chrome: 'card',
       editor: 'dialog',
       allowCustomTitle: true,
       editorTitle: 'Управление событиями',
+      titleStyle: 'prominent',
       layout: {
         minW: DEFAULT_EVENTS_WIDGET_LAYOUT.minW,
         minH: DEFAULT_EVENTS_WIDGET_LAYOUT.minH,
