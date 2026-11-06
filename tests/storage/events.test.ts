@@ -19,6 +19,7 @@ function configWithEvents() {
         {
           id: 'deadline',
           title: 'Сдать работу',
+          description: 'Проверить результат\nи отправить',
           date: '2026-11-10',
           time: '10:30',
           repeat: 'monthly',
@@ -54,5 +55,18 @@ describe('events persistence and registry', () => {
     widget.events[0]!.date = '2026-02-30';
     expect(() => migrateDashboardConfig(config)).toThrow();
     expect(getWidgetDefinition('events')!.render(widget)).toBeNull();
+  });
+
+  it('accepts older events without a description and rejects invalid descriptions', () => {
+    const config = configWithEvents();
+    const widget = config.workspaces[0]!.widgets[0]!;
+    if (widget.type !== 'events') throw new Error('Expected events');
+    delete widget.events[0]!.description;
+    expect(migrateDashboardConfig(config)).toEqual(config);
+    const malformed = structuredClone(config);
+    const event = (malformed.workspaces[0]!.widgets[0] as typeof widget)
+      .events[0]!;
+    Object.assign(event, { description: 42 });
+    expect(() => migrateDashboardConfig(malformed)).toThrow();
   });
 });

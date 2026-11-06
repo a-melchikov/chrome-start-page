@@ -73,6 +73,10 @@ describe('EventsWidget', () => {
       screen.getByLabelText('Название события'),
       'Встреча команды',
     );
+    await input.type(
+      screen.getByLabelText('Описание (необязательно)'),
+      'Повестка встречи',
+    );
     fireEvent.change(screen.getByLabelText('Дата'), {
       target: { value: '2026-11-04' },
     });
@@ -89,6 +93,10 @@ describe('EventsWidget', () => {
     expect(
       screen.getByRole('button', { name: 'Добавить событие' }),
     ).toHaveFocus();
+    await input.click(screen.getByRole('button', { name: /Изменить событие/ }));
+    expect(screen.getByLabelText('Описание (необязательно)')).toHaveValue(
+      'Повестка встречи',
+    );
   });
 
   it('validates inputs and cancels an unsaved event with Escape', async () => {

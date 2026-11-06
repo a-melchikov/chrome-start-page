@@ -416,7 +416,7 @@ and sends title and content changes through the normal debounced persistence pat
 
 ## Ближайшие события
 
-`events` хранит только исходный список `events`: ID, название, дату `YYYY-MM-DD`,
+`events` хранит только исходный список `events`: ID, название, необязательное описание, дату `YYYY-MM-DD`,
 необязательное время `HH:mm` (пустая строка означает весь день) и правило
 `none | daily | weekly | monthly | yearly`. Это совместимое расширение схемы v10;
 существующие конфигурации не требуют миграции. Валидация выполняется на границе

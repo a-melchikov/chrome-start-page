@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 
-import { Button, Dialog, Input, Select } from '../../components/ui';
+import { Button, Dialog, Input, Select, Textarea } from '../../components/ui';
 import {
   isEventDate,
   isEventRepeat,
@@ -73,6 +73,22 @@ export function EventDialog({
               setDraft({ ...draft, title: e.target.value });
               setError('');
             }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label
+            className="block text-sm font-medium"
+            htmlFor={`${id}-description`}
+          >
+            Описание (необязательно)
+          </label>
+          <Textarea
+            id={`${id}-description`}
+            rows={3}
+            value={draft.description ?? ''}
+            onChange={(e) =>
+              setDraft({ ...draft, description: e.target.value })
+            }
           />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

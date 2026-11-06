@@ -47,6 +47,7 @@ export function isCalendarEvents(value: unknown): value is CalendarEvent[] {
       typeof event.title === 'string' &&
       event.title.trim().length > 0 &&
       event.title.length <= 160 &&
+      (!('description' in event) || typeof event.description === 'string') &&
       'date' in event &&
       isEventDate(event.date) &&
       'time' in event &&
