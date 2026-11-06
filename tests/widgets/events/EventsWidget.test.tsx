@@ -39,6 +39,30 @@ describe('EventsWidget', () => {
   afterEach(() => vi.useRealTimers());
   const user = () => userEvent.setup();
 
+  it('shows an empty state with a hint for the header add button', () => {
+    const header = document.createElement('div');
+    document.body.appendChild(header);
+    const config = createDefaultEventsWidget('events', 0);
+    const { rerender, unmount } = render(
+      <EventsWidget
+        config={config}
+        onChange={vi.fn()}
+        headerActionsTarget={header}
+      />,
+    );
+    expect(screen.getByText('Пока нет ближайших событий')).toBeVisible();
+    expect(
+      screen.getByText('Добавьте событие с помощью + вверху'),
+    ).toBeVisible();
+    expect(within(header).getAllByRole('button')).toHaveLength(1);
+    rerender(<EventsWidget config={config} />);
+    expect(
+      screen.queryByText('Добавьте событие с помощью + вверху'),
+    ).not.toBeInTheDocument();
+    unmount();
+    header.remove();
+  });
+
   it('adds an event with an optional time and repeat', async () => {
     const input = user();
     render(<Harness />);

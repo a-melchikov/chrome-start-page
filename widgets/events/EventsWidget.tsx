@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { PlusIcon } from '../../components/icons';
+import { CalendarIcon, PlusIcon } from '../../components/icons';
 import { Button, IconButton } from '../../components/ui';
 import { useClockTicker } from '../clock/use-clock-ticker';
 import { createWidgetId } from '../create-widget-id';
@@ -117,6 +117,14 @@ export function EventsWidget({
               </li>
             ))}
           </ul>
+        ) : !past.length ? (
+          <div className="flex min-h-full flex-col items-center justify-center gap-2 px-2 py-4 text-center text-theme-text-secondary">
+            <CalendarIcon aria-hidden="true" className="size-8" />
+            <p className="text-sm font-medium">Пока нет ближайших событий</p>
+            {onChange && headerActionsTarget ? (
+              <p className="text-xs">Добавьте событие с помощью + вверху</p>
+            ) : null}
+          </div>
         ) : null}
         {past.length ? (
           <div className="mt-4 border-t border-theme-border pt-3">
