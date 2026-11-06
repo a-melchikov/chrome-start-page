@@ -605,6 +605,7 @@ export function YandexMusicWidget({
                 <span>Источник воспроизведения</span>
                 <Select
                   aria-label="Источник воспроизведения"
+                  dropdownPosition="static"
                   value={
                     state.selection.mode === 'auto'
                       ? 'auto'

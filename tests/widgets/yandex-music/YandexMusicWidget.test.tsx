@@ -345,6 +345,7 @@ describe('YandexMusicWidget', () => {
         name: 'Источник воспроизведения',
       }),
     );
+    expect(within(dialog).getByRole('listbox')).not.toHaveClass('absolute');
     await userEvent.click(
       screen.getByRole('option', { name: /Вторая вкладка/ }),
     );
