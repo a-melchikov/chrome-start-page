@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { CheckSquareIcon, PlayIcon } from '../../components/icons';
@@ -15,6 +15,8 @@ import {
   openWebsiteSet,
   type OpenWebsiteSetResult,
 } from './website-set';
+
+export const WEBSITE_SET_FEEDBACK_TIMEOUT_MS = 2000;
 
 interface MarkdownWidgetProps {
   config: MarkdownWidgetConfig;
@@ -66,6 +68,18 @@ export function MarkdownWidget({
   const currentWebsiteResult =
     websiteResult?.source === config.content ? websiteResult : null;
   const failedUrls = currentWebsiteResult?.failedUrls ?? [];
+
+  useEffect(() => {
+    if (!currentWebsiteResult || currentWebsiteResult.failedUrls.length > 0) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setWebsiteResult(null);
+    }, WEBSITE_SET_FEEDBACK_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [currentWebsiteResult]);
   const hasTasks = useMemo(() => {
     if (config.template === 'tasks' || config.template === 'daily-plan') {
       return true;

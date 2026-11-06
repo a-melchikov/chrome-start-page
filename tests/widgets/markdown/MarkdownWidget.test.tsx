@@ -11,7 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { createDefaultMarkdownWidget } from '../../../widgets/markdown/defaults';
-import { MarkdownWidget } from '../../../widgets/markdown/MarkdownWidget';
+import {
+  MarkdownWidget,
+  WEBSITE_SET_FEEDBACK_TIMEOUT_MS,
+} from '../../../widgets/markdown/MarkdownWidget';
 import type { MarkdownWidgetConfig } from '../../../widgets/markdown/types';
 
 function createConfig(
@@ -564,5 +567,77 @@ describe('MarkdownWidget website sets', () => {
     expect(
       screen.getByRole('button', { name: 'Начать работу: открыть сайты (1)' }),
     ).toBeVisible();
+  });
+
+  it('automatically hides successful launch feedback after the timeout while keeping errors visible', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(fakeBrowser.tabs, 'create').mockResolvedValue({} as never);
+      render(
+        <MarkdownWidget
+          config={createWebsiteSetConfig('[A](https://one.example.com)')}
+        />,
+      );
+      const button = screen.getByRole('button', {
+        name: 'Начать работу: открыть сайты (1)',
+      });
+
+      await act(async () => {
+        fireEvent.click(button);
+      });
+
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Открыто сайтов: 1 из 1.',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(WEBSITE_SET_FEEDBACK_TIMEOUT_MS - 1);
+      });
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Открыто сайтов: 1 из 1.',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not auto-hide launch failure notice after the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      vi.spyOn(fakeBrowser.tabs, 'create').mockRejectedValue(
+        new Error('Tab failed'),
+      );
+      render(
+        <MarkdownWidget
+          config={createWebsiteSetConfig('[A](https://one.example.com)')}
+        />,
+      );
+      const button = screen.getByRole('button', {
+        name: 'Начать работу: открыть сайты (1)',
+      });
+
+      await act(async () => {
+        fireEvent.click(button);
+      });
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Открыто сайтов: 0 из 1.',
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(WEBSITE_SET_FEEDBACK_TIMEOUT_MS + 1000);
+      });
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Открыто сайтов: 0 из 1.',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
