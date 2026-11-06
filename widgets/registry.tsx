@@ -121,6 +121,7 @@ export interface WidgetRenderProps<TConfig extends WidgetConfig> {
   config: TConfig;
   onChange?: (config: TConfig) => void;
   headerActionsTarget?: HTMLElement | null;
+  isEditing?: boolean;
 }
 
 export interface WidgetEditorProps<TConfig extends WidgetConfig> {
@@ -153,6 +154,7 @@ export interface RegisteredWidgetDefinition {
     config: unknown,
     onChange?: (config: WidgetConfig) => void,
     headerActionsTarget?: HTMLElement | null,
+    isEditing?: boolean,
   ) => ReactNode | null;
   renderEditor?: (
     config: unknown,
@@ -181,7 +183,7 @@ function defineWidget<TConfig extends WidgetConfig>(
             ? definition.getTitleStyle?.(config)
             : undefined
       : undefined,
-    render: (config, onChange, headerActionsTarget) =>
+    render: (config, onChange, headerActionsTarget, isEditing) =>
       definition.isConfig(config) ? (
         <Suspense
           fallback={
@@ -193,6 +195,7 @@ function defineWidget<TConfig extends WidgetConfig>(
           <Renderer
             config={config}
             headerActionsTarget={headerActionsTarget}
+            isEditing={isEditing}
             onChange={
               onChange ? (nextConfig) => onChange(nextConfig) : undefined
             }

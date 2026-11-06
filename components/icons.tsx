@@ -44,6 +44,14 @@ export function PlusIcon(props: IconProps) {
   );
 }
 
+export function MinusIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M5 12h14" />
+    </BaseIcon>
+  );
+}
+
 export function ExpandIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

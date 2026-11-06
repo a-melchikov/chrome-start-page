@@ -1,8 +1,8 @@
 import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { CalendarIcon, PlusIcon } from '../../components/icons';
-import { Button, IconButton } from '../../components/ui';
+import { CalendarIcon, MinusIcon, PlusIcon } from '../../components/icons';
+import { Button, Dialog, IconButton } from '../../components/ui';
 import { useClockTicker } from '../clock/use-clock-ticker';
 import { createWidgetId } from '../create-widget-id';
 import { EventDialog } from './EventDialog';
@@ -20,6 +20,7 @@ interface EventsWidgetProps {
   onChange?: (config: EventsWidgetConfig) => void;
   headerActionsTarget?: HTMLElement | null;
   showPast?: boolean;
+  isEditing?: boolean;
 }
 
 export function EventsWidget({
@@ -27,9 +28,11 @@ export function EventsWidget({
   onChange,
   headerActionsTarget,
   showPast = false,
+  isEditing = false,
 }: EventsWidgetProps) {
   const { currentTime } = useClockTicker('local', false);
   const [draft, setDraft] = useState<CalendarEvent | null>(null);
+  const [deleting, setDeleting] = useState<CalendarEvent | null>(null);
   const addRef = useRef<HTMLButtonElement>(null);
   const descriptionId = useId();
   const items = upcomingEvents(config.events, currentTime);
@@ -49,6 +52,18 @@ export function EventsWidget({
       repeat: 'none',
     });
   const close = () => setDraft(null);
+  const deleteButton = (event: CalendarEvent) =>
+    isEditing && onChange ? (
+      <IconButton
+        aria-label={`Удалить событие «${event.title}»`}
+        title="Удалить событие"
+        size="xs"
+        variant="ghost"
+        onClick={() => setDeleting(event)}
+      >
+        <MinusIcon className="size-4" />
+      </IconButton>
+    ) : null;
   const addButton = onChange ? (
     <Button
       ref={headerActionsTarget ? undefined : addRef}
@@ -62,7 +77,10 @@ export function EventsWidget({
   ) : null;
 
   return (
-    <div className="@container flex h-full min-h-0 flex-col gap-3" data-no-drag>
+    <div
+      className="@container flex h-full min-h-0 flex-col gap-3"
+      data-no-drag={!isEditing || undefined}
+    >
       {onChange && headerActionsTarget
         ? createPortal(
             <IconButton
@@ -85,13 +103,13 @@ export function EventsWidget({
             className="divide-y divide-theme-border/60"
           >
             {items.map(({ event, occurrence }) => (
-              <li key={event.id}>
+              <li key={event.id} className="flex items-center gap-1">
                 <button
                   type="button"
-                  disabled={!onChange}
+                  disabled={!onChange || isEditing}
                   aria-label={`Изменить событие «${event.title}»`}
                   aria-describedby={`${descriptionId}-${event.id}-date ${descriptionId}-${event.id}-countdown${event.repeat !== 'none' ? ` ${descriptionId}-${event.id}-repeat` : ''}`}
-                  className="flex w-full cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md px-1 py-2 text-left outline-none transition-colors hover:bg-theme-surface-elevated/60 focus-visible:ring-2 focus-visible:ring-theme-ring disabled:cursor-default @min-[22rem]:grid @min-[22rem]:grid-cols-[minmax(0,1fr)_auto]"
+                  className="flex w-full cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md px-1 py-2 text-left outline-none transition-colors hover:bg-theme-surface-elevated/60 focus-visible:ring-2 focus-visible:ring-theme-ring disabled:pointer-events-none disabled:cursor-default @min-[22rem]:grid @min-[22rem]:grid-cols-[minmax(0,1fr)_auto]"
                   onClick={() => setDraft(event)}
                 >
                   <span className="w-full min-w-0 break-words text-sm font-medium text-theme-text-primary @min-[22rem]:col-start-1 @min-[22rem]:row-start-1">
@@ -114,6 +132,7 @@ export function EventsWidget({
                     {formatCountdown(event, occurrence, currentTime)}
                   </span>
                 </button>
+                {deleteButton(event)}
               </li>
             ))}
           </ul>
@@ -171,6 +190,45 @@ export function EventsWidget({
               events: config.events.filter((event) => event.id !== draft.id),
             });
           }}
+        />
+      ) : null}
+      {deleting && onChange ? (
+        <Dialog
+          open
+          title="Удалить событие?"
+          description={`Удалить событие «${deleting.title}»${deleting.repeat !== 'none' ? ' и все его повторы' : ''}?`}
+          size="compact"
+          returnFocusFallback={() => addRef.current}
+          onOpenChange={(open) => {
+            if (!open) setDeleting(null);
+          }}
+          footer={
+            <>
+              <Button
+                data-dialog-initial-focus
+                size="small"
+                variant="secondary"
+                onClick={() => setDeleting(null)}
+              >
+                Отмена
+              </Button>
+              <Button
+                size="small"
+                variant="danger"
+                onClick={() => {
+                  onChange({
+                    ...config,
+                    events: config.events.filter(
+                      (event) => event.id !== deleting.id,
+                    ),
+                  });
+                  setDeleting(null);
+                }}
+              >
+                Удалить
+              </Button>
+            </>
+          }
         />
       ) : null}
     </div>

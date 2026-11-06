@@ -18,16 +18,23 @@ const meeting: CalendarEvent = {
 function Harness({
   events = [],
   showPast = false,
+  isEditing = false,
 }: {
   events?: CalendarEvent[];
   showPast?: boolean;
+  isEditing?: boolean;
 }) {
   const [config, setConfig] = useState({
     ...createDefaultEventsWidget('events', 0),
     events,
   });
   return (
-    <EventsWidget config={config} onChange={setConfig} showPast={showPast} />
+    <EventsWidget
+      config={config}
+      onChange={setConfig}
+      showPast={showPast}
+      isEditing={isEditing}
+    />
   );
 }
 
@@ -151,6 +158,42 @@ describe('EventsWidget', () => {
     ).toHaveFocus();
   });
 
+  it('offers direct deletion on the card only in dashboard edit mode', async () => {
+    const input = user();
+    const past = {
+      ...meeting,
+      id: 'past',
+      title: 'Прошлая встреча',
+      date: '2026-11-02',
+    };
+    const { rerender } = render(
+      <Harness events={[{ ...meeting, repeat: 'weekly' }, past]} />,
+    );
+    expect(
+      screen.queryByRole('button', { name: /Удалить событие «/ }),
+    ).not.toBeInTheDocument();
+    rerender(<Harness events={[meeting, past]} showPast />);
+    expect(
+      screen.queryByRole('button', { name: /Удалить событие «/ }),
+    ).not.toBeInTheDocument();
+    rerender(<Harness events={[meeting, past]} isEditing />);
+    const remove = screen.getByRole('button', {
+      name: 'Удалить событие «Обсуждение проекта»',
+    });
+    await input.click(remove);
+    expect(screen.getByText(/и все его повторы/)).toBeVisible();
+    await input.keyboard('{Escape}');
+    expect(remove).toHaveFocus();
+    expect(screen.getByText(meeting.title)).toBeVisible();
+    await input.click(remove);
+    await input.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Удалить',
+      }),
+    );
+    expect(screen.queryByText(meeting.title)).not.toBeInTheDocument();
+  });
+
   it('updates the countdown and rolls repeats forward on focus after sleep', () => {
     render(<Harness events={[{ ...meeting, repeat: 'daily' }]} />);
     expect(
@@ -182,7 +225,7 @@ describe('EventsWidget', () => {
     rerender(<Harness events={[past]} showPast />);
     expect(screen.getByText('Прошедшие события')).toBeVisible();
     await input.click(
-      screen.getByRole('button', { name: /Обсуждение проекта/ }),
+      screen.getByRole('button', { name: 'Обсуждение проекта · 2026-11-02' }),
     );
     expect(
       within(screen.getByRole('dialog')).getByLabelText('Название события'),

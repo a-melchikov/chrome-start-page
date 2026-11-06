@@ -88,6 +88,7 @@ export function WidgetHost({
     widget,
     onWidgetChange,
     headerActionsTarget,
+    isEditing,
   );
   const reader = definition?.renderReader?.(widget);
   if ((!reader || isWidgetEditing) && readerState !== 'closed') {
