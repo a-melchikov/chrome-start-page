@@ -127,15 +127,11 @@ export function EventDialog({
             ))}
           </Select>
         </div>
-        <p className="text-xs text-theme-text-secondary">
-          Местное время устройства. Без времени событие длится весь день.
-          {
-            ' В расширении события с временем напоминают о себе за 5 минут и в минуту начала.'
-          }
-          {draft.repeat === 'monthly' || draft.repeat === 'yearly'
-            ? ' Если нужного числа нет, используется последний день месяца.'
-            : ''}
-        </p>
+        {draft.repeat === 'monthly' || draft.repeat === 'yearly' ? (
+          <p className="text-xs text-theme-text-secondary">
+            Если нужного числа нет, используется последний день месяца.
+          </p>
+        ) : null}
         {error ? (
           <p
             id={`${id}-error`}
