@@ -763,6 +763,18 @@ describe('migrateDashboardConfig', () => {
         objectPosition: 'bottom' as const,
         layout: { x: 0, y: 4, w: 4, h: 4 },
       },
+      {
+        id: 'img-4',
+        type: 'image' as const,
+        source: {
+          type: 'url' as const,
+          url: 'https://example.com/custom-crop.webp',
+        },
+        objectPosition: '35% 62%',
+        zoom: 1.5,
+        fitMode: 'cover' as const,
+        layout: { x: 4, y: 4, w: 4, h: 4 },
+      },
     ]);
 
     expect(migrateDashboardConfig(validConfig)).toEqual(validConfig);
@@ -808,6 +820,21 @@ describe('migrateDashboardConfig', () => {
             type: 'image',
             source: { type: 'none' },
             objectPosition: 'diagonal-center',
+            layout: { x: 0, y: 0, w: 4, h: 4 },
+          },
+        ]),
+      ),
+    ).toThrow(InvalidDashboardConfigError);
+
+    // Percentage position out of range
+    expect(() =>
+      migrateDashboardConfig(
+        createTestDashboardWithWidgets([
+          {
+            id: 'img-out-of-range-pos',
+            type: 'image',
+            source: { type: 'none' },
+            objectPosition: '150% 50%',
             layout: { x: 0, y: 0, w: 4, h: 4 },
           },
         ]),

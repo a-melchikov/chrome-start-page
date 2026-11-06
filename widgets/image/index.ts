@@ -4,8 +4,10 @@ export {
   createDefaultImageWidget,
   DEFAULT_IMAGE_WIDGET_LAYOUT,
 } from './defaults';
-export type {
-  ImageWidgetConfig,
-  ImageWidgetSource,
-  ImageObjectPosition,
+export {
+  isImageObjectPosition,
+  IMAGE_OBJECT_POSITIONS,
+  type ImageWidgetConfig,
+  type ImageWidgetSource,
+  type ImageObjectPosition,
 } from './types';

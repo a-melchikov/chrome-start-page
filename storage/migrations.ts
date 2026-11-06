@@ -15,9 +15,8 @@ import type { AnalogClockDialStyle } from '../widgets/analog-clock/types';
 import { isCalendarEvents } from '../widgets/events/event-utils';
 import type { ClockDateFormat, ClockTimeFormat } from '../widgets/clock/types';
 import {
-  IMAGE_OBJECT_POSITIONS,
+  isImageObjectPosition,
   type ImageFitMode,
-  type ImageObjectPosition,
   type ImageWidgetSource,
 } from '../widgets/image/types';
 import { isSearchEngine } from '../widgets/search/engines';
@@ -159,13 +158,6 @@ function isImageWidgetSource(value: unknown): value is ImageWidgetSource {
   }
 
   return value.type === 'local' && isImageAssetId(value.assetId);
-}
-
-function isImageObjectPosition(value: unknown): value is ImageObjectPosition {
-  return (
-    typeof value === 'string' &&
-    (IMAGE_OBJECT_POSITIONS as readonly string[]).includes(value)
-  );
 }
 
 function isImageFitMode(value: unknown): value is ImageFitMode {

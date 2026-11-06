@@ -25,7 +25,7 @@ import {
   createDefaultImageWidget,
   DEFAULT_IMAGE_WIDGET_LAYOUT,
 } from './image/defaults';
-import type { ImageWidgetConfig } from './image/types';
+import { isImageObjectPosition, type ImageWidgetConfig } from './image/types';
 import { createDefaultMarkdownWidget } from './markdown/defaults';
 import {
   getMarkdownTitleStyle,
@@ -293,7 +293,7 @@ function isImageWidgetConfig(value: unknown): value is ImageWidgetConfig {
     typeof value.source === 'object' &&
     value.source !== null &&
     'objectPosition' in value &&
-    typeof value.objectPosition === 'string'
+    isImageObjectPosition(value.objectPosition)
   );
 }
 

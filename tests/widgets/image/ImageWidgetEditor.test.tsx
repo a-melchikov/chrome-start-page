@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 
 import { ImageWidgetEditor } from '../../../widgets/image/ImageWidgetEditor';
-import type { ImageWidgetConfig } from '../../../widgets/image/types';
+import {
+  isImageObjectPosition,
+  type ImageWidgetConfig,
+} from '../../../widgets/image/types';
 
 class FakeImage {
   decoding: 'async' | 'auto' | 'sync' = 'auto';
@@ -484,5 +487,50 @@ describe('ImageWidgetEditor', () => {
     const mouseSpy = vi.spyOn(mouseDownEvent, 'stopPropagation');
     preview.dispatchEvent(mouseDownEvent);
     expect(mouseSpy).toHaveBeenCalled();
+  });
+
+  it('updates objectPosition to percentage format when dragging preview and stays valid', () => {
+    const onChange = vi.fn();
+    const configWithImage: ImageWidgetConfig = {
+      ...baseConfig,
+      source: { type: 'url', url: 'https://example.com/pic.webp' },
+      fitMode: 'cover',
+      objectPosition: 'center',
+    };
+
+    render(
+      <ImageWidgetEditor
+        config={configWithImage}
+        onChange={onChange}
+        onRequestFinish={vi.fn()}
+      />,
+    );
+
+    const preview = screen.getByLabelText(
+      'Предпросмотр кадрирования изображения',
+    );
+    vi.spyOn(preview, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 100,
+      top: 0,
+      left: 0,
+      bottom: 100,
+      right: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    });
+
+    fireEvent.pointerDown(preview, { clientX: 100, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(preview, { clientX: 80, clientY: 40, pointerId: 1 });
+    fireEvent.pointerUp(preview, { pointerId: 1 });
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        objectPosition: '60% 60%',
+      }),
+    );
+    const updated = onChange.mock.calls[0]?.[0] as ImageWidgetConfig;
+    expect(isImageObjectPosition(updated.objectPosition)).toBe(true);
   });
 });
