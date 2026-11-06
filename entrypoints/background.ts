@@ -112,7 +112,7 @@ export async function playOffscreenChime(): Promise<void> {
       await offscreenApi.createDocument({
         url: browser.runtime.getURL('/offscreen.html#play'),
         reasons: ['AUDIO_PLAYBACK'],
-        justification: 'Play Pomodoro timer chime when interval finishes',
+        justification: 'Play timer and event reminder sounds',
       });
       scheduleFallbackClose();
     } catch (createError) {
@@ -202,7 +202,7 @@ export async function handlePomodoroAlarm(alarmName: string): Promise<void> {
 
 export default defineBackground(() => {
   registerCaptureContextMenus();
-  registerEventReminders();
+  registerEventReminders(playOffscreenChime);
   registerMusicIntegration();
 
   browser.tabs.onRemoved.addListener((tabId) => {

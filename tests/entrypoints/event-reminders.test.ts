@@ -33,8 +33,11 @@ function configWithEvent() {
 }
 
 describe('background event reminders', () => {
+  const playSound = vi.fn().mockResolvedValue(undefined);
+
   beforeEach(() => {
     fakeBrowser.reset();
+    playSound.mockClear();
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-03T14:55:20'));
     vi.spyOn(fakeBrowser.notifications, 'create');
@@ -47,15 +50,16 @@ describe('background event reminders', () => {
   it('creates one minute-aligned alarm and sends both reminders once across concurrent checks', async () => {
     await saveDashboardConfig(configWithEvent());
     await Promise.all([
-      checkEventReminders(),
-      checkEventReminders(),
-      checkEventReminders(),
+      checkEventReminders(playSound),
+      checkEventReminders(playSound),
+      checkEventReminders(playSound),
     ]);
     expect(await fakeBrowser.alarms.get(EVENT_REMINDER_ALARM)).toMatchObject({
       scheduledTime: new Date('2026-11-03T14:56:00').getTime(),
       periodInMinutes: 1,
     });
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(1);
+    expect(playSound).toHaveBeenCalledTimes(1);
     expect(fakeBrowser.notifications.create).toHaveBeenLastCalledWith(
       expect.stringMatching(/:before$/),
       expect.objectContaining({
@@ -66,27 +70,33 @@ describe('background event reminders', () => {
       }),
     );
     vi.setSystemTime(new Date('2026-11-03T15:00:30'));
-    await Promise.all([checkEventReminders(), checkEventReminders()]);
+    await Promise.all([
+      checkEventReminders(playSound),
+      checkEventReminders(playSound),
+    ]);
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(2);
+    expect(playSound).toHaveBeenCalledTimes(2);
     expect(fakeBrowser.notifications.create).toHaveBeenLastCalledWith(
       expect.stringMatching(/:start$/),
       expect.objectContaining({ title: 'Событие начинается' }),
     );
     vi.setSystemTime(new Date('2026-11-03T15:01:00'));
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(await fakeBrowser.alarms.get(EVENT_REMINDER_ALARM)).toBeUndefined();
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(2);
+    expect(playSound).toHaveBeenCalledTimes(2);
   });
 
   it('restores alarms without replaying a reminder after a worker restart', async () => {
     await saveDashboardConfig(configWithEvent());
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     await fakeBrowser.alarms.clear(EVENT_REMINDER_ALARM);
     vi.resetModules();
     const restarted = await import('../../widgets/events/background-reminders');
-    await restarted.checkEventReminders();
+    await restarted.checkEventReminders(playSound);
     expect(await fakeBrowser.alarms.get(EVENT_REMINDER_ALARM)).toBeDefined();
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(1);
+    expect(playSound).toHaveBeenCalledOnce();
     expect(await storage.getItem(EVENT_REMINDER_STATE_KEY)).toMatchObject({
       minute: new Date('2026-11-03T14:55:00').getTime(),
       delivered: [expect.stringMatching(/:before$/)],
@@ -99,17 +109,17 @@ describe('background event reminders', () => {
     if (widget.type !== 'events') throw new Error('Expected events');
     widget.events[0]!.time = '16:00';
     await saveDashboardConfig(config);
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).not.toHaveBeenCalled();
     widget.events[0]!.time = '';
     await saveDashboardConfig(config);
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(await fakeBrowser.alarms.get(EVENT_REMINDER_ALARM)).toBeUndefined();
     const trashConfig = configWithEvent();
     await saveDashboardConfig(
       trashWorkspace(trashConfig, trashConfig.workspaces[0]!.id),
     );
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).not.toHaveBeenCalled();
   });
 
@@ -120,11 +130,11 @@ describe('background event reminders', () => {
     widget.events[0]!.repeat = 'daily';
     await saveDashboardConfig(config);
     vi.setSystemTime(new Date('2026-11-03T16:00:00'));
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).not.toHaveBeenCalled();
     expect(await fakeBrowser.alarms.get(EVENT_REMINDER_ALARM)).toBeDefined();
     vi.setSystemTime(new Date('2026-11-04T14:55:00'));
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(1);
   });
 
@@ -142,12 +152,32 @@ describe('background event reminders', () => {
     vi.mocked(fakeBrowser.notifications.create).mockRejectedValueOnce(
       new Error('Notification failed'),
     );
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(2);
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(3);
-    await checkEventReminders();
+    await checkEventReminders(playSound);
     expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(3);
+  });
+
+  it('plays one sound for simultaneous reminders and none when notifications fail', async () => {
+    const config = configWithEvent();
+    const widget = config.workspaces[0]!.widgets[0]!;
+    if (widget.type !== 'events') throw new Error('Expected events');
+    widget.events.push({ ...widget.events[0]!, id: 'second' });
+    await saveDashboardConfig(config);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(fakeBrowser.notifications.create).mockRejectedValueOnce(
+      new Error('Failed'),
+    );
+    vi.mocked(fakeBrowser.notifications.create).mockRejectedValueOnce(
+      new Error('Failed'),
+    );
+    await checkEventReminders(playSound);
+    expect(playSound).not.toHaveBeenCalled();
+    await checkEventReminders(playSound);
+    expect(fakeBrowser.notifications.create).toHaveBeenCalledTimes(4);
+    expect(playSound).toHaveBeenCalledOnce();
   });
 
   it('registers alarm, startup, install and config listeners and runs on worker boot', async () => {
@@ -159,8 +189,8 @@ describe('background event reminders', () => {
     );
     const onChanged = vi.spyOn(fakeBrowser.storage.onChanged, 'addListener');
     await saveDashboardConfig(configWithEvent());
-    registerEventReminders();
-    await checkEventReminders();
+    registerEventReminders(playSound);
+    await checkEventReminders(playSound);
     expect(onAlarm).toHaveBeenCalledOnce();
     expect(onStartup).toHaveBeenCalledOnce();
     expect(onInstalled).toHaveBeenCalledOnce();

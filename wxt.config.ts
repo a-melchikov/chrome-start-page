@@ -18,7 +18,7 @@ export default defineConfig({
     // `unlimitedStorage` lets local wallpapers retain their original bytes
     // when lossless compression cannot bring them below the 6 MiB target.
     // `alarms` and `notifications` enable Pomodoro and timed event reminders;
-    // `offscreen` enables Pomodoro audio.
+    // `offscreen` enables Pomodoro and event reminder audio.
     permissions: [
       // Allows explicit capture of links and selected text through Chrome's menu.
       'contextMenus',

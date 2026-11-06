@@ -30,7 +30,9 @@ function isReminderDeliveries(value: unknown): value is ReminderDeliveries {
   );
 }
 
-async function refreshEventReminders(): Promise<void> {
+async function refreshEventReminders(
+  playSound: () => Promise<void>,
+): Promise<void> {
   // Read without writing migrations back: a background read must not trigger
   // another config-change event or race with the dashboard's save queue.
   const config = await readStoredDashboardConfig();
@@ -57,6 +59,7 @@ async function refreshEventReminders(): Promise<void> {
       ? stored
       : { minute: plan.minute, delivered: [] };
   const delivered = new Set(state.delivered);
+  let notificationCreated = false;
   for (const reminder of plan.reminders) {
     if (Math.floor(Date.now() / MINUTE_MS) * MINUTE_MS !== plan.minute) break;
     if (delivered.has(reminder.id)) continue;
@@ -73,6 +76,7 @@ async function refreshEventReminders(): Promise<void> {
         priority: 2,
         requireInteraction: true,
       });
+      notificationCreated = true;
       delivered.add(reminder.id);
       await storage.setItem(EVENT_REMINDER_STATE_KEY, {
         minute: plan.minute,
@@ -82,33 +86,42 @@ async function refreshEventReminders(): Promise<void> {
       console.error('Failed to deliver event reminder:', error);
     }
   }
+  if (notificationCreated) {
+    try {
+      await playSound();
+    } catch (error) {
+      console.error('Failed to play event reminder sound:', error);
+    }
+  }
 }
 
 // All triggers are owned by one worker and use the same queue. Tabs never send
 // notifications, so opening another start page cannot duplicate reminders.
 let pendingRefresh = Promise.resolve();
-export function checkEventReminders(): Promise<void> {
+export function checkEventReminders(
+  playSound: () => Promise<void>,
+): Promise<void> {
   pendingRefresh = pendingRefresh
-    .then(refreshEventReminders)
+    .then(() => refreshEventReminders(playSound))
     .catch((error: unknown) => {
       console.error('Failed to refresh event reminders:', error);
     });
   return pendingRefresh;
 }
 
-export function registerEventReminders(): void {
+export function registerEventReminders(playSound: () => Promise<void>): void {
+  const check = () => checkEventReminders(playSound);
   browser.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === EVENT_REMINDER_ALARM) void checkEventReminders();
+    if (alarm.name === EVENT_REMINDER_ALARM) void check();
   });
   browser.runtime.onStartup.addListener(() => {
-    void checkEventReminders();
+    void check();
   });
   browser.runtime.onInstalled.addListener(() => {
-    void checkEventReminders();
+    void check();
   });
   browser.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && 'dashboard-config' in changes)
-      void checkEventReminders();
+    if (area === 'local' && 'dashboard-config' in changes) void check();
   });
   browser.notifications.onClicked.addListener((id) => {
     if (id.startsWith(EVENT_REMINDER_NOTIFICATION_PREFIX)) {
@@ -117,5 +130,5 @@ export function registerEventReminders(): void {
       });
     }
   });
-  void checkEventReminders();
+  void check();
 }
