@@ -572,8 +572,7 @@ export function YandexMusicWidget({
             <span>
               Волны на обложке
               <span className="mt-1 block text-xs text-theme-text-secondary">
-                Декоративная анимация во время воспроизведения, без
-                синхронизации с битом.
+                Декоративная анимация во время воспроизведения.
               </span>
             </span>
             <input
@@ -587,8 +586,8 @@ export function YandexMusicWidget({
             />
           </label>
           <p className="text-sm text-theme-text-secondary">
-            Музыка играет в отдельной вкладке. Все виджеты используют один
-            источник.
+            Музыка играет в отдельной вкладке. У вас должна быть открыта вкладка
+            с Яндекс.Музыкой.
           </p>
           {permissionRequired ? (
             <Button
@@ -620,9 +619,7 @@ export function YandexMusicWidget({
                     );
                   }}
                 >
-                  <option value="auto">
-                    Авто — играющая или последняя активная вкладка
-                  </option>
+                  <option value="auto">Авто</option>
                   {state.sources.map((source, index) => (
                     <option key={source.id} value={String(source.id)}>
                       {index + 1}. {source.label}
@@ -631,11 +628,11 @@ export function YandexMusicWidget({
                   ))}
                 </Select>
               </label>
-              <p className="text-xs text-theme-text-secondary" role="status">
-                {state.sourceId === null
-                  ? 'Вкладки Музыки не найдены'
-                  : `Текущий источник: ${state.sources.find((source) => source.id === state.sourceId)?.label ?? 'Яндекс.Музыка'}`}
-              </p>
+              {state.sourceId === null ? (
+                <p className="text-xs text-theme-text-secondary" role="status">
+                  Вкладки Музыки не найдены
+                </p>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
