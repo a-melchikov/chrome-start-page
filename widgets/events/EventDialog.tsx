@@ -1,6 +1,8 @@
 import { useId, useRef, useState, type FormEvent } from 'react';
 
 import { Button, Dialog, Input, Select, Textarea } from '../../components/ui';
+import { DatePickerField } from '../../components/ui/DatePickerField';
+import { TimePickerField } from '../../components/ui/TimePickerField';
 import {
   isEventDate,
   isEventRepeat,
@@ -28,18 +30,25 @@ export function EventDialog({
 }: EventDialogProps) {
   const [draft, setDraft] = useState(event);
   const [error, setError] = useState('');
+  const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(
+    null,
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const id = useId();
 
-  const submit = (e: FormEvent) => {
+  const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!draft.title.trim()) {
       setError('Введите название события.');
       titleRef.current?.focus();
       return;
     }
-    if (!isEventDate(draft.date) || !isEventTime(draft.time)) {
+    if (
+      !isEventDate(draft.date) ||
+      !isEventTime(draft.time) ||
+      !e.currentTarget.checkValidity()
+    ) {
       setError('Укажите корректную дату и время. Год — от 1000 до 9999.');
       return;
     }
@@ -96,14 +105,16 @@ export function EventDialog({
             <label className="block text-sm font-medium" htmlFor={`${id}-date`}>
               Дата
             </label>
-            <Input
+            <DatePickerField
               id={`${id}-date`}
-              type="date"
-              min="1000-01-01"
-              max="9999-12-31"
+              required
+              open={activePicker === 'date'}
+              onOpenChange={(open) => setActivePicker(open ? 'date' : null)}
+              aria-invalid={!!error && !isEventDate(draft.date)}
+              aria-describedby={error ? `${id}-error` : undefined}
               value={draft.date}
-              onChange={(e) => {
-                setDraft({ ...draft, date: e.target.value });
+              onValueChange={(date) => {
+                setDraft({ ...draft, date });
                 setError('');
               }}
             />
@@ -112,12 +123,15 @@ export function EventDialog({
             <label className="block text-sm font-medium" htmlFor={`${id}-time`}>
               Время (необязательно)
             </label>
-            <Input
+            <TimePickerField
               id={`${id}-time`}
-              type="time"
+              open={activePicker === 'time'}
+              onOpenChange={(open) => setActivePicker(open ? 'time' : null)}
+              aria-invalid={!!error && !isEventTime(draft.time)}
+              aria-describedby={error ? `${id}-error` : undefined}
               value={draft.time}
-              onChange={(e) => {
-                setDraft({ ...draft, time: e.target.value });
+              onValueChange={(time) => {
+                setDraft({ ...draft, time });
                 setError('');
               }}
             />

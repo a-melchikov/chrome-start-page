@@ -1086,3 +1086,48 @@
   align-items: center;
   gap: 0.25rem;
 }
+
+/* Native segments remain editable; only our themed buttons open pickers. */
+.themed-picker-input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.themed-picker-input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.themed-picker-input::-webkit-datetime-edit-day-field:focus,
+.themed-picker-input::-webkit-datetime-edit-month-field:focus,
+.themed-picker-input::-webkit-datetime-edit-year-field:focus,
+.themed-picker-input::-webkit-datetime-edit-hour-field:focus,
+.themed-picker-input::-webkit-datetime-edit-minute-field:focus {
+  border-radius: 2px;
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.themed-picker-panel {
+  --ui-text-scale: var(--interface-text-scale, 1);
+  scrollbar-width: none;
+  caret-color: var(--theme-accent);
+}
+
+.themed-picker-panel ::selection {
+  background: var(--theme-accent);
+  color: var(--theme-accent-text);
+}
+
+.themed-picker-panel * {
+  scrollbar-width: none;
+}
+
+.themed-picker-panel::-webkit-scrollbar,
+.themed-picker-panel ::-webkit-scrollbar {
+  display: none;
+}
+
+.themed-picker-panel .picker-action {
+  height: 1.75rem;
+  padding-inline: 0.5rem;
+  font-size: inherit;
+}
